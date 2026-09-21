@@ -100,6 +100,10 @@ Binaries after build: `superset-ts` / `sts` → `packages/cli/dist/cli.js`.
 
 `packages/core` parses `brand type` with a lightweight scanner (regex header + brace matching for Mode B). **Comment-skipping is incomplete** — a `brand type …` appearing inside a line or block comment can still match and be rewritten. Don’t put live-looking decls in comments for now; a proper skip will come later.
 
+### Same-file brand unions (v0)
+
+`brand type Staff = Admin | Regular` (and `&`) only sees brands declared **earlier in that same `.sts` file** — cross-file dialect composition isn’t supported yet. After the CLI transform, export/import the emitted `type` + companion and use `.is` / `.from` across files as normal TS.
+
 ---
 
 ## Packages
