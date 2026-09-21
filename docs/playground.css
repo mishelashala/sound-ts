@@ -66,6 +66,10 @@ body.playground-body {
 /* Shared pane surface: textarea overlay + compiled <pre> */
 .editor-stack,
 .compiled-output {
+  --editor-font-size: 13.6px;
+  --editor-line-height: 20px;
+  --editor-pad-y: 14px;
+  --editor-pad-x: 16px;
   width: 100%;
   min-height: 22rem;
   flex: 1;
@@ -75,9 +79,12 @@ body.playground-body {
   border-radius: 4px;
   background: var(--code-panel);
   color: var(--code-fg);
-  font: inherit;
-  font-size: 0.85rem;
-  line-height: 1.45;
+  font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: var(--editor-font-size);
+  font-weight: 400;
+  font-style: normal;
+  line-height: var(--editor-line-height);
+  letter-spacing: 0;
   box-sizing: border-box;
 }
 
@@ -90,14 +97,17 @@ body.playground-body {
 
 .editor-stack > * {
   grid-area: 1 / 1;
-  margin: 0;
-  padding: 0.85rem 1rem;
-  border: 0;
+  margin: 0 !important;
+  padding: var(--editor-pad-y) var(--editor-pad-x) !important;
+  border: 0 !important;
   border-radius: 0;
-  background: transparent;
-  font: inherit;
-  font-size: inherit;
-  line-height: inherit;
+  background: transparent !important;
+  font-family: inherit;
+  font-size: var(--editor-font-size) !important;
+  font-weight: 400;
+  font-style: normal;
+  line-height: var(--editor-line-height) !important;
+  letter-spacing: 0;
   white-space: pre;
   word-wrap: normal;
   overflow-wrap: normal;
@@ -105,6 +115,7 @@ body.playground-body {
   box-sizing: border-box;
   min-height: 22rem;
   width: 100%;
+  height: 100%;
 }
 
 .editor-stack .editor-highlight {
@@ -113,17 +124,27 @@ body.playground-body {
   color: var(--code-fg);
 }
 
-.editor-stack .editor-highlight code {
-  display: block;
-  font: inherit;
-  font-size: inherit;
-  line-height: inherit;
+.editor-stack .editor-highlight code,
+.editor-stack .editor-highlight .token {
+  display: inline;
+  font-family: inherit !important;
+  font-size: inherit !important;
+  font-weight: 400 !important;
+  font-style: normal !important;
+  line-height: inherit !important;
+  letter-spacing: inherit;
   white-space: inherit;
   tab-size: inherit;
-  background: none;
-  padding: 0;
-  border: none;
-  border-radius: 0;
+  background: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  border-radius: 0 !important;
+  vertical-align: baseline;
+}
+
+.editor-stack .editor-highlight code {
+  display: block;
   color: inherit;
 }
 
@@ -133,6 +154,10 @@ body.playground-body {
   color: transparent;
   caret-color: var(--code-fg);
   overflow: auto;
+  appearance: none;
+  -webkit-appearance: none;
+  outline: none;
+  field-sizing: fixed;
 }
 
 .editor-stack textarea::selection {
