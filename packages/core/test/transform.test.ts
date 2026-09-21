@@ -74,6 +74,22 @@ brand type Role = "a" | "b" | "c";
       parseBrandTypes(`brand type Bad = "a" | "a";`),
     ).toThrow(/duplicate/);
   });
+
+  it("parses multiline literal unions with a leading |", () => {
+    const src = `
+brand type Status =
+  | "ok"
+  | "empty"
+  | "timeout"
+  | "error";
+`;
+    const { decls } = parseBrandTypes(src);
+    expect(decls).toHaveLength(1);
+    expect(decls[0]!.kind).toBe("literal");
+    if (decls[0]!.kind === "literal") {
+      expect(decls[0]!.values).toEqual(["ok", "empty", "timeout", "error"]);
+    }
+  });
 });
 
 describe("parseBrandTypes (Mode B refined)", () => {

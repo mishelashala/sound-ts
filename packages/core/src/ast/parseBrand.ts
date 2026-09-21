@@ -126,6 +126,16 @@ function sliceBrandRhs(
     );
   }
 
+  // TypeScript allows a leading `|` on multiline unions (`= | "a" | "b"`).
+  if (token === ts.SyntaxKind.BarToken) {
+    token = scanner.scan();
+    if (token === ts.SyntaxKind.EndOfFileToken) {
+      throw new SyntaxError(
+        `brand type ${name}: expected string literal or brand name after leading '|'`,
+      );
+    }
+  }
+
   const isLiteral = token === ts.SyntaxKind.StringLiteral;
   let lastEnd = scanner.getTextPos();
   let sawOp = false;
@@ -213,8 +223,13 @@ function sliceBrandRhs(
   }
 
   void sawOp;
+  // Drop a leading `|` from the sliced text so synthetic `type __T = …` parses.
+  let text = source.slice(rhsStart, lastEnd).trim();
+  if (text.startsWith("|")) {
+    text = text.slice(1).trim();
+  }
   return {
-    text: source.slice(rhsStart, lastEnd).trim(),
+    text,
     end,
     isLiteral,
   };
