@@ -38,6 +38,24 @@ function emitLiteralNominalType(
   ].join("\n");
 }
 
+/** Property key for a Mode A `Values` member (quote when not a JS identifier). */
+function emitValuesMemberKey(literal: string): string {
+  return /^[A-Za-z_$][\w$]*$/.test(literal) ? literal : JSON.stringify(literal);
+}
+
+/** Nested `Values` map: known members without going through `.from("…")`. */
+function emitValuesConst(brandName: string, values: readonly string[]): string {
+  const entries = values.map((v) => {
+    const key = emitValuesMemberKey(v);
+    return `    ${key}: ${JSON.stringify(v)} as ${brandName},`;
+  });
+  return [
+    `  const Values = Object.freeze({`,
+    ...entries,
+    `  });`,
+  ].join("\n");
+}
+
 function emitLiteralSelfContained(decl: LiteralBrandDecl): string {
   const { name, values, exported } = decl;
   const litList = values.map((v) => JSON.stringify(v)).join(", ");
@@ -64,9 +82,11 @@ function emitLiteralSelfContained(decl: LiteralBrandDecl): string {
     `    }`,
     `    throw new Error(\`Invalid ${name} primitive: \${JSON.stringify(value)}\`);`,
     `  }`,
+    emitValuesConst(name, values),
     `  return Object.freeze({`,
     `    name: "${name}" as const,`,
     `    values: __values,`,
+    `    Values,`,
     `    is,`,
     `    from,`,
     `    toPrimitive,`,

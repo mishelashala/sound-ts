@@ -418,6 +418,9 @@ describe("transform", () => {
     }
     expect(code).toMatch(/name:\s*"Account"/);
     expect(code).toMatch(/values:\s*__values/);
+    expect(code).toMatch(/\bValues,/);
+    expect(code).toContain("admin: \"admin\" as Account");
+    expect(code).toContain("regular: \"regular\" as Account");
     expect(code).toMatch(/\bis,/);
     expect(code).toMatch(/\bfrom,/);
     expect(code).toMatch(/\btoPrimitive,/);
@@ -426,11 +429,27 @@ describe("transform", () => {
     const Account = defineLiteralSet("Account", ["admin", "regular"] as const);
     expect(Account.name).toBe("Account");
     expect([...Account.values]).toEqual(["admin", "regular"]);
+    expect(Account.Values.admin).toBe("admin");
+    expect(Account.Values.regular).toBe("regular");
     expect(Account.is("admin")).toBe(true);
     expect(Account.is("guest")).toBe(false);
     expect(Account.from("regular")).toBe("regular");
     expect(() => Account.from("guest")).toThrow(LiteralSetError);
     expect(Account.toPrimitive("admin")).toBe("admin");
+  });
+
+  it("Values quotes non-identifier literals", () => {
+    const block = emitBrandType({
+      kind: "literal",
+      name: "Tag",
+      values: ["ok", "not-ok"],
+      raw: "",
+      start: 0,
+      end: 0,
+      exported: false,
+    });
+    expect(block).toContain('ok: "ok" as Tag');
+    expect(block).toContain('"not-ok": "not-ok" as Tag');
   });
 
   it("emitBrandType produces standalone block for literals", () => {
@@ -551,6 +570,8 @@ describe("defineLiteralSet (internal)", () => {
     expect(Account.from("admin")).toBe("admin");
     expect(Account.is("guest")).toBe(false);
     expect(() => Account.from("x")).toThrow(LiteralSetError);
+    expect(Account.Values.admin).toBe("admin");
+    expect(Account.Values.regular).toBe("regular");
   });
 });
 
