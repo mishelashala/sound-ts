@@ -5,10 +5,9 @@
     "moduleResolution": "NodeNext",
     "strict": true,
     "skipLibCheck": true,
-    "rootDir": ".sound-ts",
+    "rootDir": "src",
     "outDir": "dist",
     "noEmitOnError": true
   },
-  "include": [".sound-ts/**/*.ts"],
-  "exclude": ["**/*.sts", "src"]
+  "include": ["src"]
 }

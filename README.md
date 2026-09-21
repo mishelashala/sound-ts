@@ -152,9 +152,13 @@ node packages/cli/dist/cli.js path/to/file.sts -o path/to/out.ts
 
 # expand a directory
 node packages/cli/dist/cli.js ./src -o ./out
+
+# Node app — one compiler step (project directory contains tsconfig.json)
+node packages/cli/dist/cli.js build examples/tsc-app
+node packages/cli/dist/cli.js watch examples/tsc-app
 ```
 
-Point `tsc` / Vite at **`./out`** (the transformed files), not the dialect sources.
+`sts <input>` writes plain TS and does not emit JS. Point stock `tsc` / Vite at that output when you expand by hand. A Node app stops at `sts build`: stock `tsc` runs inside `sts` and JS is written to `outDir`.
 
 Binaries after build: `sound-ts` / `sts` → `packages/cli/dist/cli.js`.
 
@@ -169,41 +173,37 @@ Remaining scanner edges: regex literals; nested `${}` inside templates (the whol
 
 Keep most of the app as normal `.ts` (stock `tsc` / Vite). Add `.sts` only where you want `brand type`, `validate type`, or `cast`. VS Code already highlights `.sts`, so “just add a file” isn’t red-squiggle hell.
 
-**Today — two-step compilation** (expand, then stock build):
+**Node — one `sts` command:**
 
 ```
-.sts  --sts -o …-->  plain .ts  --tsc/nest-->  .js in normal build out
+.sts + .ts  --sts build-->  .js in the project's outDir
 ```
 
-- `sts` never emits `.js`
-- Default output → `<cwd>/.sound-ts/` (gitignored; input outside the cwd caches next to that input) or `-o` you choose
-- Stock Nest / `tsc` still owns `dist/`
-- Don’t point `tsc` at raw `.sts`
-- Whole `.sts` batch on each `sts` run for cross-file `|` / `&` and `cast` companions
+- `sts build [project]` expands `.sts`, typechecks with stock `tsc`, and writes JS to `outDir` (`dist` in `examples/tsc-app`)
+- `sts watch [project]` or `sts build --watch` rebuilds when `.sts` or `.ts` inputs change
+- Expand failure exits non-zero and does not emit JS from that run
+- `tsconfig.json` keeps the app's own `rootDir` and `include`. It does not point at a `.sound-ts` directory
+- Files stock `tsc` reads are written under the OS temp directory for that run
+- `sts <input>` / `sts transform` still expands to plain TS only (default `<cwd>/.sound-ts/`, or `-o`)
+- Whole `.sts` batch on each run for cross-file `|` / `&` and `cast` companions
 - Enter refined / validate types via `.from` or `cast<>` — bare bases are not assignable under stock `tsc`
 
 ### Drop-in build
 
-`examples/tsc-app` is a plain `tsc` app. One command expands `.sts`, then runs `tsc`. If expand fails, `tsc` does not run.
+`examples/tsc-app` is a Node app. `build` and `dev` call `sts` only.
 
 `package.json`:
 
 ```json
 {
   "scripts": {
-    "build": "node scripts/build.mjs"
+    "build": "sts build",
+    "dev": "sts watch"
   }
 }
 ```
 
-`scripts/build.mjs` runs this, and runs `tsc` only when expand exits 0:
-
-```bash
-node ../../packages/cli/dist/cli.js src -o .sound-ts
-tsc -p tsconfig.json
-```
-
-`tsconfig.json` sets `rootDir` to `.sound-ts` and `outDir` to `dist`. `include` is `.sound-ts/**/*.ts`. It does not include `*.sts`.
+`tsconfig.json` sets `rootDir` to `src` and `outDir` to `dist`. `include` is `src`. It does not mention `.sound-ts`.
 
 ```bash
 pnpm --dir examples/tsc-app build
@@ -250,6 +250,7 @@ pnpm --dir examples/vite-app build
 - [x] [AST soundness visitors](https://github.com/mishelashala/sound-ts/issues/52) — move 0.x bans off masked-string scans onto AST visitors.
 - [x] [Scopes and symbols](https://github.com/mishelashala/sound-ts/issues/53) — cross-file Sound-TS symbols for brands / companions / cast targets.
 - [x] [Complete soundness rules](https://github.com/mishelashala/sound-ts/issues/54) — 1.0 reject/accept matrix (boundaries, predicates, mutation, generics subset) on the AST + symbol layer.
+- [x] [One command, no project cache, watch](https://github.com/mishelashala/sound-ts/issues/71) — `sts build` / `sts watch` is the Node compiler step. Expanded TS for stock `tsc` stays in the OS temp directory. The app `tsconfig.json` does not point at `.sound-ts`.
 - [x] [`.from` is the only door](https://github.com/mishelashala/sound-ts/issues/75) — unknown input enters with `.from` (always checks). Known members are `Brand.Values.member` or `Brand.Values[n]`. No unchecked constructor. Formatting and labels stay normal functions. See [Entry contract](#entry-contract).
 
 ---
@@ -259,7 +260,7 @@ pnpm --dir examples/vite-app build
 | Package | Role |
 | --- | --- |
 | `packages/core` | Parse + transform `brand type` / `validate type` / `cast<>` → plain TS + runtime |
-| `packages/cli` | One-command expand (`sts` / `sound-ts`) |
+| `packages/cli` | `sts build` / `sts watch`, and expand to plain TS (`sts` / `sound-ts`) |
 | `packages/vite` | Vite plugin `soundTs()`: expand `.sts` on dev and build |
 | `packages/vscode` | Thin extension: highlight `brand type`, optional CLI command |
 
