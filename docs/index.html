@@ -109,11 +109,16 @@
           checks or companion <code>.from</code>)
         </li>
       </ul>
-      <p><strong>Where we still lean on stock TS unsoundness</strong></p>
+      <p>
+        <strong>Where we still lean on stock TS unsoundness</strong> —
+        <a href="https://github.com/mishelashala/superset-ts/issues?q=roadmap+v2">roadmap v2</a>
+        closes these on the <code>.sts</code> surface. Ordinary
+        <code>.ts</code> stays stock TypeScript.
+      </p>
       <ul>
-        <li>assertions / <code>as</code> (stock TS)</li>
-        <li><code>any</code> / <code>unknown</code> misuse</li>
-        <li>structural widen on non-branded types</li>
+        <li>assertions / <code>as</code> — <a href="https://github.com/mishelashala/superset-ts/issues/36">#36</a></li>
+        <li><code>any</code> / <code>unknown</code> misuse — <a href="https://github.com/mishelashala/superset-ts/issues/37">#37</a></li>
+        <li>structural widen on non-branded types — <a href="https://github.com/mishelashala/superset-ts/issues/38">#38</a></li>
       </ul>
       <p class="muted">
         Gate: new dialect surface should <strong>close a soundness hole</strong>,
@@ -370,6 +375,37 @@ node packages/cli/dist/cli.js ./example.sts -o ./out/example.ts</code></pre>
           calling <code>sts</code> by hand.
         </li>
       </ul>
+      <p>
+        <strong>Soundness on <code>.sts</code></strong> —
+        <a href="https://github.com/mishelashala/superset-ts/issues?q=roadmap+v2">roadmap v2</a>.
+        Check a box here only when that issue is delivered.
+        These do not add a custom checker. A <code>.ts</code> file outside the
+        dialect stays stock TypeScript.
+      </p>
+      <ul class="checklist">
+        <li>
+          <input type="checkbox" disabled />
+          <a href="https://github.com/mishelashala/superset-ts/issues/36">Reject <code>as</code></a>
+          — a type assertion in <code>.sts</code> fails expand.
+          <code>as const</code> and <code>cast&lt;&gt;</code> stay.
+          <code>as</code> is not rewritten into <code>cast</code>.
+        </li>
+        <li>
+          <input type="checkbox" disabled />
+          <a href="https://github.com/mishelashala/superset-ts/issues/37">Reject <code>any</code></a>
+          — <code>any</code> in <code>.sts</code> fails expand.
+          <code>unknown</code> stays.
+          <code>any</code> is not rewritten to <code>unknown</code>.
+        </li>
+        <li>
+          <input type="checkbox" disabled />
+          <a href="https://github.com/mishelashala/superset-ts/issues/38">No structural aliases</a>
+          — a bare object alias in <code>.sts</code> fails expand.
+          <code>validate type</code> stays nominal.
+          Outbound widen to the naked structure stays a stock
+          <code>tsc</code> hole.
+        </li>
+      </ul>
     </section>
 
     <section id="caveats">
@@ -441,7 +477,7 @@ node packages/cli/dist/cli.js ./example.sts -o ./out/example.ts</code></pre>
         <li><strong>No open brands without <code>is</code></strong> (use refined brands with a custom <code>.is</code>)</li>
         <li>Refined brands and <code>validate type</code> are <strong>nominally opaque</strong> under stock <code>tsc</code> (phantom unique-symbol brands) — not structural aliases of their bases. Enter via <code>.from</code> / <code>cast&lt;&gt;</code>.</li>
         <li>String literal brands are the member literals <strong>or</strong> a phantom arm (nominal under stock <code>tsc</code>; member literals still assign). They do not flow back to the bare literal union. Number/bigint literal brands not supported yet.</li>
-        <li>We do <strong>not</strong> patch stock <code>as</code> / assertions, <code>any</code> / <code>unknown</code> misuse, or structural widen on non-branded types — those remain TS holes outside the dialect surface.</li>
+        <li>Stock <code>as</code>, <code>any</code>, and structural aliases are still open on the <code>.sts</code> surface until <a href="https://github.com/mishelashala/superset-ts/issues?q=roadmap+v2">roadmap v2</a> (<a href="https://github.com/mishelashala/superset-ts/issues/36">#36</a>, <a href="https://github.com/mishelashala/superset-ts/issues/37">#37</a>, <a href="https://github.com/mishelashala/superset-ts/issues/38">#38</a>). Ordinary <code>.ts</code> files stay stock TypeScript either way.</li>
         <li>Not a full schema library — <code>validate type</code> covers simple object shapes only (no nested objects, generics, <code>Date</code>, …)</li>
         <li>VS Code extension not on Marketplace yet (local install only)</li>
         <li><code>defineLiteralSet</code> is not the authoring surface</li>

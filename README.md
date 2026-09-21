@@ -25,11 +25,11 @@ TypeScript’s contract is **type safety with erased types** — no runtime comp
 - `validate type` — same phantom + `.is` / `.from`
 - `cast<Target>(expr)` — checked entry path (primitive checks or companion `.from`)
 
-**Where we still lean on stock TS unsoundness** (honest Non-goals)
+**Where we still lean on stock TS unsoundness** — [roadmap v2](https://github.com/mishelashala/superset-ts/issues?q=roadmap+v2) closes these on the `.sts` surface. Ordinary `.ts` stays stock TypeScript.
 
-- assertions / `as` (stock TS)
-- `any` / `unknown` misuse
-- structural widen on non-branded types
+- assertions / `as` — [#36](https://github.com/mishelashala/superset-ts/issues/36)
+- `any` / `unknown` misuse — [#37](https://github.com/mishelashala/superset-ts/issues/37)
+- structural widen on non-branded types — [#38](https://github.com/mishelashala/superset-ts/issues/38)
 
 Gate: new dialect surface should **close a soundness hole**, not paper over one.
 
@@ -241,6 +241,12 @@ pnpm --dir examples/vite-app build
 - [x] [Drop-in build script](https://github.com/mishelashala/superset-ts/issues/29) — one `package.json` script expands, then runs `tsc`. Expand failure stops the build.
 - [x] [Loader](https://github.com/mishelashala/superset-ts/issues/30) — Vite expands `.sts` on dev and build, so you stop calling `sts` by hand.
 
+**Soundness on `.sts`** — [roadmap v2](https://github.com/mishelashala/superset-ts/issues?q=roadmap+v2). Same rule: check a box only when that issue is delivered. These do not add a custom checker. A `.ts` file outside the dialect stays stock TypeScript.
+
+- [ ] [Reject `as`](https://github.com/mishelashala/superset-ts/issues/36) — a type assertion in `.sts` fails expand. `as const` and `cast<>` stay. `as` is not rewritten into `cast`.
+- [ ] [Reject `any`](https://github.com/mishelashala/superset-ts/issues/37) — `any` in `.sts` fails expand. `unknown` stays. `any` is not rewritten to `unknown`.
+- [ ] [No structural aliases](https://github.com/mishelashala/superset-ts/issues/38) — a bare object alias in `.sts` fails expand. `validate type` stays nominal. Outbound widen to the naked structure stays a stock `tsc` hole.
+
 ---
 
 ## Packages
@@ -277,7 +283,7 @@ See also: [FAQ: Why not TypeScript?](https://mishelashala.github.io/superset-ts/
 - **No open brands without `is`** (use refined brands with a custom `.is`)
 - Refined brands and `validate type` are **nominally opaque** under stock `tsc` (phantom unique-symbol brands) — not structural aliases of their bases. Enter via `.from` / `cast<>`.
 - String literal brands are the member literals **or** a phantom arm (nominal under stock `tsc`; member literals still assign). They do not flow back to the bare literal union. Number/bigint literal brands not supported yet.
-- We do **not** patch stock `as` / assertions, `any` / `unknown` misuse, or structural widen on non-branded types — those remain TS holes outside the dialect surface.
+- Stock `as`, `any`, and structural aliases are still open on the `.sts` surface until [roadmap v2](https://github.com/mishelashala/superset-ts/issues?q=roadmap+v2) ([#36](https://github.com/mishelashala/superset-ts/issues/36), [#37](https://github.com/mishelashala/superset-ts/issues/37), [#38](https://github.com/mishelashala/superset-ts/issues/38)). Ordinary `.ts` files stay stock TypeScript either way.
 - Not a full schema library — `validate type` covers simple object shapes only (no nested objects, generics, `Date`, …)
 - VS Code extension **not on Marketplace** yet (local install only)
 - `defineLiteralSet` is **not** the public authoring API
