@@ -247,7 +247,7 @@ pnpm --dir examples/vite-app build
 **Soundness on `.sts`** — [roadmap v2](https://github.com/mishelashala/superset-ts/issues?q=roadmap+v2). Same rule: check a box only when that issue is delivered. These do not add a custom checker. A `.ts` file outside the dialect stays stock TypeScript.
 
 - [ ] [Reject `as`](https://github.com/mishelashala/superset-ts/issues/36) — a type assertion in `.sts` fails expand. `as const` and `cast<>` stay. `as` is not rewritten into `cast`.
-- [ ] [Reject `any`](https://github.com/mishelashala/superset-ts/issues/37) — `any` in `.sts` fails expand. `unknown` stays. `any` is not rewritten to `unknown`.
+- [x] [Reject `any`](https://github.com/mishelashala/superset-ts/issues/37) — `any` in `.sts` fails expand. `unknown` stays. `any` is not rewritten to `unknown`.
 - [ ] [No structural aliases](https://github.com/mishelashala/superset-ts/issues/38) — a bare object alias in `.sts` fails expand. `validate type` stays nominal. Outbound widen to the naked structure stays a stock `tsc` hole.
 - [ ] [Method parameters](https://github.com/mishelashala/superset-ts/issues/40) — a method in `.sts` emits as a readonly function property, so stock `strictFunctionTypes` checks parameters contravariantly.
 - [ ] [Reject `!`](https://github.com/mishelashala/superset-ts/issues/41) — `value!` and `prop!: Type` in `.sts` fail expand. `!==` stays. `!` is not deleted.
