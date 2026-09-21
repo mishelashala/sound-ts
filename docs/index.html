@@ -120,6 +120,9 @@
         <li>assertions / <code>as</code> — <a href="https://github.com/mishelashala/superset-ts/issues/36">#36</a></li>
         <li><code>any</code> / <code>unknown</code> misuse — <a href="https://github.com/mishelashala/superset-ts/issues/37">#37</a></li>
         <li>structural widen on non-branded types — <a href="https://github.com/mishelashala/superset-ts/issues/38">#38</a></li>
+        <li>method parameter bivariance — <a href="https://github.com/mishelashala/superset-ts/issues/40">#40</a></li>
+        <li>non-null <code>!</code> — <a href="https://github.com/mishelashala/superset-ts/issues/41">#41</a></li>
+        <li><code>Object</code> / <code>{}</code> / <code>Function</code> — <a href="https://github.com/mishelashala/superset-ts/issues/42">#42</a></li>
       </ul>
       <p class="muted">
         Gate: new dialect surface should <strong>close a soundness hole</strong>,
@@ -406,6 +409,24 @@ node packages/cli/dist/cli.js ./example.sts -o ./out/example.ts</code></pre>
           Outbound widen to the naked structure stays a stock
           <code>tsc</code> hole.
         </li>
+        <li>
+          <input type="checkbox" disabled />
+          <a href="https://github.com/mishelashala/superset-ts/issues/40">Method parameters</a>
+          — a method in <code>.sts</code> emits as a readonly function property,
+          so stock <code>strictFunctionTypes</code> checks parameters contravariantly.
+        </li>
+        <li>
+          <input type="checkbox" disabled />
+          <a href="https://github.com/mishelashala/superset-ts/issues/41">Reject <code>!</code></a>
+          — <code>value!</code> and <code>prop!: Type</code> in <code>.sts</code>
+          fail expand. <code>!==</code> stays. <code>!</code> is not deleted.
+        </li>
+        <li>
+          <input type="checkbox" disabled />
+          <a href="https://github.com/mishelashala/superset-ts/issues/42">Reject <code>Object</code>, <code>{}</code>, <code>Function</code></a>
+          — those types in <code>.sts</code> fail expand. An empty object
+          literal stays. They are not rewritten to <code>unknown</code>.
+        </li>
       </ul>
     </section>
 
@@ -478,7 +499,7 @@ node packages/cli/dist/cli.js ./example.sts -o ./out/example.ts</code></pre>
         <li><strong>No open brands without <code>is</code></strong> (use refined brands with a custom <code>.is</code>)</li>
         <li>Refined brands and <code>validate type</code> are <strong>nominally opaque</strong> under stock <code>tsc</code> (phantom unique-symbol brands) — not structural aliases of their bases. Enter via <code>.from</code> / <code>cast&lt;&gt;</code>.</li>
         <li>String literal brands are the member literals <strong>or</strong> a phantom arm (nominal under stock <code>tsc</code>; member literals still assign). They do not flow back to the bare literal union. Number/bigint literal brands not supported yet.</li>
-        <li>Stock <code>as</code>, <code>any</code>, and structural aliases are still open on the <code>.sts</code> surface until <a href="https://github.com/mishelashala/superset-ts/issues?q=roadmap+v2">roadmap v2</a> (<a href="https://github.com/mishelashala/superset-ts/issues/36">#36</a>, <a href="https://github.com/mishelashala/superset-ts/issues/37">#37</a>, <a href="https://github.com/mishelashala/superset-ts/issues/38">#38</a>). Ordinary <code>.ts</code> files stay stock TypeScript either way.</li>
+        <li>Stock <code>as</code>, <code>any</code>, structural aliases, method bivariance, non-null <code>!</code>, and <code>Object</code> / <code>{}</code> / <code>Function</code> are still open on the <code>.sts</code> surface until <a href="https://github.com/mishelashala/superset-ts/issues?q=roadmap+v2">roadmap v2</a> (<a href="https://github.com/mishelashala/superset-ts/issues/36">#36</a>–<a href="https://github.com/mishelashala/superset-ts/issues/38">#38</a>, <a href="https://github.com/mishelashala/superset-ts/issues/40">#40</a>–<a href="https://github.com/mishelashala/superset-ts/issues/42">#42</a>). Ordinary <code>.ts</code> files stay stock TypeScript either way.</li>
         <li>Not a full schema library — <code>validate type</code> covers simple object shapes only (no nested objects, generics, <code>Date</code>, …)</li>
         <li>VS Code extension not on Marketplace yet (local install only)</li>
         <li><code>defineLiteralSet</code> is not the authoring surface</li>
