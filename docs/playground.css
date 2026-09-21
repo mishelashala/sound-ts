@@ -122,6 +122,7 @@ body.playground-body {
   pointer-events: none;
   overflow: auto;
   color: var(--code-fg);
+  scrollbar-gutter: stable;
 }
 
 .editor-stack .editor-highlight code,
@@ -158,6 +159,7 @@ body.playground-body {
   -webkit-appearance: none;
   outline: none;
   field-sizing: fixed;
+  scrollbar-gutter: stable;
 }
 
 .editor-stack textarea::selection {
