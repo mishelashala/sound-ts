@@ -286,11 +286,15 @@ User.from(data); // throws on mismatch; returns User</code></pre>
         <li>optional <code>?</code></li>
         <li>arrays of primitives (<code>string[]</code>) — not <code>null[]</code></li>
         <li>unions of those (e.g. <code>string | null</code>, <code>string | number</code>, <code>string[] | number</code>)</li>
+        <li>nested objects whose leaves are those shapes</li>
+        <li><code>Date</code></li>
+        <li>a <code>brand type</code> or <code>validate type</code> name from the same file, an import, or the batch — enter a raw value with that companion's <code>.from</code>; an existing brand value may be stored as-is</li>
       </ul>
       <p class="muted">
-        Unsupported shapes (nested objects, generics, <code>Date</code>, imported
-        aliases as field types, …) error clearly at transform time — not a full
-        schema library. <code>null[]</code> stays rejected.
+        Generics (<code>Partial</code>, <code>Required</code>, <code>Array&lt;…&gt;</code>),
+        function types, and other shapes error at expand and name the gap.
+        <code>.from</code> checks the value and does not format it.
+        <code>null[]</code> stays rejected. Not a full schema library.
       </p>
       <pre><code class="language-typescript">validate type Flags = {
   active?: boolean;
@@ -568,7 +572,7 @@ node packages/cli/dist/cli.js ./example.sts -o ./out/example.ts</code></pre>
         <li>String literal brands are the member literals <strong>or</strong> a phantom arm (nominal under stock <code>tsc</code>; member literals still assign). They do not flow back to the bare literal union. Number/bigint literal brands not supported yet.</li>
         <li><strong>0.x delivered</strong> surface bans and tooling (<a href="https://github.com/mishelashala/sound-ts/issues?q=roadmap+v1">roadmap v1</a> / <a href="https://github.com/mishelashala/sound-ts/issues?q=roadmap+v2">v2</a>). Outbound widen from a <code>validate type</code> to the naked structure remains a stock <code>tsc</code> hole until a later design closes it.</li>
         <li><strong>1.0 roadmap issues #50–#54 delivered</strong> (AST + symbols + initial rule slice). Deferred items: <a href="https://github.com/mishelashala/sound-ts/blob/main/packages/core/src/soundness/SOUNDNESS_1_0.md">SOUNDNESS_1_0.md</a>. Package version may still be <code>0.x</code> until a <code>1.0.0</code> release cut.</li>
-        <li>Not a full schema library — <code>validate type</code> covers simple object shapes only (no nested objects, generics, <code>Date</code>, …)</li>
+        <li>Not a full schema library — <code>validate type</code> accepts nested objects, <code>Date</code>, and brand / validate field names. Generics (<code>Partial</code>, <code>Required</code>), function fields, and formatting inside <code>.from</code> stay out.</li>
         <li>VS Code extension not on Marketplace yet (local install only)</li>
         <li><code>defineLiteralSet</code> is not the authoring surface</li>
       </ul>
