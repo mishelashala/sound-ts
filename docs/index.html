@@ -308,7 +308,11 @@ node packages/cli/dist/cli.js ./example.sts -o ./out/example.ts</code></pre>
           <pre><code class="language-typescript">type User = { id: string; age: number };
 User.is(data); // ❌ no companion — use Zod / hand-written guard</code></pre>
         </li>
-        <li>Nominal / opaque / brand types with runtime companions</li>
+        <li>
+          Nominal / opaque / brand types with runtime companions
+          <br />
+          <span class="muted">That’s what <code>brand type</code> + companions cover here — see <a href="#cli">CLI quickstart</a> / <a href="#authoring">String literal brands</a>.</span>
+        </li>
         <li>
           Reified generics
           <pre><code class="language-typescript">function empty&lt;T&gt;(): T[] { return []; }
