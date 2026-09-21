@@ -256,7 +256,7 @@ pnpm --dir examples/vite-app build
 
 - [ ] [AST frontend with parity](https://github.com/mishelashala/sound-ts/issues/50) — TypeScript parser/AST replaces the regex frontend; fixtures expand equivalently.
 - [ ] [Dialect AST nodes](https://github.com/mishelashala/sound-ts/issues/51) — `brand type` / `validate type` / `cast<>` are explicit nodes (or a stable side-table).
-- [ ] [AST soundness visitors](https://github.com/mishelashala/sound-ts/issues/52) — move 0.x bans off masked-string scans onto AST visitors.
+- [x] [AST soundness visitors](https://github.com/mishelashala/sound-ts/issues/52) — move 0.x bans off masked-string scans onto AST visitors.
 - [ ] [Scopes and symbols](https://github.com/mishelashala/sound-ts/issues/53) — cross-file Sound-TS symbols for brands / companions / cast targets.
 - [ ] [Complete soundness rules](https://github.com/mishelashala/sound-ts/issues/54) — 1.0 reject/accept matrix (boundaries, predicates, mutation, generics subset) on the AST + symbol layer.
 
