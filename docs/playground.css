@@ -1,0 +1,95 @@
+/* Playground: wider than the docs column, two panes. */
+
+body.playground-body {
+  --max: 76rem;
+}
+
+.playground-back {
+  margin: 0.75rem 0 0;
+}
+
+.playground {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  align-items: stretch;
+  margin-top: 1rem;
+}
+
+@media (max-width: 800px) {
+  .playground {
+    grid-template-columns: 1fr;
+  }
+}
+
+.pane {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 0.4rem;
+}
+
+.pane-label {
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.output-mode {
+  margin: 0;
+  padding: 0.4rem 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.9rem;
+}
+
+.output-mode legend {
+  padding: 0 0.2rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.output-mode label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.output-mode input {
+  accent-color: var(--accent);
+}
+
+.pane textarea {
+  width: 100%;
+  min-height: 22rem;
+  flex: 1;
+  resize: vertical;
+  margin: 0;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--code-border);
+  border-left: 3px solid var(--accent);
+  border-radius: 4px;
+  background: var(--code-panel);
+  color: var(--code-fg);
+  font: inherit;
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+.pane textarea:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.pane textarea[readonly] {
+  cursor: text;
+}
+
+.pane textarea.is-error {
+  border-left-color: #f43f5e;
+  color: #fda4af;
+}

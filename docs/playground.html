@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Playground — superset-ts</title>
+  <meta name="description" content="Edit .sts and see transform() TypeScript plus JavaScript with types erased." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="playground.css" />
+  <link rel="icon" href="favicon.ico" sizes="any" />
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+  <link rel="icon" href="favicon-32.png" type="image/png" sizes="32x32" />
+  <script>
+    (function () {
+      try {
+        var stored = localStorage.getItem("theme");
+        var theme = stored === "light" || stored === "dark"
+          ? stored
+          : (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+        document.documentElement.setAttribute("data-theme", theme);
+      } catch (e) {}
+    })();
+  </script>
+</head>
+<body class="playground-body">
+  <main>
+    <header>
+      <div class="title-row">
+        <img class="seal" src="assets/seal.svg" width="32" height="32" alt="" />
+        <h1>superset-ts</h1>
+        <button type="button" class="theme-toggle" id="theme-toggle" aria-label="Toggle color theme">Theme</button>
+      </div>
+      <p class="one-liner">
+        <strong>Type soundness for TypeScript, inspired by F# types.</strong>
+        Not a Microsoft/TypeScript fork.
+      </p>
+      <p class="playground-back"><a href="index.html">Docs</a></p>
+    </header>
+
+    <div class="playground">
+      <section class="pane" aria-label=".sts source">
+        <label class="pane-label" for="sts-source">.sts source</label>
+        <textarea id="sts-source" spellcheck="false" autocomplete="off">brand type Account = "admin" | "regular";
+
+const admin = Account.from("admin");
+</textarea>
+      </section>
+      <section class="pane" aria-label="Compiled output">
+        <fieldset class="output-mode" id="output-mode">
+          <legend>Compiled output</legend>
+          <label><input type="radio" name="output-lang" value="ts" checked /> TypeScript</label>
+          <label><input type="radio" name="output-lang" value="js" /> JavaScript</label>
+        </fieldset>
+        <textarea id="compiled-output" readonly aria-readonly="true" spellcheck="false" aria-label="Compiled output"></textarea>
+      </section>
+    </div>
+    <p class="muted">
+      TypeScript is <code>transform()</code>. JavaScript is that output passed through
+      <code>typescript.transpileModule</code> (target ESNext, module ESNext) so types are erased and runtime companions stay.
+    </p>
+  </main>
+
+  <footer>
+    <p>
+      <a href="index.html">Docs</a>
+      · <a href="https://github.com/mishelashala/superset-ts">GitHub repo</a>
+    </p>
+  </footer>
+
+  <script>
+    (function () {
+      var root = document.documentElement;
+      var btn = document.getElementById("theme-toggle");
+      function currentTheme() {
+        var attr = root.getAttribute("data-theme");
+        if (attr === "light" || attr === "dark") return attr;
+        return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+      }
+      function applyTheme(theme) {
+        root.setAttribute("data-theme", theme);
+        try { localStorage.setItem("theme", theme); } catch (e) {}
+        if (btn) {
+          btn.setAttribute("aria-pressed", theme === "dark" ? "true" : "false");
+          btn.textContent = theme === "dark" ? "Light" : "Dark";
+          btn.title = theme === "dark" ? "Switch to light mode" : "Switch to dark mode";
+        }
+      }
+      applyTheme(currentTheme());
+      if (btn) {
+        btn.addEventListener("click", function () {
+          applyTheme(currentTheme() === "dark" ? "light" : "dark");
+        });
+      }
+    })();
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/typescript@5.9.3/lib/typescript.js"></script>
+  <script type="module" src="playground.js"></script>
+</body>
+</html>

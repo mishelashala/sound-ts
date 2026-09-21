@@ -12,6 +12,7 @@
   "homepage": "https://mishelashala.github.io/superset-ts/",
   "scripts": {
     "build": "pnpm -r run build",
+    "build:playground": "node scripts/build-playground.mjs",
     "test": "pnpm --filter @mishelashala/superset-ts-core test",
     "typecheck": "pnpm -r run typecheck"
   },
