@@ -239,7 +239,7 @@ pnpm --dir examples/vite-app build
 - [x] [Shadow emit](https://github.com/mishelashala/superset-ts/issues/27) — `sts` writes a gitignored cache, never a sibling `.ts`. CI fails if that output is committed.
 - [x] [Bidirectional resolve](https://github.com/mishelashala/superset-ts/issues/28) — `.ts` and `.sts` import each other. Import paths stay as the author wrote them.
 - [x] [Drop-in build script](https://github.com/mishelashala/superset-ts/issues/29) — one `package.json` script expands, then runs `tsc`. Expand failure stops the build.
-- [ ] [Loader](https://github.com/mishelashala/superset-ts/issues/30) — Vite expands `.sts` on dev and build, so you stop calling `sts` by hand.
+- [x] [Loader](https://github.com/mishelashala/superset-ts/issues/30) — Vite expands `.sts` on dev and build, so you stop calling `sts` by hand.
 
 ---
 
