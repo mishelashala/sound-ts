@@ -170,7 +170,8 @@
       <p>
         String literal brands emit as the member literals
         <strong>or</strong> a phantom arm, plus a runtime companion
-        (<code>.values</code> / <code>.is</code> / <code>.from</code>).
+        (<code>.values</code> / <code>.is</code> / <code>.from</code> /
+        <code>.toPrimitive</code>).
         <code>setRole("admin")</code> stays OK. A second brand with the same
         members is not assignable. A value of the brand assigns to
         <code>string</code>, not back to the bare literal union.

@@ -22,7 +22,8 @@ export interface EmitOptions {
 /**
  * Finite literals stay assignable (`setRole("admin")`). The phantom arm keeps
  * two brands with the same members distinct under stock `tsc`.
- * Outbound to `string` works; outbound to the bare literal union does not.
+ * Outbound to `string` works; outbound to the bare literal union uses
+ * companion `.toPrimitive(value)`.
  */
 function emitLiteralNominalType(
   name: string,
@@ -48,6 +49,7 @@ function emitLiteralSelfContained(decl: LiteralBrandDecl): string {
     `${exp}const ${name} = /*#__PURE__*/ (() => {`,
     `  const __values = Object.freeze([${litList}] as const);`,
     `  const __set = new Set<string>(__values);`,
+    `  type __Literal = (typeof __values)[number];`,
     `  function is(value: unknown): value is ${name} {`,
     `    return typeof value === "string" && __set.has(value);`,
     `  }`,
@@ -56,11 +58,18 @@ function emitLiteralSelfContained(decl: LiteralBrandDecl): string {
     `    const preview = typeof value === "string" ? JSON.stringify(value) : \`typeof \${typeof value}\`;`,
     `    throw new Error(\`Invalid ${name}: \${preview} is not one of [\${__values.map((v) => JSON.stringify(v)).join(", ")}]\`);`,
     `  }`,
+    `  function toPrimitive(value: ${name}): __Literal {`,
+    `    for (const v of __values) {`,
+    `      if (value === v) return v;`,
+    `    }`,
+    `    throw new Error(\`Invalid ${name} primitive: \${JSON.stringify(value)}\`);`,
+    `  }`,
     `  return Object.freeze({`,
     `    name: "${name}" as const,`,
     `    values: __values,`,
     `    is,`,
     `    from,`,
+    `    toPrimitive,`,
     `  });`,
     `})();`,
   ].join("\n");

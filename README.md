@@ -20,7 +20,7 @@ TypeScript’s contract is **type safety with erased types** — no runtime comp
 
 **Where we claim soundness today** (`0.x`)
 
-- `brand type` string-literal brands — member literals stay assignable; a phantom arm keeps two brands with the same members distinct. Outbound to `string` works; outbound to the bare literal union does not
+- `brand type` string-literal brands — member literals stay assignable; a phantom arm keeps two brands with the same members distinct. Outbound to `string` works; outbound to the bare literal union via `.toPrimitive`
 - `brand type` refined brands — phantom `unique symbol` emit; bare base not assignable under stock `tsc`
 - `validate type` — same phantom + `.is` / `.from`
 - `cast<Target>(expr)` — checked entry path (primitive checks or companion `.from`)
@@ -59,7 +59,7 @@ Library: `@mishelashala/sound-ts-core`.
 brand type Account = "admin" | "regular";
 ```
 
-Expands to the member literals **plus** a phantom arm, plus a runtime companion with `.values`, `.is`, `.from`:
+Expands to the member literals **plus** a phantom arm, plus a runtime companion with `.values`, `.is`, `.from`, `.toPrimitive`:
 
 ```ts
 declare const AccountBrand: unique symbol;
