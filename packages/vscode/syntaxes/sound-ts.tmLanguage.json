@@ -22,10 +22,10 @@
       "begin": "\\b(brand)\\s+(type)\\b",
       "beginCaptures": {
         "1": {
-          "name": "keyword.other.brand.sound-ts"
+          "name": "storage.type.brand.sound-ts"
         },
         "2": {
-          "name": "keyword.declaration.type.sound-ts"
+          "name": "storage.type.sound-ts"
         }
       },
       "end": "(?<=\\})\\s*;?|(?=;|$)",
@@ -69,10 +69,10 @@
       "begin": "\\b(validate)\\s+(type)\\b",
       "beginCaptures": {
         "1": {
-          "name": "keyword.other.validate.sound-ts"
+          "name": "storage.type.validate.sound-ts"
         },
         "2": {
-          "name": "keyword.declaration.type.sound-ts"
+          "name": "storage.type.sound-ts"
         }
       },
       "end": "(?<=\\})\\s*;?|(?=;|$)",
@@ -100,8 +100,8 @@
       ]
     },
     "checked-cast": {
-      "name": "keyword.operator.checked-cast.sound-ts",
-      "match": "\\bcast\b"
+      "name": "keyword.control.cast.sound-ts",
+      "match": "\\bcast\\b"
     }
   }
 }
