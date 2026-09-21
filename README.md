@@ -142,7 +142,7 @@ User.is(data);
 User.from(data); // throws on mismatch; returns User
 ```
 
-**Supported field shapes:** `string` | `number` | `boolean` | `null`, optional `?`, arrays of primitives (`string[]`), and unions of those (e.g. `string | null`). Nested objects, generics, `Date`, imported aliases as field types, etc. error clearly at transform time.
+**Supported field shapes:** `string` | `number` | `boolean` | `null`, optional `?`, arrays of those primitives (`string[]`), unions of those (e.g. `string | null`), nested objects of those leaves, `Date`, and a `brand type` or `validate type` name from the same file, an import, or the `sts` batch. A brand field is still that nominal type: put a value in it with the inner `.from`, or store a value that is already that brand. `.from` checks the shape at runtime and does not format the value. Generics (`Partial`, `Required`, `Array<…>`), function types, and other shapes error at expand and name the unsupported type.
 
 ### Checked casts (`cast<>`)
 
@@ -312,7 +312,7 @@ See also: [FAQ: Why not TypeScript?](https://mishelashala.github.io/sound-ts/#fa
 - String and number literal brands are the member literals **or** a phantom arm (nominal under stock `tsc`; member literals still assign). They do not flow back to the bare literal union. Bigint literal brands are not supported yet.
 - **0.x delivered** surface bans and tooling ([roadmap v1](https://github.com/mishelashala/sound-ts/issues?q=roadmap+v1) / [v2](https://github.com/mishelashala/sound-ts/issues?q=roadmap+v2)). Outbound widen from a `validate type` to the naked structure remains a stock `tsc` hole until a later design closes it.
 - **1.0 roadmap issues #50–#54 delivered** (AST + symbols + initial rule slice). Deferred items: [`SOUNDNESS_1_0.md`](packages/core/src/soundness/SOUNDNESS_1_0.md). Package version may still be `0.x` until a `1.0.0` release cut.
-- Not a full schema library — `validate type` covers simple object shapes only (no nested objects, generics, `Date`, …)
+- Not a full schema library — `validate type` accepts nested objects, `Date`, and brand / validate field names. Generics (`Partial`, `Required`), function fields, and formatting inside `.from` stay out.
 - VS Code extension **not on Marketplace** yet (local install only)
 - `defineLiteralSet` is **not** the public authoring API
 

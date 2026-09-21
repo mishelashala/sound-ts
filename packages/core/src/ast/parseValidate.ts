@@ -18,11 +18,37 @@ import {
 
 const PRIMITIVES = new Set<PrimitiveTypeName>(["string", "number", "boolean"]);
 
+const ALLOWED_FIELD_SHAPES =
+  "allows string | number | boolean | null, optional ?, arrays of primitives, " +
+  "unions of those, nested objects, Date, and brand type or validate type names";
+
 function unsupportedFieldType(name: string, field: string, got: string): never {
   throw new SyntaxError(
     `validate type ${name}: unsupported field type '${got}' on '${field}' ` +
-      `(allows string | number | boolean | null, optional ?, arrays of primitives, and unions of those)`,
+      `(${ALLOWED_FIELD_SHAPES})`,
   );
+}
+
+function isNullType(t: ts.TypeNode): boolean {
+  return (
+    t.kind === ts.SyntaxKind.NullKeyword ||
+    (ts.isLiteralTypeNode(t) && t.literal.kind === ts.SyntaxKind.NullKeyword)
+  );
+}
+
+function isPrimitiveTypeNode(t: ts.TypeNode): boolean {
+  if (t.kind === ts.SyntaxKind.StringKeyword) return true;
+  if (t.kind === ts.SyntaxKind.NumberKeyword) return true;
+  if (t.kind === ts.SyntaxKind.BooleanKeyword) return true;
+  if (
+    ts.isTypeReferenceNode(t) &&
+    ts.isIdentifier(t.typeName) &&
+    (!t.typeArguments || t.typeArguments.length === 0) &&
+    PRIMITIVES.has(t.typeName.text as PrimitiveTypeName)
+  ) {
+    return true;
+  }
+  return false;
 }
 
 function primitiveFromType(
@@ -54,41 +80,47 @@ function memberFromType(
   typeName: string,
   fieldName: string,
 ): ValidateMemberType {
+  if (ts.isParenthesizedTypeNode(t)) {
+    return memberFromType(t.type, typeName, fieldName);
+  }
   // TS represents `null` in type position as LiteralType(NullKeyword)
-  if (
-    t.kind === ts.SyntaxKind.NullKeyword ||
-    (ts.isLiteralTypeNode(t) && t.literal.kind === ts.SyntaxKind.NullKeyword)
-  ) {
+  if (isNullType(t)) {
     return { kind: "null" };
   }
   if (ts.isArrayTypeNode(t)) {
     const el = t.elementType;
-    if (
-      el.kind === ts.SyntaxKind.NullKeyword ||
-      (ts.isLiteralTypeNode(el) && el.literal.kind === ts.SyntaxKind.NullKeyword)
-    ) {
+    if (isNullType(el)) {
       unsupportedFieldType(typeName, fieldName, "null[]");
+    }
+    if (!isPrimitiveTypeNode(el)) {
+      unsupportedFieldType(typeName, fieldName, t.getText());
     }
     const prim = primitiveFromType(el, typeName, fieldName);
     return { kind: "array", element: prim };
   }
-  // Reject Array<…> as type reference
+  if (ts.isTypeLiteralNode(t)) {
+    return { kind: "object", fields: fieldsFromObjectType(t, typeName) };
+  }
+  if (ts.isTypeReferenceNode(t) && ts.isIdentifier(t.typeName)) {
+    if (t.typeArguments && t.typeArguments.length > 0) {
+      unsupportedFieldType(typeName, fieldName, t.getText());
+    }
+    const id = t.typeName.text;
+    if (id === "Date") return { kind: "date" };
+    if (PRIMITIVES.has(id as PrimitiveTypeName)) {
+      return { kind: "primitive", name: id as PrimitiveTypeName };
+    }
+    return { kind: "ref", name: id };
+  }
   if (
-    ts.isTypeReferenceNode(t) &&
-    ts.isIdentifier(t.typeName) &&
-    t.typeName.text === "Array"
+    t.kind === ts.SyntaxKind.StringKeyword ||
+    t.kind === ts.SyntaxKind.NumberKeyword ||
+    t.kind === ts.SyntaxKind.BooleanKeyword
   ) {
-    unsupportedFieldType(typeName, fieldName, "Array");
+    const prim = primitiveFromType(t, typeName, fieldName);
+    return { kind: "primitive", name: prim };
   }
-  if (ts.isTypeLiteralNode(t) || ts.isParenthesizedTypeNode(t)) {
-    unsupportedFieldType(
-      typeName,
-      fieldName,
-      ts.isTypeLiteralNode(t) ? "{" : "(",
-    );
-  }
-  const prim = primitiveFromType(t, typeName, fieldName);
-  return { kind: "primitive", name: prim };
+  unsupportedFieldType(typeName, fieldName, t.getText());
 }
 
 function fieldTypeFromType(
