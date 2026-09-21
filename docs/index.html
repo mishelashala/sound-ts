@@ -171,9 +171,10 @@ node packages/cli/dist/cli.js ./example.sts -o ./out/example.ts</code></pre>
         <li>
           <strong>Parser / comments:</strong>
           lightweight scanner (regex header + brace match for Mode B).
-          Comment-skipping is incomplete — a decl inside a line or block
-          comment can still match and be rewritten. Avoid live-looking decls
-          in comments until a proper skip lands.
+          Line/block comments and string/template literals are masked before
+          the scan (fixed) — fake decls inside them are ignored. Remaining
+          edges: regex literals; nested <code>${}</code> in templates (whole
+          template skipped).
         </li>
         <li>
           <strong>Editor:</strong> author in <code>.sts</code> to avoid stock

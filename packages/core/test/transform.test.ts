@@ -258,6 +258,52 @@ brand type Authed = User & Session;
   });
 });
 
+describe("comment / string safe scan", () => {
+  it("ignores brand type inside // line comment", () => {
+    const src = `// brand type Ghost = "nope";
+brand type Live = "yes";
+`;
+    const { decls } = parseBrandTypes(src);
+    expect(decls.map((d) => d.name)).toEqual(["Live"]);
+  });
+
+  it("ignores brand type inside /* block comment */", () => {
+    const src = `/* brand type Ghost = "nope"; */
+brand type Live = "yes";
+`;
+    const { decls } = parseBrandTypes(src);
+    expect(decls.map((d) => d.name)).toEqual(["Live"]);
+  });
+
+  it("still expands a live decl after a comment", () => {
+    const src = `// note
+brand type Account = "admin" | "regular";
+`;
+    const result = transform(src);
+    expect(result.changed).toBe(true);
+    expect(result.decls).toHaveLength(1);
+    expect(result.code).toContain(`type Account = "admin" | "regular";`);
+    expect(result.code).toContain("// note");
+    expect(result.code).not.toContain("brand type");
+  });
+
+  it("leaves a string containing brand type Foo = ... unchanged", () => {
+    const src = `const s = "brand type Foo = \\"x\\"";
+`;
+    const result = transform(src);
+    expect(result.changed).toBe(false);
+    expect(result.code).toBe(src);
+    expect(parseBrandTypes(src).decls).toHaveLength(0);
+  });
+
+  it("ignores brand type inside a template literal", () => {
+    const src =
+      "const s = `brand type Foo = \"x\"`;\nbrand type Live = \"yes\";\n";
+    const { decls } = parseBrandTypes(src);
+    expect(decls.map((d) => d.name)).toEqual(["Live"]);
+  });
+});
+
 describe("defineLiteralSet (internal)", () => {
   it("still builds the companion shape used as emit target", () => {
     const Account = defineLiteralSet("Account", ["admin", "regular"] as const);
