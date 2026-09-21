@@ -1,6 +1,6 @@
 {
   "name": "@mishelashala/superset-ts-core",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "private": false,
   "description": "Transform: brand type \u2192 plain TS types + runtime companions",
   "license": "MIT",

@@ -1,6 +1,6 @@
 {
   "name": "@mishelashala/superset-ts-cli",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "private": false,
   "description": "CLI: expand brand type \u2192 plain TS + runtime companions",
   "license": "MIT",
