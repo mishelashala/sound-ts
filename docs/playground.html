@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
-  <link rel="stylesheet" href="playground.css?v=4" />
+  <link rel="stylesheet" href="playground.css?v=5" />
   <!-- Prism (CDN): same pin as docs/index.html; token colors from styles.css. -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css" />
   <link rel="icon" href="favicon.ico" sizes="any" />
@@ -44,13 +44,22 @@
 
     <div class="playground">
       <section class="pane" aria-label=".sts source">
-        <label class="pane-label" for="sts-source">.sts source</label>
+        <div class="pane-toolbar">
+          <label class="pane-label" for="sts-source">.sts source</label>
+          <label class="example-picker" for="sts-example">
+            Example
+            <select id="sts-example" aria-label="Load a dialect example">
+              <option value="literal" selected>String literal brand</option>
+              <option value="refined">Refined brand</option>
+              <option value="union">Brand union</option>
+              <option value="validate">Validate type</option>
+              <option value="cast">Checked cast</option>
+            </select>
+          </label>
+        </div>
         <div class="editor-stack">
           <pre class="editor-highlight" aria-hidden="true"><code id="sts-highlight" class="language-sts"></code></pre>
-          <textarea id="sts-source" spellcheck="false" autocomplete="off">brand type Account = "admin" | "regular";
-
-const admin = Account.from("admin");
-</textarea>
+          <textarea id="sts-source" spellcheck="false" autocomplete="off"></textarea>
         </div>
       </section>
       <section class="pane" aria-label="Compiled output">
@@ -105,6 +114,6 @@ const admin = Account.from("admin");
   <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-javascript.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-typescript.min.js"></script>
-  <script type="module" src="playground.js?v=3"></script>
+  <script type="module" src="playground.js?v=5"></script>
 </body>
 </html>

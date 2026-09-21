@@ -3,6 +3,7 @@
  * serves docs/ with no build step). `typescript` and Prism stay on pinned CDNs.
  */
 import { transform } from "../../packages/core/src/transform.ts";
+import { EXAMPLES, exampleById } from "./examples.js";
 
 export { transform };
 
@@ -80,6 +81,7 @@ function boot() {
   const outputEl = document.getElementById("compiled-output");
   const codeEl = document.getElementById("compiled-code");
   const modeEl = document.getElementById("output-mode");
+  const exampleEl = document.getElementById("sts-example");
 
   // Old cached playground.js expected a textarea#compiled-output. If this
   // markup is missing, show a hard-refresh hint instead of a blank pane.
@@ -89,7 +91,8 @@ function boot() {
     !(highlightPre instanceof HTMLElement) ||
     !(outputEl instanceof HTMLElement) ||
     !(codeEl instanceof HTMLElement) ||
-    !(modeEl instanceof HTMLFieldSetElement)
+    !(modeEl instanceof HTMLFieldSetElement) ||
+    !(exampleEl instanceof HTMLSelectElement)
   ) {
     const fallback = document.getElementById("compiled-output");
     if (fallback instanceof HTMLElement) {
@@ -101,6 +104,15 @@ function boot() {
   }
 
   ensureStsGrammar();
+
+  if (exampleEl.options.length === 0) {
+    for (const example of EXAMPLES) {
+      const option = document.createElement("option");
+      option.value = example.id;
+      option.textContent = example.label;
+      exampleEl.appendChild(option);
+    }
+  }
 
   let timer = 0;
 
@@ -144,6 +156,15 @@ function boot() {
     }
   }
 
+  function loadExample(id) {
+    const example = exampleById(id);
+    exampleEl.value = example.id;
+    sourceEl.value = example.source;
+    sourceEl.scrollTop = 0;
+    sourceEl.scrollLeft = 0;
+    render();
+  }
+
   sourceEl.addEventListener("input", () => {
     window.clearTimeout(timer);
     timer = window.setTimeout(render, DEBOUNCE_MS);
@@ -155,7 +176,11 @@ function boot() {
     render();
   });
 
-  render();
+  exampleEl.addEventListener("change", () => {
+    loadExample(exampleEl.value);
+  });
+
+  loadExample(exampleEl.value || EXAMPLES[0].id);
 }
 
 if (typeof document !== "undefined") {
