@@ -107,6 +107,7 @@ export {
   assertNoAny,
   assertNoStructuralAliases,
   assertNoWideTypes,
+  assertNoDialectAssertions,
   assertNoBrandTypePredicates,
   assertHonestRefinedPredicates,
   assertNoBrandMutation,

@@ -4,6 +4,7 @@
  */
 
 import { describe, expect, it } from "vitest";
+import * as ts from "typescript";
 import {
   transform,
   transformProject,
@@ -11,6 +12,33 @@ import {
   buildProjectSymbols,
   parseSts,
 } from "../src/index.js";
+
+/** Compile one expanded snippet with stock tsc --strict. */
+function typecheckOk(source: string): string[] {
+  const file = "snippet.ts";
+  const options: ts.CompilerOptions = {
+    target: ts.ScriptTarget.ES2022,
+    module: ts.ModuleKind.ESNext,
+    strict: true,
+    noEmit: true,
+    skipLibCheck: true,
+  };
+  const host = ts.createCompilerHost(options);
+  const orig = host.getSourceFile.bind(host);
+  host.getSourceFile = (name, languageVersion, onError, shouldCreateNewSourceFile) => {
+    if (name === file) {
+      return ts.createSourceFile(file, source, languageVersion, true);
+    }
+    return orig(name, languageVersion, onError, shouldCreateNewSourceFile);
+  };
+  host.writeFile = () => {};
+  const program = ts.createProgram([file], options, host);
+  const diags = [
+    ...program.getSyntacticDiagnostics(),
+    ...program.getSemanticDiagnostics(),
+  ];
+  return diags.map((d) => ts.flattenDiagnosticMessageText(d.messageText, "\n"));
+}
 
 describe("soundness 1.0: brand type predicates (FFI)", () => {
   it("rejects author type predicate refining a brand", () => {
@@ -189,5 +217,163 @@ function isAccount(x: unknown): x is Account { return true; }
     expect(() =>
       runSoundness1Checks(source, { filename: "t.sts", symbols }),
     ).toThrow(/type predicate/);
+  });
+});
+
+describe("soundness 1.0: plain .ts cannot assert into a brand (#72)", () => {
+  const brandSts = `export brand type Brand = "admin" | "regular";\n`;
+
+  it("fails as Brand in as-brand.ts", () => {
+    expect(() =>
+      transformProject([
+        { filename: "brand.sts", source: brandSts },
+        {
+          filename: "as-brand.ts",
+          source: `export const punched = "admin" as Brand;\n`,
+        },
+      ]),
+    ).toThrow(SyntaxError);
+    expect(() =>
+      transformProject([
+        { filename: "brand.sts", source: brandSts },
+        {
+          filename: "as-brand.ts",
+          source: `export const punched = "admin" as Brand;\n`,
+        },
+      ]),
+    ).toThrow(/type assertion to dialect companion 'Brand'/);
+    expect(() =>
+      transformProject([
+        { filename: "brand.sts", source: brandSts },
+        {
+          filename: "as-brand.ts",
+          source: `export const punched = "admin" as Brand;\n`,
+        },
+      ]),
+    ).toThrow(/not rewritten into cast/);
+  });
+
+  it("fails angle-bracket assertion to a brand in .ts", () => {
+    expect(() =>
+      transformProject([
+        { filename: "brand.sts", source: brandSts },
+        {
+          filename: "angle.ts",
+          source: `export const punched = <Brand>"admin";\n`,
+        },
+      ]),
+    ).toThrow(/type assertion to dialect companion 'Brand'/);
+  });
+
+  it("fails as Brand declared in another file in the batch", () => {
+    expect(() =>
+      transformProject([
+        {
+          filename: "ids.sts",
+          source: `brand type Brand = "a" | "b";\n`,
+        },
+        {
+          filename: "as-brand.ts",
+          source: `export const punched = "a" as Brand;\n`,
+        },
+      ]),
+    ).toThrow(/dialect companion 'Brand'/);
+  });
+
+  it("fails as User for a validate type", () => {
+    expect(() =>
+      transformProject([
+        {
+          filename: "user.sts",
+          source: `validate type User = { id: string };\n`,
+        },
+        {
+          filename: "as-user.ts",
+          source: `export const u = { id: "a" } as User;\n`,
+        },
+      ]),
+    ).toThrow(/type assertion to dialect companion 'User'/);
+  });
+
+  it("fails any assertion into a brand annotation", () => {
+    expect(() =>
+      transformProject([
+        { filename: "brand.sts", source: brandSts },
+        {
+          filename: "as-any.ts",
+          source: `declare const raw: unknown;\nexport const punched: Brand = raw as any;\n`,
+        },
+      ]),
+    ).toThrow(/any assertion into dialect companion 'Brand'/);
+  });
+
+  it("fails non-null assertion into a brand", () => {
+    expect(() =>
+      transformProject([
+        { filename: "brand.sts", source: brandSts },
+        {
+          filename: "bang.ts",
+          source: `declare const raw: unknown;\nexport const punched: Brand = raw!;\n`,
+        },
+      ]),
+    ).toThrow(/non-null assertion into dialect companion 'Brand'/);
+    expect(() =>
+      transformProject([
+        { filename: "brand.sts", source: brandSts },
+        {
+          filename: "definite.ts",
+          source: `export let punched!: Brand;\n`,
+        },
+      ]),
+    ).toThrow(/non-null assertion to dialect companion 'Brand'/);
+  });
+
+  it("Brand.from in .ts still typechecks", () => {
+    const use = `import { Brand } from "./brand.js";\nexport const ok = Brand.from("admin");\n`;
+    const project = transformProject([
+      { filename: "brand.sts", source: brandSts },
+      { filename: "use.ts", source: use },
+    ]);
+    const plain = project.files.find((f) => f.filename === "use.ts")!;
+    const sts = project.files.find((f) => f.filename === "brand.sts")!;
+    expect(plain.changed).toBe(false);
+    expect(plain.code).toBe(use);
+    expect(plain.code).toContain(`Brand.from("admin")`);
+    const bundled = `${sts.code}\n${plain.code.replace(/^import\s+\{[^}]+\}\s+from\s+["'][^"']+["'];\n/, "")}`;
+    expect(typecheckOk(bundled)).toEqual([]);
+  });
+
+  it("keeps cast<Brand>, as const, and non-companion assertions", () => {
+    const use = `
+import { Brand } from "./brand.js";
+declare function cast<T>(value: unknown): T;
+export const values = ["admin", "regular"] as const;
+export const label = "admin" as string;
+export const n = 1 as number;
+export const wide = 1 as any;
+export const viaCast = cast<Brand>("admin");
+export const ok = Brand.from("admin");
+`;
+    const project = transformProject([
+      { filename: "brand.sts", source: brandSts },
+      { filename: "use.ts", source: use },
+    ]);
+    const plain = project.files.find((f) => f.filename === "use.ts")!;
+    expect(plain.changed).toBe(false);
+    expect(plain.code).toBe(use);
+    expect(plain.code).toContain(`cast<Brand>`);
+    expect(plain.code).toContain(`as const`);
+    expect(plain.code).not.toContain(`Brand.from("admin") as`);
+  });
+
+  it("copies a .ts file that never names a dialect companion", () => {
+    const plain = `export const x = 1 as any;\nexport const y = value!;\nexport const z = "a" as string;\n`;
+    const project = transformProject([
+      { filename: "brand.sts", source: brandSts },
+      { filename: "plain.ts", source: plain },
+    ]);
+    const file = project.files.find((f) => f.filename === "plain.ts")!;
+    expect(file.changed).toBe(false);
+    expect(file.code).toBe(plain);
   });
 });

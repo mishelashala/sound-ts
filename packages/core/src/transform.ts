@@ -76,8 +76,10 @@ export interface TransformProjectResult {
 
 /**
  * Dialect soundness + rewrites apply to `.sts` (and stdin / unspecified).
- * Plain `.ts` / `.tsx` in a mixed `sts` mirror batch stay byte-for-byte so
- * gradual adoption does not ban `as` / rewrite methods across a stock app.
+ * Plain `.ts` / `.tsx` in a mixed batch stay byte-for-byte except the #72
+ * gate: asserting into a brand or validate companion fails closed.
+ * `as` to a non-companion, methods, and files that never name a companion
+ * are unchanged.
  */
 export function isDialectSurface(filename?: string): boolean {
   if (filename === undefined || filename === "<stdin>") return true;
@@ -144,6 +146,15 @@ export function transform(
   options: TransformFileOptions = {},
 ): TransformResult {
   if (!isDialectSurface(options.filename)) {
+    if (options.symbols && options.symbols.byName.size > 0) {
+      runSoundness1Checks(source, {
+        symbols: options.symbols,
+        dialectSurface: false,
+        ...(options.filename !== undefined
+          ? { filename: options.filename }
+          : {}),
+      });
+    }
     return {
       code: source,
       decls: [],
@@ -243,8 +254,8 @@ export function transform(
  * `|` / `&` members + cycles, then emit each file and rewrite `cast`.
  * Relative imports of companions stay stock TS after emit.
  *
- * Plain `.ts` / `.tsx` are mirrored unchanged (no soundness bans, no method
- * rewrite). Only `.sts` is the dialect surface.
+ * Plain `.ts` / `.tsx` are mirrored (no method rewrite, no blanket `as` ban).
+ * Assertions into a batch companion still fail closed (#72).
  */
 export function transformProject(
   files: ProjectFileInput[],
@@ -288,9 +299,11 @@ export function transformProject(
   );
 
   for (const f of parsed) {
-    if (f.dialectSurface) {
-      runSoundness1Checks(f.source, { filename: f.filename, symbols });
-    }
+    runSoundness1Checks(f.source, {
+      filename: f.filename,
+      symbols,
+      dialectSurface: f.dialectSurface,
+    });
   }
 
   resolveBrandMemberSymbols(symbols);
