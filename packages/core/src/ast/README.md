@@ -26,8 +26,9 @@ Instead:
    (`emit` / `rewriteCheckedCasts`) walks those nodes — not opaque string rewrites as
    the representation of dialect syntax.
 
-The full-file TS AST (when needed later for soundness) can attach to the same spans;
-this package still runs text soundness bans separately (#52).
+Soundness bans (#52) visit a blanked full-file TS AST. Cross-file dialect
+**scopes / symbols** (#53) build on this side-table — see
+[`../symbols/README.md`](../symbols/README.md).
 
 ## Node kinds
 
