@@ -18,21 +18,18 @@ Repo: [mishelashala/sound-ts](https://github.com/mishelashala/sound-ts) · docs:
 
 TypeScript’s contract is **type safety with erased types** — no runtime companions from the type layer. Sound-TS aims for **F#-style soundness**: opaque / branded (phantom) types plus runtime companions so values enter through checked paths.
 
-**Where we claim soundness today**
+**Where we claim soundness today** (`0.x`)
 
 - `brand type` string-literal brands — member literals stay assignable; a phantom arm keeps two brands with the same members distinct. Outbound to `string` works; outbound to the bare literal union does not
 - `brand type` refined brands — phantom `unique symbol` emit; bare base not assignable under stock `tsc`
 - `validate type` — same phantom + `.is` / `.from`
 - `cast<Target>(expr)` — checked entry path (primitive checks or companion `.from`)
+- On `.sts`: reject `as` / `any` / `!` / wide types, no bare structural aliases, methods emit as readonly function properties ([#36](https://github.com/mishelashala/sound-ts/issues/36)–[#38](https://github.com/mishelashala/sound-ts/issues/38), [#40](https://github.com/mishelashala/sound-ts/issues/40)–[#42](https://github.com/mishelashala/sound-ts/issues/42))
 
-**Where we still lean on stock TS unsoundness** — [roadmap v2](https://github.com/mishelashala/sound-ts/issues?q=roadmap+v2) closes these on the `.sts` surface. Ordinary `.ts` stays stock TypeScript.
+**Still open toward `1.0`** — regex frontend cannot see the whole program. Ordinary `.ts` stays stock TypeScript.
 
-- assertions / `as` — [#36](https://github.com/mishelashala/sound-ts/issues/36)
-- `any` / `unknown` misuse — [#37](https://github.com/mishelashala/sound-ts/issues/37)
-- structural widen on non-branded types — [#38](https://github.com/mishelashala/sound-ts/issues/38)
-- method parameter bivariance — [#40](https://github.com/mishelashala/sound-ts/issues/40)
-- non-null `!` — [#41](https://github.com/mishelashala/sound-ts/issues/41)
-- `Object` / `{}` / `Function` — [#42](https://github.com/mishelashala/sound-ts/issues/42)
+- Outbound widen from a `validate type` to the naked field structure (stock `tsc`)
+- Deeper holes that need AST + scopes (mutation after brand construction, FFI boundaries, predicates, generics / variance) — [roadmap 1.0](https://github.com/mishelashala/sound-ts/issues?q=roadmap+1.0)
 
 Gate: new dialect surface should **close a soundness hole**, not paper over one.
 
@@ -237,14 +234,16 @@ import { Account } from "./roles.sts";
 pnpm --dir examples/vite-app build
 ```
 
-**Seamless integration** — [roadmap v1](https://github.com/mishelashala/sound-ts/issues?q=roadmap+v1). Check a box in this list only when that issue is delivered.
+**0.x (delivered)** — tooling + surface soundness on `.sts`. Checkboxes stay checked as history. Ordinary `.ts` stays stock TypeScript.
+
+*Seamless integration* ([roadmap v1](https://github.com/mishelashala/sound-ts/issues?q=roadmap+v1)):
 
 - [x] [Shadow emit](https://github.com/mishelashala/sound-ts/issues/27) — `sts` writes a gitignored cache, never a sibling `.ts`. CI fails if that output is committed.
 - [x] [Bidirectional resolve](https://github.com/mishelashala/sound-ts/issues/28) — `.ts` and `.sts` import each other. Import paths stay as the author wrote them.
 - [x] [Drop-in build script](https://github.com/mishelashala/sound-ts/issues/29) — one `package.json` script expands, then runs `tsc`. Expand failure stops the build.
 - [x] [Loader](https://github.com/mishelashala/sound-ts/issues/30) — Vite expands `.sts` on dev and build, so you stop calling `sts` by hand.
 
-**Soundness on `.sts`** — [roadmap v2](https://github.com/mishelashala/sound-ts/issues?q=roadmap+v2). Same rule: check a box only when that issue is delivered. These do not add a custom checker. A `.ts` file outside the dialect stays stock TypeScript.
+*Soundness on `.sts`* ([roadmap v2](https://github.com/mishelashala/sound-ts/issues?q=roadmap+v2)):
 
 - [x] [Reject `as`](https://github.com/mishelashala/sound-ts/issues/36) — a type assertion in `.sts` fails expand. `as const` and `cast<>` stay. `as` is not rewritten into `cast`.
 - [x] [Reject `any`](https://github.com/mishelashala/sound-ts/issues/37) — `any` in `.sts` fails expand. `unknown` stays. `any` is not rewritten to `unknown`.
@@ -252,6 +251,14 @@ pnpm --dir examples/vite-app build
 - [x] [Method parameters](https://github.com/mishelashala/sound-ts/issues/40) — a method in `.sts` emits as a readonly function property, so stock `strictFunctionTypes` checks parameters contravariantly.
 - [x] [Reject `!`](https://github.com/mishelashala/sound-ts/issues/41) — `value!` and `prop!: Type` in `.sts` fail expand. `!==` stays. `!` is not deleted.
 - [x] [Reject `Object`, `{}`, `Function`](https://github.com/mishelashala/sound-ts/issues/42) — those types in `.sts` fail expand. An empty object literal stays. They are not rewritten to `unknown`.
+
+**1.0.0 — complete soundness** — [roadmap 1.0](https://github.com/mishelashala/sound-ts/issues?q=roadmap+1.0). AST frontend first (parity with 0.x), then rules that need program structure. Check a box only when that issue is delivered. Breaking changes relative to 0.x are allowed before `1.0.0`. Stock `tsc` stays the backend on expand output.
+
+- [ ] [AST frontend with parity](https://github.com/mishelashala/sound-ts/issues/50) — TypeScript parser/AST replaces the regex frontend; fixtures expand equivalently.
+- [ ] [Dialect AST nodes](https://github.com/mishelashala/sound-ts/issues/51) — `brand type` / `validate type` / `cast<>` are explicit nodes (or a stable side-table).
+- [ ] [AST soundness visitors](https://github.com/mishelashala/sound-ts/issues/52) — move 0.x bans off masked-string scans onto AST visitors.
+- [ ] [Scopes and symbols](https://github.com/mishelashala/sound-ts/issues/53) — cross-file Sound-TS symbols for brands / companions / cast targets.
+- [ ] [Complete soundness rules](https://github.com/mishelashala/sound-ts/issues/54) — 1.0 reject/accept matrix (boundaries, predicates, mutation, generics subset) on the AST + symbol layer.
 
 ---
 
@@ -289,11 +296,12 @@ pnpm --dir examples/vite-app build
 See also: [FAQ: Why not TypeScript?](https://mishelashala.github.io/sound-ts/#faq) (why a dialect vs stock TS) · [Soundness](#soundness-project-goal).
 
 - **No Microsoft / TypeScript fork** to maintain
-- **No custom TypeScript checker or language server** — stock `tsc` runs on expand output only.
+- **No custom TypeScript language server in 0.x** — stock `tsc` runs on expand output; 1.0 adds a Sound-TS semantic phase *before* emit, still not a Microsoft fork
 - **No open brands without `is`** (use refined brands with a custom `.is`)
 - Refined brands and `validate type` are **nominally opaque** under stock `tsc` (phantom unique-symbol brands) — not structural aliases of their bases. Enter via `.from` / `cast<>`.
 - String literal brands are the member literals **or** a phantom arm (nominal under stock `tsc`; member literals still assign). They do not flow back to the bare literal union. Number/bigint literal brands not supported yet.
-- [Roadmap v2](https://github.com/mishelashala/sound-ts/issues?q=roadmap+v2) is delivered on the `.sts` surface ([#36](https://github.com/mishelashala/sound-ts/issues/36)–[#38](https://github.com/mishelashala/sound-ts/issues/38), [#40](https://github.com/mishelashala/sound-ts/issues/40)–[#42](https://github.com/mishelashala/sound-ts/issues/42)): reject `as` / `any` / `!` / wide types, no bare structural aliases, methods emit as readonly function properties. Ordinary `.ts` files stay stock TypeScript. Outbound widen from a `validate type` to the naked field structure remains a stock `tsc` hole.
+- **0.x delivered** surface bans and tooling ([roadmap v1](https://github.com/mishelashala/sound-ts/issues?q=roadmap+v1) / [v2](https://github.com/mishelashala/sound-ts/issues?q=roadmap+v2)). Outbound widen from a `validate type` to the naked structure remains a stock `tsc` hole until a later design closes it.
+- **1.0 incomplete until** [roadmap 1.0](https://github.com/mishelashala/sound-ts/issues?q=roadmap+1.0) ships (AST frontend + complete soundness rules)
 - Not a full schema library — `validate type` covers simple object shapes only (no nested objects, generics, `Date`, …)
 - VS Code extension **not on Marketplace** yet (local install only)
 - `defineLiteralSet` is **not** the public authoring API
