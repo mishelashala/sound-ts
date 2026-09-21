@@ -1,7 +1,7 @@
 {
   "name": "@mishelashala/superset-ts-cli",
   "version": "0.3.0",
-  "private": true,
+  "private": false,
   "description": "CLI: expand brand type \u2192 plain TS + runtime companions",
   "license": "MIT",
   "type": "module",
@@ -22,5 +22,8 @@
   },
   "engines": {
     "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
