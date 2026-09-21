@@ -4,7 +4,7 @@
 
 <h1 align="center">superset-ts</h1>
 
-**Goal:** a value enters a brand or a validated shape only through a checked path. `brand type`, `validate type`, and `cast<>` expand to plain TypeScript — nominal types stock `tsc` already enforces, plus runtime companions (`Account.is` / `Account.from`) — so Vite and VS Code keep using normal output.
+**Type soundness for TypeScript, inspired by F# types.**
 
 > **Not a TypeScript fork.** No patched `tsc`, no Microsoft fork to maintain, no custom checker. The CLI rewrites source; bundlers consume **output** only.
 
