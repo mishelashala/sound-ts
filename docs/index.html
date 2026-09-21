@@ -171,23 +171,42 @@
       <p>
         String literal brands emit as the member literals
         <strong>or</strong> a phantom arm, plus a runtime companion
-        (<code>.values</code> / <code>.is</code> / <code>.from</code> /
-        <code>.toPrimitive</code>).
+        (<code>.values</code> / <code>.Values</code> / <code>.is</code> /
+        <code>.from</code> / <code>.toPrimitive</code>).
         <code>setRole("admin")</code> stays OK. A second brand with the same
         members is not assignable. A value of the brand assigns to
         <code>string</code>, not back to the bare literal union.
       </p>
+      <p>
+        Unknown input enters with <code>.from</code>. <code>.from</code> always
+        runs the check and throws on failure. A known string member is
+        <code>Brand.Values.member</code>; a known number member is
+        <code>Brand.Values[n]</code>. The companion does not format and has no
+        method that skips <code>is</code>. <code>toFixed</code> and slugify stay
+        in a normal function that calls <code>.from</code>. A label stays a
+        normal function over <code>.toPrimitive</code>.
+      </p>
       <pre><code class="language-typescript">// file: roles.sts
 brand type Account = "admin" | "regular";
+
+const admin = Account.Values.admin;
 
 function greet(role: Account): string {
   return role === "admin" ? "hello, admin" : "hello";
 }
 
-// After CLI transform, Account is also a runtime companion:
 greet(Account.from("admin"));
-Account.is("guest");   // false
-Account.from("guest"); // throws</code></pre>
+Account.from("guest"); // throws
+
+brand type CurrencyNumber = string {
+  is(value: string): value is CurrencyNumber {
+    return /^\d+\.\d{2}$/.test(value);
+  }
+}
+
+function currencyFromAmount(amount: number): CurrencyNumber {
+  return CurrencyNumber.from(amount.toFixed(2));
+}</code></pre>
       <p class="muted">Emit: <code>type Account = "admin" | "regular" | (string &amp; { readonly [AccountBrand]: true });</code></p>
     </section>
 
@@ -499,6 +518,14 @@ node packages/cli/dist/cli.js ./example.sts -o ./out/example.ts</code></pre>
           <a href="https://github.com/mishelashala/sound-ts/issues/54">Complete soundness rules</a>
           — 1.0 reject/accept matrix (boundaries, predicates, mutation, generics
           subset) on the AST + symbol layer.
+        </li>
+        <li>
+          <input type="checkbox" disabled checked />
+          <a href="https://github.com/mishelashala/sound-ts/issues/75"><code>.from</code> is the only door</a>
+          — unknown input enters with <code>.from</code> (always checks).
+          Known members are <code>Brand.Values.member</code> or
+          <code>Brand.Values[n]</code>. No unchecked constructor.
+          Formatting and labels stay normal functions.
         </li>
       </ul>
     </section>

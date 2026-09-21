@@ -8,10 +8,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css" />
-  <link rel="stylesheet" href="playground.css?v=8" />
-  <!-- Prism (CDN): same pin as docs/index.html; token colors from styles.css. -->
+  <!-- Prism (CDN) first; brand/signal token colors + sizes win from styles.css / playground.css. -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="playground.css?v=9" />
   <link rel="icon" href="favicon.ico" sizes="any" />
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
   <link rel="icon" href="favicon-32.png" type="image/png" sizes="32x32" />
@@ -103,7 +103,7 @@
       function currentTheme() {
         var attr = root.getAttribute("data-theme");
         if (attr === "light" || attr === "dark") return attr;
-        return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        return "dark";
       }
       function applyTheme(theme) {
         root.setAttribute("data-theme", theme);
@@ -126,6 +126,6 @@
   <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-javascript.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-typescript.min.js"></script>
-  <script type="module" src="playground.js?v=8"></script>
+  <script type="module" src="playground.js?v=9"></script>
 </body>
 </html>
