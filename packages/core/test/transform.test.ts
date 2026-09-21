@@ -404,6 +404,8 @@ describe("transform", () => {
     expect(code).toMatch(/values:\s*__values/);
     expect(code).toMatch(/\bis,/);
     expect(code).toMatch(/\bfrom,/);
+    expect(code).toMatch(/\btoPrimitive,/);
+    expect(code).toContain("function toPrimitive(value: Account)");
 
     const Account = defineLiteralSet("Account", ["admin", "regular"] as const);
     expect(Account.name).toBe("Account");
@@ -412,6 +414,7 @@ describe("transform", () => {
     expect(Account.is("guest")).toBe(false);
     expect(Account.from("regular")).toBe("regular");
     expect(() => Account.from("guest")).toThrow(LiteralSetError);
+    expect(Account.toPrimitive("admin")).toBe("admin");
   });
 
   it("emitBrandType produces standalone block for literals", () => {
@@ -422,10 +425,12 @@ describe("transform", () => {
       raw: "",
       start: 0,
       end: 0,
+      exported: false,
     });
     expect(block).toContain(
       `type Color = "red" | "blue" | (string & { readonly [ColorBrand]: true });`,
     );
+    expect(block).toContain("toPrimitive");
     expect(block).toContain("Object.freeze");
   });
 

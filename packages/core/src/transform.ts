@@ -125,12 +125,13 @@ function expandFile(
 
 /**
  * Expand `brand type` / `validate type` into plain TS types plus runtime
- * companions (`Name.is` / `Name.from`, and `Name.values` for string-literal
- * brands), rewrite `cast<…>(…)` checked casts, and emit method syntax as
- * readonly function properties (stock `strictFunctionTypes`).
+ * companions (`Name.is` / `Name.from`, and `Name.values` / `Name.toPrimitive`
+ * for string-literal brands), rewrite `cast<…>(…)` checked casts, and emit
+ * method syntax as readonly function properties (stock `strictFunctionTypes`).
  * Refined, validate, and string-literal brands emit a phantom unique-symbol
  * arm (nominally opaque under stock `tsc`). String-literal brands also keep
- * the member literals in the union so `"admin"` stays assignable.
+ * the member literals in the union so `"admin"` stays assignable; use
+ * `.toPrimitive` to recover the closed literal union for DTOs.
  *
  * Combined brand members resolve against the project brand map (this file
  * alone, or a map from `transformProject`). `cast` targets resolve against

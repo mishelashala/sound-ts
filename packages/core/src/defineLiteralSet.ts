@@ -13,6 +13,8 @@ export interface LiteralSet<
   readonly values: Values;
   is(value: unknown): value is Values[number];
   from(value: unknown): Values[number];
+  /** Narrow a branded member back to the closed literal union (DTO / JSON edges). */
+  toPrimitive(value: Values[number]): Values[number];
 }
 
 /** @internal */
@@ -60,10 +62,18 @@ export function defineLiteralSet<
     throw new LiteralSetError(name, value, frozen);
   }
 
+  function toPrimitive(value: Values[number]): Values[number] {
+    for (const v of frozen) {
+      if (value === v) return v as Values[number];
+    }
+    throw new LiteralSetError(name, value, frozen);
+  }
+
   return Object.freeze({
     name,
     values: frozen,
     is,
     from,
+    toPrimitive,
   });
 }
