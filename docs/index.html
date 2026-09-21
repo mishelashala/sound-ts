@@ -79,6 +79,7 @@ Account.from("guest"); // throws</code></pre>
 
     <section id="mode-b">
       <h2>Mode B — refined brands</h2>
+      <p class="muted">Emit keeps <code>type Name = base</code>; under stock <code>tsc</code> the refinement is runtime-only (<code>.is</code> / <code>.from</code>) — expected.</p>
       <p>
         Custom <code>is</code> body; CLI <strong>generates</strong>
         <code>from</code> that validates via <code>is</code>.

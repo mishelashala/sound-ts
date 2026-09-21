@@ -30,7 +30,7 @@ brand type PositiveInt = number {
 }
 ```
 
-Expands to `type PositiveInt = number` plus a companion that keeps your `.is` body and **generates** `.from` (validate via `.is`). No separate `.d.ts` emit — plain `.ts` only; stock `tsc` typechecks the output.
+Expands to `type PositiveInt = number` plus a companion that keeps your `.is` body and **generates** `.from` (validate via `.is`). Under stock `tsc`, the type alias is still the base (`number`) — the refinement is **runtime-only** (`.is` / `.from`); that is expected, not a fork. No separate `.d.ts` emit — plain `.ts` only.
 
 ### Brand-only unions / intersections (phase 2)
 
