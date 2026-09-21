@@ -16,8 +16,13 @@ export interface TransformFileOptions extends EmitOptions {
 }
 
 /**
- * Expand `brand type Name = "a" | "b"` into a plain type alias plus a
- * runtime companion (`Name.is` / `Name.from` / `Name.values`).
+ * Expand `brand type` into plain type aliases plus runtime companions
+ * (`Name.is` / `Name.from`, and `Name.values` for string-literal brands).
+ *
+ * Supports:
+ * - Mode A string literal unions
+ * - Mode B refined brands (`= base { is(...) { … } }`)
+ * - Brand-only unions / intersections
  *
  * Stock `tsc` / Vite / bundlers consume the **output** only.
  */

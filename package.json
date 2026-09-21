@@ -1,8 +1,8 @@
 {
   "name": "superset-ts",
   "private": true,
-  "version": "0.2.0",
-  "description": "TypeScript dialect + CLI: brand type string literal unions expand to plain TS + runtime companions. Not a TypeScript fork.",
+  "version": "0.3.0",
+  "description": "TypeScript dialect + CLI: brand type (literals, Mode B refined, brand unions) expand to plain TS + runtime companions. Not a TypeScript fork.",
   "license": "MIT",
   "author": "Michell Ayala",
   "repository": {

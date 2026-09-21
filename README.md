@@ -8,18 +8,45 @@ Repo: [mishelashala/superset-ts](https://github.com/mishelashala/superset-ts) ·
 
 ---
 
-## Authoring (phase 1)
+## Authoring
 
 **Prefer `.sts` files.** Stock TypeScript language service will red-squiggle `brand type` inside ordinary `.ts` / `.tsx` (unknown keywords). The VS Code extension’s TextMate grammar covers `.sts`; injection into `.ts` only helps highlighting, not the checker.
+
+### Mode A — string literal unions (phase 1)
 
 ```sts
 brand type Account = "admin" | "regular";
 ```
 
-String literal unions only in this cut. The CLI expands that into:
+Expands to a plain `type Account = …` plus a runtime companion with `.values`, `.is`, `.from`.
 
-- a plain `type Account = "admin" | "regular"`
-- a runtime companion `Account` with `.values`, `.is`, `.from` — usable from JS
+### Mode B — refined brands with custom `is` (phase 2)
+
+```sts
+brand type PositiveInt = number {
+  is(n: number): n is PositiveInt {
+    return Number.isInteger(n) && n > 0;
+  }
+}
+```
+
+Expands to `type PositiveInt = number` plus a companion that keeps your `.is` body and **generates** `.from` (validate via `.is`). No separate `.d.ts` emit — plain `.ts` only; stock `tsc` typechecks the output.
+
+### Brand-only unions / intersections (phase 2)
+
+Members must be **already-declared brand names** in the same file (no open `string` / arbitrary types):
+
+```sts
+brand type Admin = "admin";
+brand type Regular = "regular";
+brand type Staff = Admin | Regular;
+
+brand type User = "u";
+brand type Session = "s";
+brand type Authed = User & Session;
+```
+
+Unknown / non-brand members error clearly at transform time.
 
 ```ts
 // after sts transform — stock TypeScript
@@ -61,7 +88,7 @@ Binaries after build: `superset-ts` / `sts` → `packages/cli/dist/cli.js`.
 
 ### Parser caveat (v0)
 
-`packages/core` parses `brand type` with a regex. **Comment-skipping is incomplete** — a `brand type …` appearing inside a line or block comment can still match and be rewritten. Don’t put live-looking decls in comments for now; a proper skip will come later.
+`packages/core` parses `brand type` with a lightweight scanner (regex header + brace matching for Mode B). **Comment-skipping is incomplete** — a `brand type …` appearing inside a line or block comment can still match and be rewritten. Don’t put live-looking decls in comments for now; a proper skip will come later.
 
 ---
 
@@ -77,7 +104,7 @@ Binaries after build: `superset-ts` / `sts` → `packages/cli/dist/cli.js`.
 
 ## What about `defineLiteralSet`?
 
-**Not the product API.** Authors write `brand type`. `defineLiteralSet` is an **internal** emit/runtime helper (optional emit target). Do not import it in app code — use the dialect + CLI.
+**Not the product API.** Authors write `brand type`. `defineLiteralSet` is an **internal** emit/runtime helper (optional emit target for Mode A literals). Do not import it in app code — use the dialect + CLI.
 
 ---
 
@@ -89,12 +116,12 @@ Binaries after build: `superset-ts` / `sts` → `packages/cli/dist/cli.js`.
 
 ---
 
-## Non-goals (v0)
+## Non-goals (this cut)
 
 - **No Microsoft / TypeScript fork** to maintain
 - No custom TypeScript checker or language server fantasy
-- Phase 1: **string literal unions only** (`brand type Name = "a" \| "b"`)
-- Not nominal brands — closed literal union + runtime (structural)
+- **Not** open brands (`brand type Email = string` without an `is` block)
+- **Not** nominal Mode A / number-or-bigint literal Mode A
 - Not a full schema / object validation library
 - **No npm publish** in this cut
 - VS Code extension **not on Marketplace** yet (local install only)

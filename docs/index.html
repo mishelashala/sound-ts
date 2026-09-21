@@ -4,8 +4,10 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>superset-ts — brand type dialect + CLI</title>
-  <meta name="description" content="Write brand type string literal unions; CLI expands to plain TS + runtime companions. Not a TypeScript fork." />
+  <meta name="description" content="Write brand type (literal unions, Mode B refined brands, brand-only unions); CLI expands to plain TS + runtime companions. Not a TypeScript fork." />
   <link rel="stylesheet" href="styles.css" />
+  <!-- Prism (CDN): highlight .sts / TS / shell samples. Theme colors overridden in styles.css. -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css" />
 </head>
 <body>
   <main>
@@ -21,6 +23,8 @@
 
     <nav aria-label="On this page">
       <a href="#authoring">Authoring</a>
+      <a href="#mode-b">Mode&nbsp;B</a>
+      <a href="#unions">Unions</a>
       <a href="#cli">CLI</a>
       <a href="#caveats">Caveats</a>
       <a href="#vscode">VS&nbsp;Code</a>
@@ -35,7 +39,7 @@
         </thead>
         <tbody>
           <tr>
-            <td>A small dialect: <code>brand type</code> for closed string literal unions</td>
+            <td>A small dialect: <code>brand type</code> for literals, refined brands, and brand-only unions</td>
             <td>A fork of TypeScript or <code>tsc</code></td>
           </tr>
           <tr>
@@ -51,7 +55,7 @@
     </section>
 
     <section id="authoring">
-      <h2>Authoring (phase 1)</h2>
+      <h2>Authoring — Mode A (string literals)</h2>
       <p>
         <strong>Prefer <code>.sts</code> files.</strong>
         Stock TypeScript language service will red-squiggle
@@ -60,8 +64,7 @@
         <code>.sts</code>; injection into <code>.ts</code> only helps
         highlighting, not the checker.
       </p>
-      <p>String literal unions only:</p>
-      <pre><code>// file: roles.sts
+      <pre><code class="language-typescript">// file: roles.sts
 brand type Account = "admin" | "regular";
 
 function greet(role: Account): string {
@@ -74,9 +77,65 @@ Account.is("guest");   // false
 Account.from("guest"); // throws</code></pre>
     </section>
 
+    <section id="mode-b">
+      <h2>Mode B — refined brands</h2>
+      <p>
+        Custom <code>is</code> body; CLI <strong>generates</strong>
+        <code>from</code> that validates via <code>is</code>.
+        Emit is plain <code>.ts</code> (type alias + companion) — expand, then stock <code>tsc</code>.
+      </p>
+      <pre><code class="language-typescript">// file: positive.sts
+brand type PositiveInt = number {
+  is(n: number): n is PositiveInt {
+    return Number.isInteger(n) &amp;&amp; n &gt; 0;
+  }
+}</code></pre>
+      <p>Emit shape (plain TS after transform):</p>
+      <pre><code class="language-typescript">type PositiveInt = number;
+const PositiveInt = /*#__PURE__*/ (() =&gt; {
+  function is(n: number): n is PositiveInt {
+    return Number.isInteger(n) &amp;&amp; n &gt; 0;
+  }
+  function from(value: unknown): PositiveInt {
+    if (is(value as number)) return value as PositiveInt;
+    throw new Error(/* … */);
+  }
+  return Object.freeze({ name: "PositiveInt" as const, is, from });
+})();</code></pre>
+    </section>
+
+    <section id="unions">
+      <h2>Brand-only unions / intersections</h2>
+      <p>
+        Members must be <strong>already-declared brand names</strong> in the
+        same file. Open types like <code>string</code> in a brand
+        <code>|</code> / <code>&amp;</code> are rejected.
+      </p>
+      <pre><code class="language-typescript">// file: staff.sts
+brand type Admin = "admin";
+brand type Regular = "regular";
+brand type Staff = Admin | Regular;
+
+brand type User = "u";
+brand type Session = "s";
+brand type Authed = User &amp; Session;</code></pre>
+      <p>Union emit delegates <code>.is</code> to members:</p>
+      <pre><code class="language-typescript">type Staff = Admin | Regular;
+const Staff = /*#__PURE__*/ (() =&gt; {
+  function is(value: unknown): value is Staff {
+    return Admin.is(value) || Regular.is(value);
+  }
+  function from(value: unknown): Staff {
+    if (is(value)) return value;
+    throw new Error(/* … */);
+  }
+  return Object.freeze({ name: "Staff" as const, is, from });
+})();</code></pre>
+    </section>
+
     <section id="cli">
       <h2>CLI quickstart</h2>
-      <pre><code>git clone https://github.com/mishelashala/superset-ts.git
+      <pre><code class="language-bash">git clone https://github.com/mishelashala/superset-ts.git
 cd superset-ts
 pnpm install &amp;&amp; pnpm build &amp;&amp; pnpm test
 
@@ -96,7 +155,7 @@ node packages/cli/dist/cli.js ./src -o ./out</code></pre>
       <ul>
         <li>
           <strong>Parser / comments:</strong>
-          <code>parse.ts</code> matches <code>brand type</code> with a regex.
+          lightweight scanner (regex header + brace match for Mode B).
           Comment-skipping is incomplete — a decl inside a line or block
           comment can still match and be rewritten. Avoid live-looking decls
           in comments until a proper skip lands.
@@ -127,17 +186,17 @@ node packages/cli/dist/cli.js ./src -o ./out</code></pre>
       <p>
         <strong>Internal emit / runtime helper — not the public API.</strong>
         Authors write <code>brand type</code>; the CLI expands. Do not treat
-        <code>import &#123; defineLiteralSet &#125;</code> as the product.
+        <code>import { defineLiteralSet }</code> as the product.
       </p>
     </section>
 
     <section id="non-goals">
-      <h2>Non-goals (v0)</h2>
+      <h2>Non-goals (this cut)</h2>
       <ul>
         <li>No Microsoft / TypeScript fork to maintain</li>
         <li>No custom checker or LSP fantasy in v0</li>
-        <li>Phase 1: string literal unions only</li>
-        <li>Closed literal union + runtime — not nominal brands</li>
+        <li>Not open brands (<code>brand type Email = string</code> without <code>is</code>)</li>
+        <li>Not nominal Mode A / number–bigint literal Mode A</li>
         <li>Not a full schema validation library</li>
         <li>Not on npm yet</li>
         <li>VS Code extension not on Marketplace yet (local install only)</li>
@@ -154,5 +213,9 @@ node packages/cli/dist/cli.js ./src -o ./out</code></pre>
       · extension <strong>local-only</strong> until Marketplace publish
     </p>
   </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-typescript.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-bash.min.js"></script>
 </body>
 </html>

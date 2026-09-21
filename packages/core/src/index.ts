@@ -9,7 +9,15 @@
  */
 
 export { transform, type TransformResult, type TransformFileOptions } from "./transform.js";
-export { parseBrandTypes, type BrandTypeDecl, type ParseResult } from "./parse.js";
+export {
+  parseBrandTypes,
+  type BrandTypeDecl,
+  type BrandKind,
+  type LiteralBrandDecl,
+  type RefinedBrandDecl,
+  type CombinedBrandDecl,
+  type ParseResult,
+} from "./parse.js";
 export { emitBrandType, transformSource, type EmitOptions } from "./emit.js";
 
 /** @internal — emit target / runtime shape; not the public product API */

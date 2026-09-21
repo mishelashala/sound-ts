@@ -1,32 +1,23 @@
 :root {
-  color-scheme: light dark;
-  --fg: #1a1a1a;
-  --muted: #555;
-  --bg: #fafafa;
-  --border: #ddd;
-  --code-bg: #f0f0f0;
-  --link: #0550ae;
+  color-scheme: light;
+  --surface: #f8fafc;
+  --fg: #0f172a;
+  --muted: #64748b;
+  --border: #e2e8f0;
+  --accent: #0d9488;
+  --code-panel: #0f172a;
+  --code-fg: #e2e8f0;
+  --inline-code-bg: #f1f5f9;
   --max: 42rem;
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   line-height: 1.5;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --fg: #e8e8e8;
-    --muted: #aaa;
-    --bg: #121212;
-    --border: #333;
-    --code-bg: #1e1e1e;
-    --link: #6cb6ff;
-  }
 }
 
 * { box-sizing: border-box; }
 
 body {
   margin: 0;
-  background: var(--bg);
+  background: var(--surface);
   color: var(--fg);
 }
 
@@ -42,6 +33,7 @@ h1 {
   font-size: 1.35rem;
   font-weight: 600;
   margin: 0 0 0.5rem;
+  color: var(--fg);
 }
 
 h2 {
@@ -49,6 +41,7 @@ h2 {
   margin: 1.75rem 0 0.75rem;
   border-bottom: 1px solid var(--border);
   padding-bottom: 0.25rem;
+  color: var(--fg);
 }
 
 h3 {
@@ -67,9 +60,23 @@ nav {
   gap: 0.75rem 1.25rem;
   margin: 1rem 0 0.5rem;
   font-size: 0.95rem;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.75rem;
 }
 
-a { color: var(--link); }
+nav a {
+  color: var(--muted);
+  text-decoration: none;
+}
+
+nav a:hover,
+nav a:focus-visible {
+  color: var(--accent);
+}
+
+a { color: var(--accent); }
+
+a:hover { text-decoration: underline; }
 
 table {
   width: 100%;
@@ -86,14 +93,19 @@ th, td {
 
 th { font-weight: 600; }
 
-pre {
-  background: var(--code-bg);
+/* Dark code panels for highlighted blocks */
+pre,
+pre[class*="language-"] {
+  background: var(--code-panel);
+  color: var(--code-fg);
   border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
   border-radius: 4px;
-  padding: 0.75rem 1rem;
+  padding: 0.85rem 1rem;
   overflow-x: auto;
   font-size: 0.85rem;
   line-height: 1.45;
+  margin: 0.75rem 0 1rem;
 }
 
 code {
@@ -101,16 +113,77 @@ code {
   font-size: 0.9em;
 }
 
-p code, td code, li code, h1 code, h3 code {
-  background: var(--code-bg);
+p code, td code, li code, h1 code, h2 code, h3 code, nav code {
+  background: var(--inline-code-bg);
+  color: var(--fg);
   padding: 0.1em 0.35em;
   border-radius: 3px;
+  border: 1px solid var(--border);
 }
 
-pre code {
+pre code,
+pre[class*="language-"] code {
   background: none;
+  color: inherit;
   padding: 0;
+  border: none;
   font-size: inherit;
+  border-radius: 0;
+}
+
+/* Prism token tweaks on dark panel + teal accent */
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+  color: #94a3b8;
+}
+
+.token.punctuation {
+  color: #cbd5e1;
+}
+
+.token.property,
+.token.tag,
+.token.boolean,
+.token.number,
+.token.constant,
+.token.symbol {
+  color: #5eead4;
+}
+
+.token.selector,
+.token.attr-name,
+.token.string,
+.token.char,
+.token.builtin,
+.token.inserted {
+  color: #6ee7b7;
+}
+
+.token.operator,
+.token.entity,
+.token.url,
+.language-css .token.string,
+.style .token.string {
+  color: #a5b4fc;
+}
+
+.token.atrule,
+.token.attr-value,
+.token.keyword {
+  color: #2dd4bf;
+}
+
+.token.function,
+.token.class-name {
+  color: #fcd34d;
+}
+
+.token.regex,
+.token.important,
+.token.variable {
+  color: #fda4af;
 }
 
 ul {
@@ -128,3 +201,5 @@ footer {
 }
 
 footer p { margin: 1rem 0 0; }
+
+footer a { color: var(--accent); }
