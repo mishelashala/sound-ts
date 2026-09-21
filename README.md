@@ -26,10 +26,15 @@ TypeScript’s contract is **type safety with erased types** — no runtime comp
 - `cast<Target>(expr)` — checked entry path (primitive checks or companion `.from`)
 - On `.sts`: reject `as` / `any` / `!` / wide types, no bare structural aliases, methods emit as readonly function properties ([#36](https://github.com/mishelashala/sound-ts/issues/36)–[#38](https://github.com/mishelashala/sound-ts/issues/38), [#40](https://github.com/mishelashala/sound-ts/issues/40)–[#42](https://github.com/mishelashala/sound-ts/issues/42))
 
-**Still open toward `1.0`** — regex frontend cannot see the whole program. Ordinary `.ts` stays stock TypeScript.
+**1.0 slice (delivered on `.sts`)** — AST + symbols close more holes before emit. Ordinary `.ts` stays stock TypeScript. Matrix: [`SOUNDNESS_1_0.md`](packages/core/src/soundness/SOUNDNESS_1_0.md).
 
-- Outbound widen from a `validate type` to the naked field structure (stock `tsc`)
-- Deeper holes that need AST + scopes (mutation after brand construction, FFI boundaries, predicates, generics / variance) — [roadmap 1.0](https://github.com/mishelashala/sound-ts/issues?q=roadmap+1.0)
+- FFI: author `x is Brand` / `asserts x is Brand` rejected — entry via `cast<>` / `.from`
+- Honest Mode B `is` shapes (empty / ignored param / always-`true` rejected)
+- Mutation of companions / dialect-annotated bindings rejected
+- Conservative generics: `Partial` / `Required` on brands rejected; `Readonly` allowed
+- Still deferred (see design note): proving `is` correctness, unannotated mutation, full variance, ambient FFI
+
+Outbound widen from a `validate type` to the naked field structure remains a stock `tsc` hole until a later design closes it.
 
 Gate: new dialect surface should **close a soundness hole**, not paper over one.
 
@@ -252,13 +257,13 @@ pnpm --dir examples/vite-app build
 - [x] [Reject `!`](https://github.com/mishelashala/sound-ts/issues/41) — `value!` and `prop!: Type` in `.sts` fail expand. `!==` stays. `!` is not deleted.
 - [x] [Reject `Object`, `{}`, `Function`](https://github.com/mishelashala/sound-ts/issues/42) — those types in `.sts` fail expand. An empty object literal stays. They are not rewritten to `unknown`.
 
-**1.0.0 — complete soundness** — [roadmap 1.0](https://github.com/mishelashala/sound-ts/issues?q=roadmap+1.0). AST frontend first (parity with 0.x), then rules that need program structure. Check a box only when that issue is delivered. Breaking changes relative to 0.x are allowed before `1.0.0`. Stock `tsc` stays the backend on expand output.
+**1.0.0 — complete soundness** — [roadmap 1.0](https://github.com/mishelashala/sound-ts/issues?q=roadmap+1.0). AST frontend, dialect nodes, AST bans, symbols, and the initial 1.0 rule slice are delivered. Stock `tsc` stays the backend on expand output. Deferred holes live in [`SOUNDNESS_1_0.md`](packages/core/src/soundness/SOUNDNESS_1_0.md).
 
 - [x] [AST frontend with parity](https://github.com/mishelashala/sound-ts/issues/50) — TypeScript parser/AST replaces the regex frontend; fixtures expand equivalently.
 - [x] [Dialect AST nodes](https://github.com/mishelashala/sound-ts/issues/51) — `brand type` / `validate type` / `cast<>` are explicit nodes (or a stable side-table).
 - [x] [AST soundness visitors](https://github.com/mishelashala/sound-ts/issues/52) — move 0.x bans off masked-string scans onto AST visitors.
 - [x] [Scopes and symbols](https://github.com/mishelashala/sound-ts/issues/53) — cross-file Sound-TS symbols for brands / companions / cast targets.
-- [ ] [Complete soundness rules](https://github.com/mishelashala/sound-ts/issues/54) — 1.0 reject/accept matrix (boundaries, predicates, mutation, generics subset) on the AST + symbol layer.
+- [x] [Complete soundness rules](https://github.com/mishelashala/sound-ts/issues/54) — 1.0 reject/accept matrix (boundaries, predicates, mutation, generics subset) on the AST + symbol layer.
 
 ---
 
@@ -301,7 +306,7 @@ See also: [FAQ: Why not TypeScript?](https://mishelashala.github.io/sound-ts/#fa
 - Refined brands and `validate type` are **nominally opaque** under stock `tsc` (phantom unique-symbol brands) — not structural aliases of their bases. Enter via `.from` / `cast<>`.
 - String literal brands are the member literals **or** a phantom arm (nominal under stock `tsc`; member literals still assign). They do not flow back to the bare literal union. Number/bigint literal brands not supported yet.
 - **0.x delivered** surface bans and tooling ([roadmap v1](https://github.com/mishelashala/sound-ts/issues?q=roadmap+v1) / [v2](https://github.com/mishelashala/sound-ts/issues?q=roadmap+v2)). Outbound widen from a `validate type` to the naked structure remains a stock `tsc` hole until a later design closes it.
-- **1.0 incomplete until** [roadmap 1.0](https://github.com/mishelashala/sound-ts/issues?q=roadmap+1.0) ships (AST frontend + complete soundness rules)
+- **1.0 roadmap issues #50–#54 delivered** (AST + symbols + initial rule slice). Deferred items: [`SOUNDNESS_1_0.md`](packages/core/src/soundness/SOUNDNESS_1_0.md). Package version may still be `0.x` until a `1.0.0` release cut.
 - Not a full schema library — `validate type` covers simple object shapes only (no nested objects, generics, `Date`, …)
 - VS Code extension **not on Marketplace** yet (local install only)
 - `defineLiteralSet` is **not** the public authoring API

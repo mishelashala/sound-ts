@@ -118,19 +118,37 @@
         </li>
       </ul>
       <p>
-        <strong>Still open toward <code>1.0</code></strong> — regex frontend
-        cannot see the whole program. Ordinary <code>.ts</code> stays stock
-        TypeScript.
+        <strong>1.0 slice (delivered on <code>.sts</code>)</strong> — AST +
+        symbols close more holes before emit. Ordinary <code>.ts</code> stays
+        stock TypeScript. Matrix:
+        <a href="https://github.com/mishelashala/sound-ts/blob/main/packages/core/src/soundness/SOUNDNESS_1_0.md">SOUNDNESS_1_0.md</a>.
       </p>
       <ul>
         <li>
-          Outbound widen from a <code>validate type</code> to the naked field
-          structure (stock <code>tsc</code>)
+          FFI: author <code>x is Brand</code> /
+          <code>asserts x is Brand</code> rejected — entry via
+          <code>cast&lt;&gt;</code> / <code>.from</code>
         </li>
         <li>
-          Deeper holes that need AST + scopes (mutation after brand
-          construction, FFI boundaries, predicates, generics / variance) —
-          <a href="https://github.com/mishelashala/sound-ts/issues?q=roadmap+1.0">roadmap 1.0</a>
+          Honest Mode B <code>is</code> shapes (empty / ignored param /
+          always-<code>true</code> rejected)
+        </li>
+        <li>
+          Mutation of companions / dialect-annotated bindings rejected
+        </li>
+        <li>
+          Conservative generics: <code>Partial</code> /
+          <code>Required</code> on brands rejected; <code>Readonly</code>
+          allowed
+        </li>
+        <li>
+          Still deferred (see design note): proving <code>is</code>
+          correctness, unannotated mutation, full variance, ambient FFI
+        </li>
+        <li>
+          Outbound widen from a <code>validate type</code> to the naked field
+          structure remains a stock <code>tsc</code> hole until a later design
+          closes it
         </li>
       </ul>
       <p class="muted">
@@ -441,10 +459,10 @@ node packages/cli/dist/cli.js ./example.sts -o ./out/example.ts</code></pre>
       <p>
         <strong>1.0.0 — complete soundness</strong> —
         <a href="https://github.com/mishelashala/sound-ts/issues?q=roadmap+1.0">roadmap 1.0</a>.
-        AST frontend first (parity with 0.x), then rules that need program
-        structure. Check a box only when that issue is delivered. Breaking
-        changes relative to 0.x are allowed before <code>1.0.0</code>. Stock
-        <code>tsc</code> stays the backend on expand output.
+        AST frontend, dialect nodes, AST bans, symbols, and the initial 1.0
+        rule slice are delivered. Stock <code>tsc</code> stays the backend on
+        expand output. Deferred holes live in
+        <a href="https://github.com/mishelashala/sound-ts/blob/main/packages/core/src/soundness/SOUNDNESS_1_0.md">SOUNDNESS_1_0.md</a>.
       </p>
       <ul class="checklist">
         <li>
@@ -470,7 +488,7 @@ node packages/cli/dist/cli.js ./example.sts -o ./out/example.ts</code></pre>
           — cross-file Sound-TS symbols for brands / companions / cast targets.
         </li>
         <li>
-          <input type="checkbox" disabled />
+          <input type="checkbox" disabled checked />
           <a href="https://github.com/mishelashala/sound-ts/issues/54">Complete soundness rules</a>
           — 1.0 reject/accept matrix (boundaries, predicates, mutation, generics
           subset) on the AST + symbol layer.
@@ -548,7 +566,7 @@ node packages/cli/dist/cli.js ./example.sts -o ./out/example.ts</code></pre>
         <li>Refined brands and <code>validate type</code> are <strong>nominally opaque</strong> under stock <code>tsc</code> (phantom unique-symbol brands) — not structural aliases of their bases. Enter via <code>.from</code> / <code>cast&lt;&gt;</code>.</li>
         <li>String literal brands are the member literals <strong>or</strong> a phantom arm (nominal under stock <code>tsc</code>; member literals still assign). They do not flow back to the bare literal union. Number/bigint literal brands not supported yet.</li>
         <li><strong>0.x delivered</strong> surface bans and tooling (<a href="https://github.com/mishelashala/sound-ts/issues?q=roadmap+v1">roadmap v1</a> / <a href="https://github.com/mishelashala/sound-ts/issues?q=roadmap+v2">v2</a>). Outbound widen from a <code>validate type</code> to the naked structure remains a stock <code>tsc</code> hole until a later design closes it.</li>
-        <li><strong>1.0 incomplete until</strong> <a href="https://github.com/mishelashala/sound-ts/issues?q=roadmap+1.0">roadmap 1.0</a> ships (AST frontend + complete soundness rules)</li>
+        <li><strong>1.0 roadmap issues #50–#54 delivered</strong> (AST + symbols + initial rule slice). Deferred items: <a href="https://github.com/mishelashala/sound-ts/blob/main/packages/core/src/soundness/SOUNDNESS_1_0.md">SOUNDNESS_1_0.md</a>. Package version may still be <code>0.x</code> until a <code>1.0.0</code> release cut.</li>
         <li>Not a full schema library — <code>validate type</code> covers simple object shapes only (no nested objects, generics, <code>Date</code>, …)</li>
         <li>VS Code extension not on Marketplace yet (local install only)</li>
         <li><code>defineLiteralSet</code> is not the authoring surface</li>
