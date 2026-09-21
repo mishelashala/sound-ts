@@ -599,6 +599,64 @@ validate type Flags = {
     ]);
   });
 
+  it("parses null and string | null field unions", () => {
+    const src = `
+validate type Label = {
+  displayName: string | null;
+  count: null | number;
+  note?: string | null;
+};
+`;
+    const { decls } = parseValidateTypes(src);
+    expect(decls[0]!.fields).toEqual([
+      {
+        name: "displayName",
+        optional: false,
+        type: {
+          members: [
+            { kind: "primitive", name: "string" },
+            { kind: "null" },
+          ],
+        },
+      },
+      {
+        name: "count",
+        optional: false,
+        type: {
+          members: [
+            { kind: "null" },
+            { kind: "primitive", name: "number" },
+          ],
+        },
+      },
+      {
+        name: "note",
+        optional: true,
+        type: {
+          members: [
+            { kind: "primitive", name: "string" },
+            { kind: "null" },
+          ],
+        },
+      },
+    ]);
+  });
+
+  it("emits null checks for string | null fields", () => {
+    const src = `validate type Label = { name: string | null };\n`;
+    const result = transform(src);
+    expect(result.code).toContain(`name: string | null;`);
+    expect(result.code).toContain(
+      `(typeof v.name === "string") || (v.name === null)`,
+    );
+  });
+
+  it("rejects null[] array element type", () => {
+    expect(() =>
+      parseValidateTypes(`validate type Bad = { xs: null[] };`),
+    ).toThrow(/unsupported field type 'null\[]'/);
+  });
+
   it("emits phantom unique-symbol brand + is/from companion", () => {
     const src = `validate type User = { id: string; age: number };\n`;
     const result = transform(src);

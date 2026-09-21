@@ -137,7 +137,7 @@ User.is(data);
 User.from(data); // throws on mismatch; returns User
 ```
 
-**Supported field shapes:** `string` | `number` | `boolean`, optional `?`, arrays of those (`string[]`), and unions of those. Nested objects, generics, `Date`, imported aliases as field types, etc. error clearly at transform time.
+**Supported field shapes:** `string` | `number` | `boolean` | `null`, optional `?`, arrays of primitives (`string[]`), and unions of those (e.g. `string | null`). Nested objects, generics, `Date`, imported aliases as field types, etc. error clearly at transform time.
 
 ### Checked casts (`cast<>`)
 
