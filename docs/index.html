@@ -129,18 +129,27 @@ const PositiveInt = /*#__PURE__*/ (() =&gt; {
     <section id="unions">
       <h2>Brand-only unions / intersections</h2>
       <p>
-        Members must be <strong>already-declared brand names</strong> in the
-        same file. Open types like <code>string</code> in a brand
-        <code>|</code> / <code>&amp;</code> are rejected.
+        Members must be <strong>known brand names</strong> from the transform
+        input — same file or another <code>.sts</code> on the CLI batch.
+        Open types like <code>string</code> in a brand
+        <code>|</code> / <code>&amp;</code> are rejected; unknown brands and
+        cycles error at transform time.
       </p>
-      <pre><code class="language-typescript">// file: staff.sts
+      <p>Two-file example (declare in <code>a.sts</code>, compose in <code>b.sts</code>):</p>
+      <pre><code class="language-typescript">// a.sts
 brand type Admin = "admin";
 brand type Regular = "regular";
-brand type Staff = Admin | Regular;
 
-brand type User = "u";
-brand type Session = "s";
-brand type Authed = User &amp; Session;</code></pre>
+export { Admin, Regular };</code></pre>
+      <pre><code class="language-typescript">// b.sts
+import { Admin, Regular } from "./a.js";
+
+brand type Staff = Admin | Regular;</code></pre>
+      <p>
+        Run <code>sts</code> on the directory (or both files) so the project
+        brand map sees every declaration, then point stock <code>tsc</code> at
+        the expanded output.
+      </p>
       <p>Union emit delegates <code>.is</code> to members:</p>
       <pre><code class="language-typescript">type Staff = Admin | Regular;
 const Staff = /*#__PURE__*/ (() =&gt; {
@@ -155,8 +164,12 @@ const Staff = /*#__PURE__*/ (() =&gt; {
 })();</code></pre>
       <p>Call-site usage of the runtime companions:</p>
       <pre><code class="language-typescript">Staff.is("admin");     // true (Admin member)
-Authed.is(value);      // true only if User.is &amp;&amp; Session.is
 Staff.from(raw);       // throws if neither brand matches</code></pre>
+      <p>Same-file intersections still work:</p>
+      <pre><code class="language-typescript">brand type User = "u";
+brand type Session = "s";
+brand type Authed = User &amp; Session;
+// Authed.is(value) → User.is(value) &amp;&amp; Session.is(value)</code></pre>
     </section>
 
     <section id="cli">
@@ -193,17 +206,11 @@ node packages/cli/dist/cli.js ./example.sts -o ./out/example.ts</code></pre>
           <code>tsc</code> red squiggles on the dialect keywords.
         </li>
         <li>
-          <strong>Same-file brand unions / intersections:</strong>
-          <code>brand type Staff = Admin | Regular</code> (and <code>&amp;</code>)
-          only sees brand names declared <strong>earlier in that same
-          <code>.sts</code> file</strong>. Cross-file composition in the dialect
-          isn’t supported yet.
-        </li>
-        <li>
-          <strong>Using brands across files is fine:</strong> after the CLI
-          transform, export/import the emitted <code>type</code> + companion and
-          call <code>.is</code> / <code>.from</code> anywhere — that’s normal TS
-          modules.
+          <strong>Cross-file brand refs:</strong>
+          pass every <code>.sts</code> on the CLI batch (e.g. a directory) so
+          <code>|</code> / <code>&amp;</code> members resolve against the
+          project brand map. After expand, stock <code>tsc</code> sees normal
+          imports of the emitted <code>type</code> + companion.
         </li>
       </ul>
     </section>

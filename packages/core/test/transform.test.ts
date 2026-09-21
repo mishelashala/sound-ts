@@ -1,10 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
   transform,
+  transformProject,
   parseBrandTypes,
   defineLiteralSet,
   LiteralSetError,
   emitBrandType,
+  buildBrandMap,
+  resolveBrandRefs,
 } from "../src/index.js";
 
 describe("parseBrandTypes (Mode A literals)", () => {
@@ -78,7 +81,7 @@ brand type PositiveInt = number {
 });
 
 describe("parseBrandTypes (brand unions / intersections)", () => {
-  it("parses union of already-declared brands", () => {
+  it("parses union of brand names (resolution deferred)", () => {
     const src = `
 brand type Admin = "admin";
 brand type Regular = "regular";
@@ -92,7 +95,7 @@ brand type Staff = Admin | Regular;
     }
   });
 
-  it("parses intersection of already-declared brands", () => {
+  it("parses intersection of brand names", () => {
     const src = `
 brand type User = "u";
 brand type Session = "s";
@@ -105,19 +108,17 @@ brand type Authed = User & Session;
     }
   });
 
-  it("rejects non-brand members in union", () => {
-    expect(() =>
-      parseBrandTypes(`brand type Bad = Admin | Regular;`),
-    ).toThrow(/not an already-declared brand name/);
-  });
-
-  it("rejects open string in brand union", () => {
-    expect(() =>
-      parseBrandTypes(`
+  it("parses forward references within a file (resolved later)", () => {
+    const src = `
+brand type Staff = Admin | Regular;
 brand type Admin = "admin";
-brand type Bad = Admin | string;
-`),
-    ).toThrow(/'string' is not an already-declared brand name/);
+brand type Regular = "regular";
+`;
+    const { decls } = parseBrandTypes(src);
+    expect(decls[0]!.kind).toBe("union");
+    if (decls[0]!.kind === "union") {
+      expect(decls[0]!.members).toEqual(["Admin", "Regular"]);
+    }
   });
 
   it("rejects mixing | and &", () => {
@@ -130,15 +131,188 @@ brand type Bad = A | B & C;
 `),
     ).toThrow(/cannot mix/);
   });
+});
 
-  it("rejects forward reference (not already declared)", () => {
+describe("brand map resolution", () => {
+  it("rejects unknown brand members at transform time", () => {
+    expect(() => transform(`brand type Bad = Admin | Regular;`)).toThrow(
+      /not a known brand name/,
+    );
+  });
+
+  it("rejects open string in brand union", () => {
     expect(() =>
-      parseBrandTypes(`
+      transform(`
+brand type Admin = "admin";
+brand type Bad = Admin | string;
+`),
+    ).toThrow(/'string' is not a known brand name/);
+  });
+
+  it("allows forward reference within a single file", () => {
+    const { code, changed } = transform(`
 brand type Staff = Admin | Regular;
 brand type Admin = "admin";
 brand type Regular = "regular";
+`);
+    expect(changed).toBe(true);
+    expect(code).toContain(`type Staff = Admin | Regular;`);
+    expect(code).toContain(`return Admin.is(value) || Regular.is(value);`);
+  });
+
+  it("detects cycles among combined brands", () => {
+    expect(() =>
+      transform(`
+brand type A = B | C;
+brand type B = A | C;
+brand type C = "c";
 `),
-    ).toThrow(/not an already-declared brand name/);
+    ).toThrow(/brand type cycle detected/);
+  });
+
+  it("detects self-referential cycles", () => {
+    expect(() =>
+      transform(`
+brand type A = "a";
+brand type Bad = Bad | A;
+`),
+    ).toThrow(/brand type cycle detected/);
+  });
+
+  it("rejects duplicate brand names in the project map", () => {
+    const a = parseBrandTypes(`brand type Admin = "admin";`).decls;
+    const b = parseBrandTypes(`brand type Admin = "other";`).decls;
+    expect(() =>
+      buildBrandMap([
+        { filename: "a.sts", decls: a },
+        { filename: "b.sts", decls: b },
+      ]),
+    ).toThrow(/duplicate declaration/);
+  });
+});
+
+describe("transformProject (cross-file brand refs)", () => {
+  it("resolves union members declared in another file", () => {
+    const result = transformProject([
+      {
+        filename: "a.sts",
+        source: `
+brand type Admin = "admin";
+brand type Regular = "regular";
+
+export { Admin, Regular };
+`,
+      },
+      {
+        filename: "b.sts",
+        source: `
+import { Admin, Regular } from "./a.js";
+
+brand type Staff = Admin | Regular;
+`,
+      },
+    ]);
+
+    expect(result.brandMap.has("Admin")).toBe(true);
+    expect(result.brandMap.has("Regular")).toBe(true);
+    expect(result.brandMap.has("Staff")).toBe(true);
+
+    const b = result.files.find((f) => f.filename === "b.sts")!;
+    expect(b.changed).toBe(true);
+    expect(b.code).toContain(`type Staff = Admin | Regular;`);
+    expect(b.code).toContain(`return Admin.is(value) || Regular.is(value);`);
+    expect(b.code).not.toContain("brand type");
+
+    const a = result.files.find((f) => f.filename === "a.sts")!;
+    expect(a.code).toContain(`type Admin = "admin";`);
+    expect(a.code).toContain(`export { Admin, Regular };`);
+  });
+
+  it("resolves intersection members across files", () => {
+    const result = transformProject([
+      {
+        filename: "ids.sts",
+        source: `
+brand type User = "u";
+brand type Session = "s";
+export { User, Session };
+`,
+      },
+      {
+        filename: "authed.sts",
+        source: `
+import { User, Session } from "./ids.js";
+brand type Authed = User & Session;
+`,
+      },
+    ]);
+    const authed = result.files.find((f) => f.filename === "authed.sts")!;
+    expect(authed.code).toContain(`type Authed = User & Session;`);
+    expect(authed.code).toContain(
+      `return User.is(value) && Session.is(value);`,
+    );
+  });
+
+  it("errors on unknown brand across the project batch", () => {
+    expect(() =>
+      transformProject([
+        {
+          filename: "a.sts",
+          source: `brand type Admin = "admin";\n`,
+        },
+        {
+          filename: "b.sts",
+          source: `brand type Staff = Admin | Missing;\n`,
+        },
+      ]),
+    ).toThrow(/'Missing' is not a known brand name/);
+  });
+
+  it("errors on cross-file cycles", () => {
+    expect(() =>
+      transformProject([
+        {
+          filename: "a.sts",
+          source: `
+brand type A = B | C;
+brand type C = "c";
+`,
+        },
+        {
+          filename: "b.sts",
+          source: `brand type B = A | C;\n`,
+        },
+      ]),
+    ).toThrow(/brand type cycle detected/);
+  });
+
+  it("orders brands dependencies-first", () => {
+    const result = transformProject([
+      {
+        filename: "b.sts",
+        source: `brand type Staff = Admin | Regular;\n`,
+      },
+      {
+        filename: "a.sts",
+        source: `
+brand type Admin = "admin";
+brand type Regular = "regular";
+`,
+      },
+    ]);
+    const adminIdx = result.brandOrder.indexOf("Admin");
+    const regularIdx = result.brandOrder.indexOf("Regular");
+    const staffIdx = result.brandOrder.indexOf("Staff");
+    expect(adminIdx).toBeGreaterThanOrEqual(0);
+    expect(regularIdx).toBeGreaterThanOrEqual(0);
+    expect(staffIdx).toBeGreaterThan(adminIdx);
+    expect(staffIdx).toBeGreaterThan(regularIdx);
+  });
+
+  it("resolveBrandRefs alone rejects unknown members", () => {
+    const decls = parseBrandTypes(`brand type Bad = Ghost;`).decls;
+    const map = buildBrandMap([{ filename: "x.sts", decls }]);
+    expect(() => resolveBrandRefs(map)).toThrow(/not a known brand name/);
   });
 });
 

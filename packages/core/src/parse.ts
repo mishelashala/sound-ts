@@ -5,7 +5,7 @@
  * - Mode A (string literals): `brand type Account = "admin" | "regular"`
  * - Mode B (refined): `brand type PositiveInt = number { is(n: number): n is PositiveInt { … } }`
  * - Brand unions / intersections: `brand type Staff = Admin | Regular`
- *   (members must be already-declared brand names in this file)
+ *   (members must be known brand names — resolved via project brand map)
  *
  * Before scanning for `brand type`, line/block comments and string/template
  * literals are masked in-place with spaces (offsets stay aligned for emit).
@@ -45,7 +45,7 @@ export interface RefinedBrandDecl extends BrandTypeDeclBase {
   isBody: string;
 }
 
-/** Phase 2: union or intersection of already-declared brand names */
+/** Union or intersection of known brand names (resolved after parse) */
 export interface CombinedBrandDecl extends BrandTypeDeclBase {
   kind: "union" | "intersection";
   /** Brand member names in source order */
@@ -476,7 +476,6 @@ function maskCommentsAndStrings(source: string): string {
  */
 export function parseBrandTypes(source: string): ParseResult {
   const decls: BrandTypeDecl[] = [];
-  const knownBrands = new Set<string>();
   const scan = maskCommentsAndStrings(source);
   const headerRe = /\bbrand\s+type\s+([A-Za-z_$][\w$]*)\s*=/g;
   let m: RegExpExecArray | null;
@@ -509,7 +508,7 @@ export function parseBrandTypes(source: string): ParseResult {
       }
       const afterFirst = skipWs(source, firstIdent.end);
       if (source[afterFirst] === "{") {
-        // Mode B refined: `number { is… }`
+        // Refined: `number { is… }`
         const refined = parseRefined(source, i, name);
         decl = {
           kind: "refined",
@@ -530,20 +529,10 @@ export function parseBrandTypes(source: string): ParseResult {
         // lone brand alias / end of statement-ish
         /[\r\n]/.test(source[afterFirst] ?? "")
       ) {
-        // Brand union / intersection / single-brand alias
-        // But: if next is `|` or `&` or `;` or newline — combined.
-        // Careful: Mode A never reaches here (quotes). Open `= string;` is OUT
-        // of scope — treat as combined with one member and reject if not known.
+        // Brand union / intersection / single-brand alias.
+        // Member resolution (known brand / cycle) is deferred to the project
+        // brand map — see buildBrandMap + resolveBrandRefs.
         const combined = parseCombined(source, i, name);
-        // Validate members are already-declared brands
-        for (const member of combined.members) {
-          if (!knownBrands.has(member)) {
-            throw new SyntaxError(
-              `brand type ${name}: '${member}' is not an already-declared brand name ` +
-                `(brand unions/intersections may only reference brands declared earlier in this file)`,
-            );
-          }
-        }
         decl = {
           kind: combined.kind,
           name,
@@ -555,12 +544,11 @@ export function parseBrandTypes(source: string): ParseResult {
       } else {
         throw new SyntaxError(
           `brand type ${name}: unexpected token after '${firstIdent.ident}' ` +
-            `(Mode B needs '{ is(...) }'; unions need '|' / '&' between brand names)`,
+            `(refined brands need '{ is(...) }'; unions need '|' / '&' between brand names)`,
         );
       }
     }
 
-    knownBrands.add(name);
     decls.push(decl);
     // Continue search after this decl (headerRe.lastIndex may sit inside body)
     headerRe.lastIndex = decl.end;
