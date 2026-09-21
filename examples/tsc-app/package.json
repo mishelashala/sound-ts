@@ -3,7 +3,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "node scripts/build.mjs",
+    "build": "sts build",
+    "dev": "sts watch",
     "test": "node --test test/fail-closed.test.mjs"
+  },
+  "devDependencies": {
+    "@mishelashala/sound-ts-cli": "workspace:*"
   }
 }

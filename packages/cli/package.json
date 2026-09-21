@@ -2,7 +2,7 @@
   "name": "@mishelashala/sound-ts-cli",
   "version": "0.3.2",
   "private": false,
-  "description": "CLI: expand brand type \u2192 plain TS + runtime companions",
+  "description": "CLI: sts build / watch compile a Node app; sts transform expands to plain TS",
   "license": "MIT",
   "type": "module",
   "bin": {
@@ -19,7 +19,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@mishelashala/sound-ts-core": "workspace:*"
+    "@mishelashala/sound-ts-core": "workspace:*",
+    "typescript": "^5.6.3"
   },
   "engines": {
     "node": ">=18"

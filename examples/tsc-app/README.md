@@ -1,6 +1,6 @@
 # tsc-app
 
-Plain `tsc` app. One command expands `.sts`, then runs `tsc`. If expand fails, `tsc` does not run.
+Node app. `build` and `dev` call `sts` only. `sts` expands `.sts`, typechecks, and emits JS into `dist`. If expand fails, no JS is emitted.
 
 ## Scripts
 
@@ -9,34 +9,30 @@ Plain `tsc` app. One command expands `.sts`, then runs `tsc`. If expand fails, `
 ```json
 {
   "scripts": {
-    "build": "node scripts/build.mjs"
+    "build": "sts build",
+    "dev": "sts watch"
   }
 }
-```
-
-`scripts/build.mjs` runs the CLI, then `tsc` only when that process exits 0:
-
-```bash
-node ../../packages/cli/dist/cli.js src -o .sound-ts
-tsc -p tsconfig.json
 ```
 
 From this repo, after `pnpm build` at the root:
 
 ```bash
 pnpm --dir examples/tsc-app build
+pnpm --dir examples/tsc-app dev
 ```
 
-`node ../../packages/cli/dist/cli.js` is `packages/cli/dist/cli.js` (the `sts` / `sound-ts` bin). Output is `examples/tsc-app/.sound-ts`. There is no default shadow cache yet, so the script passes `-o .sound-ts`.
+`sts` is `packages/cli/dist/cli.js` (the `sts` / `sound-ts` bin). `dev` is `sts watch`: a change to `.sts` or `.ts` rebuilds.
 
 ## tsc
 
-`tsconfig.json` does not include `*.sts`.
+`tsconfig.json` does not mention `.sound-ts`.
 
-- `rootDir`: `.sound-ts` (expanded `.ts` only)
+- `rootDir`: `src`
 - `outDir`: `dist`
-- `include`: `.sound-ts/**/*.ts`
-- `exclude`: `**/*.sts`, `src`
+- `include`: `src`
+
+Stock `tsc` runs inside `sts`. Expanded `.ts` for that run is written under the OS temp directory, not in this app.
 
 ## Sources
 
@@ -46,8 +42,8 @@ pnpm --dir examples/tsc-app build
 brand type Account = "admin" | "regular";
 ```
 
-`src/app.ts` imports `Account` from `./roles.js`. Stock `tsc` sees that import only after expand, as `.sound-ts/roles.ts`.
+`src/app.ts` imports `Account` from `./roles.js`.
 
 ## Fail closed
 
-`pnpm --dir examples/tsc-app test` copies this app to a temp directory, corrupts `roles.sts`, runs `scripts/build.mjs`, and checks for a non-zero exit and no emitted `dist/*.js`.
+`pnpm --dir examples/tsc-app test` copies this app to a temp directory, corrupts `roles.sts`, runs `sts build`, and checks for a non-zero exit and no emitted `dist/*.js`.

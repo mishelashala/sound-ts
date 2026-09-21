@@ -18,6 +18,12 @@ importers:
         specifier: ^2.1.4
         version: 2.1.9(@types/node@26.6.2)
 
+  examples/tsc-app:
+    devDependencies:
+      '@mishelashala/sound-ts-cli':
+        specifier: workspace:*
+        version: link:../../packages/cli
+
   examples/vite-app:
     devDependencies:
       '@mishelashala/sound-ts-vite':
@@ -32,6 +38,9 @@ importers:
       '@mishelashala/sound-ts-core':
         specifier: workspace:*
         version: link:../core
+      typescript:
+        specifier: ^5.6.3
+        version: 5.9.3
 
   packages/core:
     dependencies:

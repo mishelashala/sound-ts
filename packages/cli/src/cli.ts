@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * sound-ts / sts — expand brand type / validate type / cast<> into plain TypeScript
- * that stock tsc / Vite consume. Not a TypeScript fork.
+ * sound-ts / sts — expand brand type / validate type / cast<> into plain TypeScript.
+ * `sts build` / `sts watch` then run stock tsc. Not a TypeScript fork.
  */
 import {
   copyFile,
@@ -13,6 +13,7 @@ import {
 } from "node:fs/promises";
 import path from "node:path";
 import { transformProject } from "@mishelashala/sound-ts-core";
+import { buildProject, watchProject } from "./buildProject.js";
 import { mapOutputPath, resolveOutputTarget, SOUND_TS_CACHE_DIR } from "./outputPath.js";
 
 const VERSION = "0.3.2";
@@ -21,15 +22,25 @@ function usage(): string {
   return `sound-ts / sts — brand type / validate type / cast<> → plain TS + runtime companions
 
 Usage:
+  sts build [project] [--watch]
+  sts watch [project]
   sts <input> [-o <output>]
   sts transform <input> [-o <output>]
   sts --help
   sts --version
 
-Input may be a .ts / .tsx / .sts file or a directory (recurses *.ts, *.tsx, *.sts).
-sts never emits .js. Re-running sts overwrites files in the output.
+sts build reads the project's tsconfig.json, expands .sts, typechecks with
+stock tsc, and emits JS into outDir (default dist). [project] defaults to the
+cwd. Expand failure exits non-zero and does not emit JS from that run.
+Expanded .ts for tsc is written under the OS temp directory, not .sound-ts,
+and the project's tsconfig is not pointed at that cache.
+sts watch (or sts build --watch) rebuilds when .sts, .ts, or .tsx inputs change.
 
-Default output is a gitignored .sound-ts/ cache:
+sts <input> / sts transform expand only and never emit .js.
+Input may be a .ts / .tsx / .sts file or a directory (recurses *.ts, *.tsx, *.sts).
+Re-running transform overwrites files in the output.
+
+Default transform output is a gitignored .sound-ts/ cache:
   - Input inside the cwd (or the cwd itself) → <cwd>/.sound-ts/
   - Input outside the cwd → <dirname(input)>/.sound-ts/
     (a directory is cached next to that directory; a file is cached in
@@ -43,22 +54,27 @@ Explicit -o overrides the cache (output file for one input, directory for a dire
 When multiple files are transformed together, brand and validate names are
 collected across the whole batch so \`brand type Staff = Admin | Regular\` and
 \`cast<User>(raw)\` can reference companions declared in other input files.
-Point stock tsc / Vite at the **output** only.
 `;
 }
 
+type Command = "transform" | "build" | "watch";
+
 interface Args {
+  command: Command;
   input?: string;
   output?: string;
   help: boolean;
   version: boolean;
+  watch: boolean;
 }
 
 function parseArgs(argv: string[]): Args {
-  const args: Args = { help: false, version: false };
+  const args: Args = { command: "transform", help: false, version: false, watch: false };
   const rest = [...argv];
-  if (rest[0] === "transform") {
-    rest.shift();
+  if (rest[0] === "build" || rest[0] === "watch" || rest[0] === "transform") {
+    const cmd = rest.shift() as Command;
+    args.command = cmd;
+    if (cmd === "watch") args.watch = true;
   }
   while (rest.length > 0) {
     const tok = rest.shift()!;
@@ -66,7 +82,15 @@ function parseArgs(argv: string[]): Args {
       args.help = true;
     } else if (tok === "-v" || tok === "--version") {
       args.version = true;
+    } else if (tok === "--watch") {
+      if (args.command !== "build" && args.command !== "watch") {
+        throw new Error("--watch is only valid with sts build");
+      }
+      args.watch = true;
     } else if (tok === "-o" || tok === "--out" || tok === "--output") {
+      if (args.command === "build" || args.command === "watch") {
+        throw new Error("-o is not used with sts build / sts watch");
+      }
       const next = rest.shift();
       if (!next) throw new Error("Missing value for -o");
       args.output = next;
@@ -128,12 +152,27 @@ async function main(): Promise<void> {
     return;
   }
 
-  if (args.help || (!args.input && !args.version)) {
+  if (args.help || (args.command === "transform" && !args.input && !args.version)) {
     console.log(usage());
     return;
   }
   if (args.version) {
     console.log(VERSION);
+    return;
+  }
+
+  if (args.command === "build" || args.command === "watch") {
+    const project = path.resolve(args.input ?? process.cwd());
+    const projectStat = await stat(project).catch(() => null);
+    if (!projectStat?.isDirectory()) {
+      console.error(`Project directory not found: ${project}`);
+      process.exitCode = 1;
+      return;
+    }
+    process.exitCode =
+      args.watch || args.command === "watch"
+        ? await watchProject(project)
+        : await buildProject(project);
     return;
   }
 
