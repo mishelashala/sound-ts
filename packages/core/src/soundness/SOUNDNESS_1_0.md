@@ -16,6 +16,7 @@ structural aliases), which still run first.
 | **Honest type predicates** | Mode B `is` bodies that mention the parameter and are not trivially `return true` | Empty `is` bodies; bodies that never reference the `is` parameter; bodies whose only return is literal `true` |
 | **Mutation / aliasing** | Reading fields; rebinding locals; `Object.freeze`d companions as emitted | Assigning to companion members (`User.is = …`, `User.from = …`, `User.values = …`); property writes on bindings **annotated** with a dialect companion type (`u: User; u.id = …`) |
 | **Generics / variance** | `ReadonlyArray<Brand>`, `Readonly<Brand>`, brands as ordinary type arguments to author types we do not special-case | `Partial<Brand>` and `Required<Brand>` where `Brand` is a dialect companion (optionalizes / remaps the phantom brand arm) |
+| **Outbound widen** | Literal brand → `string` / `number`; `Name.toPrimitive(value)` → the bare literal union; field reads on a validate type (`user.id`); a fresh object literal annotated with the field structure | A binding annotated with the **full naked field structure** of a `validate type`, when the initializer or a later `=` is that validate value (`.from`, `cast<>`, `Name.Values.*`, or a binding that holds it). A binding annotated with the **bare literal union** of a literal brand, when the initializer or a later `=` is that brand. `.toPrimitive` is the literal-brand unwrap. The visitor does not rewrite the value |
 
 Gate: each reject **closes a visible hole**. We do not invent a cast rewrite or
 weaken emit to silence stock `tsc`.
@@ -32,11 +33,32 @@ weaken emit to silence stock `tsc`.
    construction.
 4. **`Partial` / `Required` on brands** — mapped utilities make the phantom
    brand property optional (or rewrite the shape), reopening structural entry.
+5. **Outbound widen** — a validate-type value is not its naked field
+   structure, and a literal brand is not its bare literal union, unless the
+   author unwraps a literal brand with `.toPrimitive`. Wide `string` /
+   `number` assignability stays.
+
+### Outbound widen: the visitor is the gate
+
+Stock `tsc` accepts `Fields & { readonly [Brand]: true }` as `Fields`. A
+phantom intersection cannot close `validate type` → naked object and still
+keep `user.id`. Probed alternatives (class private fields, private unique
+symbols, abstract-class intersections) still assign to the naked object;
+a union with a brand-only arm rejects the assignment and breaks field reads.
+Literal-brand emit is unchanged: the phantom **union** arm already makes
+stock `tsc` reject `"a" | "b"` / `0 | 1`. `.toPrimitive` is that conversion.
+
+`assertNoOutboundWiden` runs before emit and throws `SyntaxError`. It does
+not rewrite the value into a lie. The stock-`tsc` fixture on validate types
+records that the naked-object assignment still typechecks, so this visitor
+— not emit — is the gate.
 
 ## Deferred (not this PR)
 
 - Proving Mode B / validate `is` bodies correct (SMT, abstract interp, etc.)
 - Mutation without an explicit brand type annotation (needs checker flow)
+- Outbound widen through return position, call arguments, or a structural
+  supertype that is not the full naked field structure (needs checker flow)
 - Full variance for user generics, `Array`/`Map`/`Set` write-through, method
   bivariance beyond existing method→property emit
 - Ambient / `declare` FFI surfaces, package `paths`, node_modules resolution

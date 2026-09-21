@@ -8,10 +8,10 @@
  * Dialect decls are skipped using offsets recorded while blanking
  * `brand` / `validate` before `createSourceFile` (see `ast.ts`).
  *
- * Note (outbound widen): a `validate type User` value remains assignable to
- * the naked `{ id: string }` structure under stock `tsc` (excess-property
- * checking only applies to fresh object literals). That direction is a stock
- * TypeScript hole and is not closed by this check.
+ * Note (outbound widen): stock `tsc` still accepts a `validate type User`
+ * value as the naked `{ id: string }` structure (excess-property checks
+ * apply only to fresh object literals). This check does not close that
+ * direction. The pre-emit visitor `assertNoOutboundWiden` is the gate.
  */
 
 import * as ts from "typescript";

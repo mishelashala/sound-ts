@@ -953,9 +953,24 @@ declare let a: Account;
 u = a;
 // @ts-expect-error different phantom brands — not structural aliases
 a = u;
-// Note: outbound widen to naked { id: string } remains a stock tsc hole
-// (excess-property checks only apply to fresh object literals). Not asserted here.
+// Naked-object widen is a stock tsc hole. assertNoOutboundWiden is the gate
+// (see "stock tsc still allows a validate type value to widen…").
 `;
+    expect(typecheckOk(check)).toEqual([]);
+  });
+
+  it("stock tsc still allows a validate type value to widen to its naked fields", () => {
+    const src = `validate type User = { id: string };\n`;
+    const { code } = transform(src);
+    const check = `${code}
+declare const u: User;
+const plain: { id: string } = u;
+const id: string = u.id;
+void plain;
+void id;
+`;
+    // Phantom intersection keeps field reads and does not block this
+    // assignment. assertNoOutboundWiden is the gate on .sts sources.
     expect(typecheckOk(check)).toEqual([]);
   });
 });

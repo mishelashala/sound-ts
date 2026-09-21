@@ -111,6 +111,7 @@ export {
   assertHonestRefinedPredicates,
   assertNoBrandMutation,
   assertBrandGenericSubset,
+  assertNoOutboundWiden,
   type SoundnessCheckOptions,
   type Soundness1CheckOptions,
 } from "./soundness/index.js";
