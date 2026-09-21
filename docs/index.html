@@ -51,6 +51,7 @@
       <a href="#caveats">Caveats</a>
       <a href="#vscode">VS&nbsp;Code</a>
       <a href="#non-goals">Non-goals</a>
+      <a href="#faq">FAQ</a>
     </nav>
 
     <section id="what">
@@ -289,6 +290,38 @@ node packages/cli/dist/cli.js ./example.sts -o ./out/example.ts</code></pre>
         <li>VS Code extension not on Marketplace yet (local install only)</li>
         <li><code>defineLiteralSet</code> is not the authoring surface</li>
       </ul>
+    </section>
+
+    <section id="faq">
+      <h2>FAQ: Why not TypeScript?</h2>
+      <p>
+        TypeScript’s design non-goal: don’t add RTTI or emit different JS from
+        the type system — no runtime overhead from the type layer.
+      </p>
+      <p>
+        Features declined / left out for that reason (buckets, not a full
+        issue archive):
+      </p>
+      <ol>
+        <li>Runtime validation from types (auto <code>.is</code> / assert)</li>
+        <li>Nominal / opaque / brand types with runtime companions</li>
+        <li>Reified generics</li>
+        <li>Pattern matching / runtime exhaustiveness from unions</li>
+        <li>Traits / typeclasses as runtime dispatch</li>
+        <li>Contracts / checked casts</li>
+        <li>Serialization codecs from types</li>
+        <li>Dependent / refinement types with runtime proofs without user <code>is</code></li>
+      </ol>
+      <p class="muted">
+        TS already emits for some <em>expression</em> features (enum, namespace,
+        parameter properties, downleveled class/async, decorators) — those aren’t
+        “types that generate companions.”
+      </p>
+      <p>
+        <strong>Bottom line:</strong> if the value is erase-the-type
+        <strong>and</strong> emit a runtime artifact from it, TS usually says no —
+        libraries / transformers / <code>sts</code> fill that gap.
+      </p>
     </section>
   </main>
 
