@@ -8,7 +8,15 @@
  * authoring API. Authors write `brand type Account = "admin" | "regular"`.
  */
 
-export { transform, type TransformResult, type TransformFileOptions } from "./transform.js";
+export {
+  transform,
+  transformProject,
+  type TransformResult,
+  type TransformFileOptions,
+  type ProjectFileInput,
+  type ProjectFileResult,
+  type TransformProjectResult,
+} from "./transform.js";
 export {
   parseBrandTypes,
   type BrandTypeDecl,
@@ -19,6 +27,15 @@ export {
   type ParseResult,
 } from "./parse.js";
 export { emitBrandType, transformSource, type EmitOptions } from "./emit.js";
+export {
+  buildBrandMap,
+  resolveBrandRefs,
+  detectBrandCycles,
+  orderBrandsDependenciesFirst,
+  type BrandMap,
+  type BrandMapEntry,
+  type BrandSourceFile,
+} from "./brandMap.js";
 
 /** @internal — emit target / runtime shape; not the public product API */
 export {

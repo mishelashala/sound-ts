@@ -48,19 +48,24 @@ Expands to `type PositiveInt = number` plus a companion that keeps your `.is` bo
 
 ### Brand unions / intersections
 
-Members must be **already-declared brand names** in the same file (no open `string` / arbitrary types):
+Members must be **known brand names** from the transform input (same file or another `.sts` on the CLI batch) — no open `string` / arbitrary types. Unknown brands and cycles error clearly at transform time.
 
 ```sts
+// a.sts — declare
 brand type Admin = "admin";
 brand type Regular = "regular";
-brand type Staff = Admin | Regular;
 
-brand type User = "u";
-brand type Session = "s";
-brand type Authed = User & Session;
+export { Admin, Regular };
 ```
 
-Unknown / non-brand members error clearly at transform time.
+```sts
+// b.sts — compose across files
+import { Admin, Regular } from "./a.js";
+
+brand type Staff = Admin | Regular;
+```
+
+Same-file composition still works (`User & Session`, etc.). Pass the directory (or both files) to `sts` so the project brand map sees every declaration; then point `tsc` at the expanded output.
 
 ```ts
 // after sts transform — stock TypeScript
@@ -103,10 +108,6 @@ Binaries after build: `superset-ts` / `sts` → `packages/cli/dist/cli.js`.
 ### Parser notes
 
 Remaining scanner edges: regex literals; nested `${}` inside templates (the whole template is skipped).
-
-### Same-file brand unions
-
-`brand type Staff = Admin | Regular` (and `&`) only sees brands declared **earlier in that same `.sts` file** — cross-file dialect composition isn’t supported yet. After the CLI transform, export/import the emitted `type` + companion and use `.is` / `.from` across files as normal TS.
 
 ---
 
