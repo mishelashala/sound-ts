@@ -3,8 +3,8 @@
  *
  * Parsing: dialect AST frontend (`./ast`). Emitting stays here.
  *
- * Supported field shapes: `string` | `number` | `boolean`, optional `?`,
- * arrays of those primitives (`string[]`), and unions of those.
+ * Supported field shapes: `string` | `number` | `boolean` | `null`, optional `?`,
+ * arrays of those primitives (`string[]`), and unions of those (e.g. `string | null`).
  * Emits a phantom-branded type (unique symbol) + the same `.is` / `.from`
  * companion shape as refined `brand type`, so stock `tsc` blocks bare
  * object literals from assigning without `.from` / `cast`.
@@ -14,8 +14,10 @@ import { parseSts } from "./ast/index.js";
 
 export type PrimitiveTypeName = "string" | "number" | "boolean";
 
+/** Field member: primitive, null, or array of primitives (not `null[]`). */
 export type ValidateMemberType =
   | { kind: "primitive"; name: PrimitiveTypeName }
+  | { kind: "null" }
   | { kind: "array"; element: PrimitiveTypeName };
 
 export interface ValidateFieldType {
@@ -51,6 +53,9 @@ export function parseValidateTypes(source: string): ValidateParseResult {
 }
 
 function emitMemberCheck(valueExpr: string, member: ValidateMemberType): string {
+  if (member.kind === "null") {
+    return `${valueExpr} === null`;
+  }
   if (member.kind === "primitive") {
     return `typeof ${valueExpr} === "${member.name}"`;
   }
@@ -61,7 +66,9 @@ function emitMemberCheck(valueExpr: string, member: ValidateMemberType): string 
 }
 
 function emitFieldCheck(valueVar: string, field: ValidateField): string {
-  const access = `${valueVar}.${field.name}`;
+  // Bracket access: hosts with `noPropertyAccessFromIndexSignature` reject
+  // `v.field` on `Record<string, unknown>` (used in the generated `is` body).
+  const access = `${valueVar}[${JSON.stringify(field.name)}]`;
   const memberChecks = field.type.members
     .map((mem) => `(${emitMemberCheck(access, mem)})`)
     .join(" || ");
@@ -75,9 +82,11 @@ function emitObjectShape(decl: ValidateTypeDecl): string {
   const lines = decl.fields.map((f) => {
     const opt = f.optional ? "?" : "";
     const typeStr = f.type.members
-      .map((m) =>
-        m.kind === "primitive" ? m.name : `${m.element}[]`,
-      )
+      .map((m) => {
+        if (m.kind === "null") return "null";
+        if (m.kind === "primitive") return m.name;
+        return `${m.element}[]`;
+      })
       .join(" | ");
     return `  ${f.name}${opt}: ${typeStr};`;
   });

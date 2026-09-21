@@ -21,7 +21,7 @@ const PRIMITIVES = new Set<PrimitiveTypeName>(["string", "number", "boolean"]);
 function unsupportedFieldType(name: string, field: string, got: string): never {
   throw new SyntaxError(
     `validate type ${name}: unsupported field type '${got}' on '${field}' ` +
-      `(allows string | number | boolean, optional ?, arrays of those, and unions of those)`,
+      `(allows string | number | boolean | null, optional ?, arrays of primitives, and unions of those)`,
   );
 }
 
@@ -54,9 +54,23 @@ function memberFromType(
   typeName: string,
   fieldName: string,
 ): ValidateMemberType {
+  // TS represents `null` in type position as LiteralType(NullKeyword)
+  if (
+    t.kind === ts.SyntaxKind.NullKeyword ||
+    (ts.isLiteralTypeNode(t) && t.literal.kind === ts.SyntaxKind.NullKeyword)
+  ) {
+    return { kind: "null" };
+  }
   if (ts.isArrayTypeNode(t)) {
-    const el = primitiveFromType(t.elementType, typeName, fieldName);
-    return { kind: "array", element: el };
+    const el = t.elementType;
+    if (
+      el.kind === ts.SyntaxKind.NullKeyword ||
+      (ts.isLiteralTypeNode(el) && el.literal.kind === ts.SyntaxKind.NullKeyword)
+    ) {
+      unsupportedFieldType(typeName, fieldName, "null[]");
+    }
+    const prim = primitiveFromType(el, typeName, fieldName);
+    return { kind: "array", element: prim };
   }
   // Reject Array<…> as type reference
   if (

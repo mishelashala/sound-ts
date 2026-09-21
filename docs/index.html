@@ -291,20 +291,21 @@ type User = {
 const User = /*#__PURE__*/ (() =&gt; { /* .is / .from */ })();</code></pre>
       <p><strong>Supported field shapes:</strong></p>
       <ul>
-        <li><code>string</code> | <code>number</code> | <code>boolean</code></li>
+        <li><code>string</code> | <code>number</code> | <code>boolean</code> | <code>null</code></li>
         <li>optional <code>?</code></li>
-        <li>arrays of those primitives (<code>string[]</code>)</li>
-        <li>unions of those (<code>string | number</code>, <code>string[] | number</code>)</li>
+        <li>arrays of primitives (<code>string[]</code>) — not <code>null[]</code></li>
+        <li>unions of those (e.g. <code>string | null</code>, <code>string | number</code>, <code>string[] | number</code>)</li>
       </ul>
       <p class="muted">
         Unsupported shapes (nested objects, generics, <code>Date</code>, imported
         aliases as field types, …) error clearly at transform time — not a full
-        schema library.
+        schema library. <code>null[]</code> stays rejected.
       </p>
       <pre><code class="language-typescript">validate type Flags = {
   active?: boolean;
   tags: string[];
   id: string | number;
+  note: string | null;
 };</code></pre>
     </section>
 
