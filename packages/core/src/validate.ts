@@ -66,7 +66,9 @@ function emitMemberCheck(valueExpr: string, member: ValidateMemberType): string 
 }
 
 function emitFieldCheck(valueVar: string, field: ValidateField): string {
-  const access = `${valueVar}.${field.name}`;
+  // Bracket access: hosts with `noPropertyAccessFromIndexSignature` reject
+  // `v.field` on `Record<string, unknown>` (used in the generated `is` body).
+  const access = `${valueVar}[${JSON.stringify(field.name)}]`;
   const memberChecks = field.type.members
     .map((mem) => `(${emitMemberCheck(access, mem)})`)
     .join(" || ");

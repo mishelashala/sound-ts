@@ -671,8 +671,8 @@ validate type Label = {
     expect(result.code).toContain(`function is(value: unknown): value is User`);
     expect(result.code).toContain(`function from(value: unknown): User`);
     expect(result.code).toContain(`if (is(value)) return value as User;`);
-    expect(result.code).toContain(`typeof v.id === "string"`);
-    expect(result.code).toContain(`typeof v.age === "number"`);
+    expect(result.code).toContain(`typeof v["id"] === "string"`);
+    expect(result.code).toContain(`typeof v["age"] === "number"`);
     expect(result.code).not.toContain("validate type");
   });
 
