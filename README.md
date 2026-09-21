@@ -249,7 +249,7 @@ pnpm --dir examples/vite-app build
 - [x] [Reject `as`](https://github.com/mishelashala/superset-ts/issues/36) — a type assertion in `.sts` fails expand. `as const` and `cast<>` stay. `as` is not rewritten into `cast`.
 - [x] [Reject `any`](https://github.com/mishelashala/superset-ts/issues/37) — `any` in `.sts` fails expand. `unknown` stays. `any` is not rewritten to `unknown`.
 - [x] [No structural aliases](https://github.com/mishelashala/superset-ts/issues/38) — a bare object alias in `.sts` fails expand. `validate type` stays nominal. Outbound widen to the naked structure stays a stock `tsc` hole.
-- [ ] [Method parameters](https://github.com/mishelashala/superset-ts/issues/40) — a method in `.sts` emits as a readonly function property, so stock `strictFunctionTypes` checks parameters contravariantly.
+- [x] [Method parameters](https://github.com/mishelashala/superset-ts/issues/40) — a method in `.sts` emits as a readonly function property, so stock `strictFunctionTypes` checks parameters contravariantly.
 - [x] [Reject `!`](https://github.com/mishelashala/superset-ts/issues/41) — `value!` and `prop!: Type` in `.sts` fail expand. `!==` stays. `!` is not deleted.
 - [x] [Reject `Object`, `{}`, `Function`](https://github.com/mishelashala/superset-ts/issues/42) — those types in `.sts` fail expand. An empty object literal stays. They are not rewritten to `unknown`.
 
@@ -293,7 +293,7 @@ See also: [FAQ: Why not TypeScript?](https://mishelashala.github.io/superset-ts/
 - **No open brands without `is`** (use refined brands with a custom `.is`)
 - Refined brands and `validate type` are **nominally opaque** under stock `tsc` (phantom unique-symbol brands) — not structural aliases of their bases. Enter via `.from` / `cast<>`.
 - String literal brands are the member literals **or** a phantom arm (nominal under stock `tsc`; member literals still assign). They do not flow back to the bare literal union. Number/bigint literal brands not supported yet.
-- Stock `as`, `any`, structural aliases, method bivariance, non-null `!`, and `Object` / `{}` / `Function` are still open on the `.sts` surface until [roadmap v2](https://github.com/mishelashala/superset-ts/issues?q=roadmap+v2) ([#36](https://github.com/mishelashala/superset-ts/issues/36)–[#38](https://github.com/mishelashala/superset-ts/issues/38), [#40](https://github.com/mishelashala/superset-ts/issues/40)–[#42](https://github.com/mishelashala/superset-ts/issues/42)). Ordinary `.ts` files stay stock TypeScript either way.
+- [Roadmap v2](https://github.com/mishelashala/superset-ts/issues?q=roadmap+v2) is delivered on the `.sts` surface ([#36](https://github.com/mishelashala/superset-ts/issues/36)–[#38](https://github.com/mishelashala/superset-ts/issues/38), [#40](https://github.com/mishelashala/superset-ts/issues/40)–[#42](https://github.com/mishelashala/superset-ts/issues/42)): reject `as` / `any` / `!` / wide types, no bare structural aliases, methods emit as readonly function properties. Ordinary `.ts` files stay stock TypeScript. Outbound widen from a `validate type` to the naked field structure remains a stock `tsc` hole.
 - Not a full schema library — `validate type` covers simple object shapes only (no nested objects, generics, `Date`, …)
 - VS Code extension **not on Marketplace** yet (local install only)
 - `defineLiteralSet` is **not** the public authoring API
