@@ -4,9 +4,19 @@
 
 > **Not a TypeScript fork.** No patched `tsc`, no Microsoft fork to maintain, no custom checker in v0. The CLI rewrites source; bundlers consume **output** only.
 
-Repo: [mishelashala/superset-ts](https://github.com/mishelashala/superset-ts) · docs: [mishelashala.github.io/superset-ts](https://mishelashala.github.io/superset-ts/) · **not published to npm**
+Repo: [mishelashala/superset-ts](https://github.com/mishelashala/superset-ts) · docs: [mishelashala.github.io/superset-ts](https://mishelashala.github.io/superset-ts/) · npm: [`@mishelashala/superset-ts-cli`](https://www.npmjs.com/package/@mishelashala/superset-ts-cli) / [`@mishelashala/superset-ts-core`](https://www.npmjs.com/package/@mishelashala/superset-ts-core)
 
 ---
+
+
+## Install
+
+```bash
+npm i -g @mishelashala/superset-ts-cli
+# bins: sts, superset-ts
+```
+
+Library: `@mishelashala/superset-ts-core`.
 
 ## Authoring
 
@@ -123,7 +133,7 @@ Binaries after build: `superset-ts` / `sts` → `packages/cli/dist/cli.js`.
 - **Not** open brands (`brand type Email = string` without an `is` block)
 - **Not** nominal Mode A / number-or-bigint literal Mode A
 - Not a full schema / object validation library
-- **No npm publish** in this cut
+- VS Code extension not on Marketplace yet (local install only)
 - VS Code extension **not on Marketplace** yet (local install only)
 - `defineLiteralSet` is **not** the public authoring API
 
