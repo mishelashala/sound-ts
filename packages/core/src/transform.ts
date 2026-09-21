@@ -89,9 +89,11 @@ function expandFile(
 }
 
 /**
- * Expand `brand type` / `validate type` into plain type aliases plus runtime
+ * Expand `brand type` / `validate type` into plain TS types plus runtime
  * companions (`Name.is` / `Name.from`, and `Name.values` for string-literal
  * brands), and rewrite `cast<…>(…)` checked casts.
+ * Refined + validate emit phantom unique-symbol brands (nominally opaque under
+ * stock `tsc`); string-literal brands stay closed string unions.
  *
  * Combined brand members resolve against the project brand map (this file
  * alone, or a map from `transformProject`). `cast` targets resolve against

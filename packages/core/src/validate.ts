@@ -1,9 +1,11 @@
 /**
- * `validate type` — MVP runtime validation companions from object types.
+ * `validate type` — runtime validation companions from object types.
  *
  * Supported field shapes: `string` | `number` | `boolean`, optional `?`,
  * arrays of those primitives (`string[]`), and unions of those.
- * Generates the same `.is` / `.from` companion shape as `brand type`.
+ * Emits a phantom-branded type (unique symbol) + the same `.is` / `.from`
+ * companion shape as refined `brand type`, so stock `tsc` blocks bare
+ * object literals from assigning without `.from` / `cast`.
  */
 
 import { maskCommentsAndStrings } from "./parse.js";
@@ -91,7 +93,7 @@ function scanBalancedBrace(source: string, i: number): number {
 function unsupportedFieldType(name: string, field: string, got: string): never {
   throw new SyntaxError(
     `validate type ${name}: unsupported field type '${got}' on '${field}' ` +
-      `(MVP allows string | number | boolean, optional ?, arrays of those, and unions of those)`,
+      `(allows string | number | boolean, optional ?, arrays of those, and unions of those)`,
   );
 }
 
@@ -132,7 +134,7 @@ function parseFieldType(
   const members: ValidateMemberType[] = [];
   let pos = skipWs(source, i);
   for (;;) {
-    // Nested object / paren groups are out of MVP
+    // Nested object / paren groups are unsupported
     if (source[pos] === "{" || source[pos] === "(") {
       unsupportedFieldType(typeName, fieldName, source[pos]!);
     }
@@ -225,7 +227,7 @@ export function parseValidateTypes(source: string): ValidateParseResult {
     let i = skipWs(source, afterEq);
     if (source[i] !== "{") {
       throw new SyntaxError(
-        `validate type ${name}: MVP requires an object type '{ … }' after '=' ` +
+        `validate type ${name}: requires an object type '{ … }' after '=' ` +
           `(got '${source[i] ?? "EOF"}')`,
       );
     }
@@ -267,7 +269,7 @@ function emitFieldCheck(valueVar: string, field: ValidateField): string {
   return `(${memberChecks})`;
 }
 
-function emitTypeAlias(decl: ValidateTypeDecl): string {
+function emitObjectShape(decl: ValidateTypeDecl): string {
   const lines = decl.fields.map((f) => {
     const opt = f.optional ? "?" : "";
     const typeStr = f.type.members
@@ -277,7 +279,17 @@ function emitTypeAlias(decl: ValidateTypeDecl): string {
       .join(" | ");
     return `  ${f.name}${opt}: ${typeStr};`;
   });
-  return `type ${decl.name} = {\n${lines.join("\n")}\n};`;
+  return `{\n${lines.join("\n")}\n}`;
+}
+
+/** Phantom-branded type alias so bare objects are not assignable under stock tsc. */
+function emitTypeAlias(decl: ValidateTypeDecl): string {
+  const brand = `${decl.name}Brand`;
+  const shape = emitObjectShape(decl);
+  return [
+    `declare const ${brand}: unique symbol;`,
+    `type ${decl.name} = ${shape} & { readonly [${brand}]: true };`,
+  ].join("\n");
 }
 
 /** Emit plain TS type alias + `.is` / `.from` companion for one validate type. */
@@ -297,7 +309,7 @@ export function emitValidateType(decl: ValidateTypeDecl): string {
     `    );`,
     `  }`,
     `  function from(value: unknown): ${name} {`,
-    `    if (is(value)) return value;`,
+    `    if (is(value)) return value as ${name};`,
     `    const preview = typeof value === "string" ? JSON.stringify(value) : \`typeof \${typeof value}\`;`,
     `    throw new Error(\`Invalid ${name}: \${preview}\`);`,
     `  }`,

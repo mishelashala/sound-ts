@@ -46,6 +46,7 @@ export {
 } from "./checkedCast.js";
 export {
   emitBrandType,
+  emitPhantomBrandAlias,
   transformSource,
   type EmitOptions,
   type EmitDecl,
