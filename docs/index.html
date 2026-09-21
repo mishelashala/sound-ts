@@ -179,6 +179,19 @@ node packages/cli/dist/cli.js ./example.sts -o ./out/example.ts</code></pre>
           <strong>Editor:</strong> author in <code>.sts</code> to avoid stock
           <code>tsc</code> red squiggles on the dialect keywords.
         </li>
+        <li>
+          <strong>Same-file brand unions / intersections:</strong>
+          <code>brand type Staff = Admin | Regular</code> (and <code>&amp;</code>)
+          only sees brand names declared <strong>earlier in that same
+          <code>.sts</code> file</strong>. Cross-file composition in the dialect
+          isn’t supported yet.
+        </li>
+        <li>
+          <strong>Using brands across files is fine:</strong> after the CLI
+          transform, export/import the emitted <code>type</code> + companion and
+          call <code>.is</code> / <code>.from</code> anywhere — that’s normal TS
+          modules.
+        </li>
       </ul>
     </section>
 
