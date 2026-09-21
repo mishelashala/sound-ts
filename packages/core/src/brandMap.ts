@@ -3,6 +3,10 @@
  * across a CLI batch, then resolve `|` / `&` brand members and detect cycles.
  * No module/import resolver — every file on the transform input graph shares
  * one map (needed so `cast<User>(…)` can see companions from other files).
+ *
+ * Prefer `buildProjectSymbols` / `DialectProjectSymbols` for new code (identity
+ * + import bindings). These maps remain the stable derived view used by emit
+ * callers; `transformProject` builds them from the symbol table.
  */
 
 import type { BrandTypeDecl, CombinedBrandDecl } from "./parse.js";

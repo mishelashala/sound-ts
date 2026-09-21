@@ -74,6 +74,24 @@ export {
   type ValidateMapEntry,
   type ValidateSourceFile,
 } from "./brandMap.js";
+export {
+  buildProjectSymbols,
+  lookupSymbol,
+  resolveBrandMemberSymbols,
+  resolveCastTarget,
+  orderBrandSymbolsDependenciesFirst,
+  companionNamesFromSymbols,
+  getFileScope,
+  brandMapFromSymbols,
+  validateMapFromSymbols,
+  resolveBatchModule,
+  type DialectSymbolKind,
+  type DialectSymbol,
+  type ImportBinding,
+  type FileScope,
+  type DialectProjectSymbols,
+  type DialectFileInput,
+} from "./symbols/index.js";
 
 /** @internal — emit target / runtime shape; not the public product API */
 export {

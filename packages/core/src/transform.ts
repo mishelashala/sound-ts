@@ -6,7 +6,6 @@ import {
   buildBrandMap,
   buildValidateMap,
   companionNames,
-  orderBrandsDependenciesFirst,
   resolveBrandRefs,
   type BrandMap,
   type ValidateMap,
@@ -15,6 +14,15 @@ import type { ValidateTypeDecl } from "./validate.js";
 import { rewriteCheckedCasts } from "./checkedCast.js";
 import { rewriteMethodsAsProperties } from "./emitMethods.js";
 import { runSoundnessChecks } from "./soundness/index.js";
+import {
+  buildProjectSymbols,
+  brandMapFromSymbols,
+  companionNamesFromSymbols,
+  orderBrandSymbolsDependenciesFirst,
+  resolveBrandMemberSymbols,
+  validateMapFromSymbols,
+  type DialectProjectSymbols,
+} from "./symbols/index.js";
 
 export interface TransformResult {
   /** Transformed source (plain TS) */
@@ -39,6 +47,8 @@ export interface TransformFileOptions extends EmitOptions {
   validateMap?: ValidateMap;
   /** Optional pre-computed companion names for `cast` (brands + validate). */
   companionNames?: ReadonlySet<string>;
+  /** Optional pre-built project symbols (preferred with multi-file maps). */
+  symbols?: DialectProjectSymbols;
 }
 
 export interface ProjectFileInput {
@@ -58,6 +68,8 @@ export interface TransformProjectResult {
   brandOrder: string[];
   /** All companion names (brands + validate types) */
   companionNames: Set<string>;
+  /** Dialect scopes + symbols for the batch (foundation for #54) */
+  symbols: DialectProjectSymbols;
 }
 
 function expandFile(
@@ -122,29 +134,34 @@ export function transform(
 
   let brandMap: BrandMap;
   let validateMap: ValidateMap;
+  let names: ReadonlySet<string>;
 
-  if (options.brandMap && options.validateMap) {
+  if (options.symbols) {
+    resolveBrandMemberSymbols(options.symbols);
+    brandMap = options.brandMap ?? brandMapFromSymbols(options.symbols);
+    validateMap = options.validateMap ?? validateMapFromSymbols(options.symbols);
+    names =
+      options.companionNames ?? companionNamesFromSymbols(options.symbols);
+  } else if (options.brandMap && options.validateMap) {
+    // Legacy injection path (maps without symbols).
     brandMap = options.brandMap;
     validateMap = options.validateMap;
     resolveBrandRefs(brandMap);
     assertNoCompanionNameCollisions(brandMap, validateMap);
+    names = options.companionNames ?? companionNames(brandMap, validateMap);
   } else {
-    const brandFile: { filename?: string; decls: BrandTypeDecl[] } = {
-      decls,
-    };
-    if (options.filename !== undefined) brandFile.filename = options.filename;
-    const validateFile: { filename?: string; decls: ValidateTypeDecl[] } = {
-      decls: validateDecls,
-    };
-    if (options.filename !== undefined) validateFile.filename = options.filename;
-    brandMap = options.brandMap ?? buildBrandMap([brandFile]);
-    validateMap = options.validateMap ?? buildValidateMap([validateFile]);
-    resolveBrandRefs(brandMap);
-    assertNoCompanionNameCollisions(brandMap, validateMap);
+    const symbols = buildProjectSymbols([
+      {
+        filename: options.filename ?? "<stdin>",
+        source,
+        dialect,
+      },
+    ]);
+    resolveBrandMemberSymbols(symbols);
+    brandMap = options.brandMap ?? brandMapFromSymbols(symbols);
+    validateMap = options.validateMap ?? validateMapFromSymbols(symbols);
+    names = options.companionNames ?? companionNamesFromSymbols(symbols);
   }
-
-  const names =
-    options.companionNames ?? companionNames(brandMap, validateMap);
 
   if (decls.length === 0 && validateDecls.length === 0) {
     // Still may have cast<…>(…) casts and/or method syntax to rewrite
@@ -176,9 +193,9 @@ export function transform(
 
 /**
  * Whole-program transform over the CLI input graph: collect brand + validate
- * decls from every file, build project maps, resolve `|` / `&` members +
- * cycles, then emit each file and rewrite `cast`. No import/module resolver —
- * every path on the batch shares the maps.
+ * decls from every file, build project symbols (scopes + import links), resolve
+ * `|` / `&` members + cycles, then emit each file and rewrite `cast`.
+ * Relative imports of companions stay stock TS after emit.
  */
 export function transformProject(
   files: ProjectFileInput[],
@@ -193,24 +210,25 @@ export function transformProject(
     return {
       filename: f.filename,
       source: f.source,
+      dialect,
       decls: dialect.brands,
       validateDecls: dialect.validates,
     };
   });
 
-  const brandMap = buildBrandMap(
-    parsed.map((f) => ({ filename: f.filename, decls: f.decls })),
-  );
-  const validateMap = buildValidateMap(
+  const symbols = buildProjectSymbols(
     parsed.map((f) => ({
       filename: f.filename,
-      decls: f.validateDecls,
+      source: f.source,
+      dialect: f.dialect,
     })),
   );
-  assertNoCompanionNameCollisions(brandMap, validateMap);
-  resolveBrandRefs(brandMap);
-  const brandOrder = orderBrandsDependenciesFirst(brandMap);
-  const names = companionNames(brandMap, validateMap);
+  resolveBrandMemberSymbols(symbols);
+
+  const brandMap = brandMapFromSymbols(symbols);
+  const validateMap = validateMapFromSymbols(symbols);
+  const brandOrder = orderBrandSymbolsDependenciesFirst(symbols);
+  const names = companionNamesFromSymbols(symbols);
 
   const results: ProjectFileResult[] = parsed.map((f) => {
     const { code, changed } = expandFile(
@@ -236,5 +254,6 @@ export function transformProject(
     validateMap,
     brandOrder,
     companionNames: names,
+    symbols,
   };
 }
