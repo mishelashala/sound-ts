@@ -184,11 +184,8 @@ node packages/cli/dist/cli.js ./example.sts -o ./out/example.ts</code></pre>
       <h2>Caveats</h2>
       <ul>
         <li>
-          <strong>Parser / comments:</strong>
-          lightweight scanner (regex header + brace match for refined brands).
-          Line/block comments and string/template literals are masked before
-          the scan (fixed) — fake decls inside them are ignored. Remaining
-          edges: regex literals; nested <code>${}</code> in templates (whole
+          <strong>Parser edges:</strong>
+          regex literals; nested <code>${}</code> in templates (whole
           template skipped).
         </li>
         <li>

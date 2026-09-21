@@ -102,7 +102,7 @@ Binaries after build: `superset-ts` / `sts` → `packages/cli/dist/cli.js`.
 
 ### Parser notes
 
-`packages/core` parses `brand type` with a lightweight scanner (regex header + brace matching for refined brands). Line/block comments and string/template literals are masked before the scan so fake decls inside them are ignored; live decls after comments still expand. Remaining edges: regex literals; nested `${}` inside templates (the whole template is skipped).
+Remaining scanner edges: regex literals; nested `${}` inside templates (the whole template is skipped).
 
 ### Same-file brand unions
 
