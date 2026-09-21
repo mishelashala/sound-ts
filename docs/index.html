@@ -303,14 +303,43 @@ node packages/cli/dist/cli.js ./example.sts -o ./out/example.ts</code></pre>
         issue archive):
       </p>
       <ol>
-        <li>Runtime validation from types (auto <code>.is</code> / assert)</li>
+        <li>
+          Runtime validation from types (auto <code>.is</code> / assert)
+          <pre><code class="language-typescript">type User = { id: string; age: number };
+User.is(data); // ❌ no companion — use Zod / hand-written guard</code></pre>
+        </li>
         <li>Nominal / opaque / brand types with runtime companions</li>
-        <li>Reified generics</li>
-        <li>Pattern matching / runtime exhaustiveness from unions</li>
-        <li>Traits / typeclasses as runtime dispatch</li>
-        <li>Contracts / checked casts</li>
-        <li>Serialization codecs from types</li>
-        <li>Dependent / refinement types with runtime proofs without user <code>is</code></li>
+        <li>
+          Reified generics
+          <pre><code class="language-typescript">function empty&lt;T&gt;(): T[] { return []; }
+empty&lt;string&gt;().$type; // ❌ T is gone at runtime</code></pre>
+        </li>
+        <li>
+          Pattern matching / runtime exhaustiveness from unions
+          <pre><code class="language-typescript">match(status) {
+  "ok" =&gt; 1,
+  "err" =&gt; 0,
+} // ❌ no emit; switch + `never` check is manual</code></pre>
+        </li>
+        <li>
+          Traits / typeclasses as runtime dispatch
+          <pre><code class="language-typescript">trait Show&lt;T&gt; { show(t: T): string }
+show(42); // ❌ no runtime method table from the trait</code></pre>
+        </li>
+        <li>
+          Contracts / checked casts
+          <pre><code class="language-typescript">const n = raw as! number; // ❌ no throw-on-mismatch cast</code></pre>
+        </li>
+        <li>
+          Serialization codecs from types
+          <pre><code class="language-typescript">type Dto = { email: string };
+JSON.parse(s) as Dto; // ❌ no auto encode/decode / schema from Dto</code></pre>
+        </li>
+        <li>
+          Dependent / refinement types with runtime proofs without user <code>is</code>
+          <pre><code class="language-typescript">type PositiveInt = number &amp; { _brand: "pos" }; // type-only
+PositiveInt.from(-1); // ❌ TS won’t generate the check for you</code></pre>
+        </li>
       </ol>
       <p class="muted">
         TS already emits for some <em>expression</em> features (enum, namespace,
