@@ -15,6 +15,7 @@ import {
   type ValidateTypeDecl,
 } from "./validate.js";
 import { rewriteCheckedCasts } from "./checkedCast.js";
+import { runSoundnessChecks } from "./soundness/index.js";
 
 export interface TransformResult {
   /** Transformed source (plain TS) */
@@ -106,6 +107,7 @@ export function transform(
   source: string,
   options: TransformFileOptions = {},
 ): TransformResult {
+  runSoundnessChecks(source, options.filename);
   const { decls } = parseBrandTypes(source);
   const { decls: validateDecls } = parseValidateTypes(source);
 
@@ -172,6 +174,9 @@ export function transformProject(
   files: ProjectFileInput[],
   options: EmitOptions = {},
 ): TransformProjectResult {
+  for (const f of files) {
+    runSoundnessChecks(f.source, f.filename);
+  }
   const parsed = files.map((f) => ({
     filename: f.filename,
     source: f.source,
