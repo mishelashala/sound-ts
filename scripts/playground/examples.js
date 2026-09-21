@@ -67,6 +67,61 @@ const n = cast<number>(raw);
 const user = cast<User>(raw);
 `,
   },
+  {
+    id: "methods",
+    label: "Method parameters",
+    source: `// Methods emit as readonly function properties (strictFunctionTypes).
+class Kennel {
+  feed(name: string) {
+    console.log(name);
+  }
+}
+
+const kennel = new Kennel();
+kennel.feed("rex");
+`,
+  },
+  {
+    id: "reject-as",
+    label: "Reject as (error)",
+    source: `// Expand fails: use cast<> or Account.from instead of as.
+brand type Account = "admin" | "regular";
+
+const punched = "admin" as Account;
+`,
+  },
+  {
+    id: "reject-any",
+    label: "Reject any (error)",
+    source: `// Expand fails: use unknown, then cast<> / .from.
+const punched: any = "admin";
+`,
+  },
+  {
+    id: "reject-bang",
+    label: "Reject ! (error)",
+    source: `// Expand fails: narrow with a check instead of !.
+declare const user: { name: string | undefined };
+
+const name = user.name!;
+`,
+  },
+  {
+    id: "reject-wide",
+    label: "Reject Object / {} (error)",
+    source: `// Expand fails: Object / {} / Function are too wide.
+function take(value: Object) {
+  console.log(value);
+}
+`,
+  },
+  {
+    id: "reject-structural",
+    label: "No structural alias (error)",
+    source: `// Expand fails: use validate type or brand type.
+type User = { id: string; age: number };
+`,
+  },
 ];
 
 export function exampleById(id) {

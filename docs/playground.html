@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
-  <link rel="stylesheet" href="playground.css?v=6" />
+  <link rel="stylesheet" href="playground.css?v=7" />
   <!-- Prism (CDN): same pin as docs/index.html; token colors from styles.css. -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css" />
   <link rel="icon" href="favicon.ico" sizes="any" />
@@ -55,6 +55,12 @@
                 <option value="union">Brand union</option>
                 <option value="validate">Validate type</option>
                 <option value="cast">Checked cast</option>
+                <option value="methods">Method parameters</option>
+                <option value="reject-as">Reject as (error)</option>
+                <option value="reject-any">Reject any (error)</option>
+                <option value="reject-bang">Reject ! (error)</option>
+                <option value="reject-wide">Reject Object / {} (error)</option>
+                <option value="reject-structural">No structural alias (error)</option>
               </select>
             </label>
             <button type="button" class="copy-btn" id="copy-source" aria-live="polite">Copy</button>
@@ -120,6 +126,6 @@
   <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-javascript.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-typescript.min.js"></script>
-  <script type="module" src="playground.js?v=6"></script>
+  <script type="module" src="playground.js?v=7"></script>
 </body>
 </html>
