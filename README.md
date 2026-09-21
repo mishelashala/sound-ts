@@ -116,9 +116,18 @@ Remaining scanner edges: regex literals; nested `${}` inside templates (the whol
 
 Keep most of the app as normal `.ts` (stock `tsc` / Vite). Add `.sts` only where you want `brand type`.
 
-- Expand in CI (`sts … -o …`), then compile the output as usual.
-- Start with one leaf brand file (ids / roles) → grow file by file.
-- Pass the **whole `.sts` batch** to `sts` for cross-file `|` / `&`; composing files still `import` companions so emit typechecks under stock `tsc`.
+**Two-step compilation** (expand, then stock build):
+
+```
+.sts  --sts -o …-->  plain .ts  --tsc/nest-->  .js in normal build out
+```
+
+- `sts` never emits `.js`
+- Default dir → `dir.out/` or `-o` you choose (e.g. `src/brands.generated/`)
+- Stock Nest / `tsc` still owns `dist/`
+- Don’t point `tsc` at raw `.sts`
+- Whole `.sts` batch on each `sts` run for cross-file `|` / `&`
+- Start with one leaf brand file (ids / roles) → grow file by file
 
 ---
 

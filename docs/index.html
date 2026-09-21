@@ -201,17 +201,22 @@ node packages/cli/dist/cli.js ./example.sts -o ./out/example.ts</code></pre>
         Keep most of the app as normal <code>.ts</code> (stock <code>tsc</code> / Vite).
         Add <code>.sts</code> only where you want <code>brand type</code>.
       </p>
+      <p><strong>Two-step compilation</strong> (expand, then stock build):</p>
+      <pre><code>.sts  --sts -o …-->  plain .ts  --tsc/nest-->  .js in normal build out</code></pre>
       <ul>
+        <li><code>sts</code> never emits <code>.js</code></li>
         <li>
-          Expand in CI (<code>sts … -o …</code>), then compile the output as usual.
+          Default dir → <code>dir.out/</code> or <code>-o</code> you choose
+          (e.g. <code>src/brands.generated/</code>)
+        </li>
+        <li>Stock Nest / <code>tsc</code> still owns <code>dist/</code></li>
+        <li>Don’t point <code>tsc</code> at raw <code>.sts</code></li>
+        <li>
+          Whole <code>.sts</code> batch on each <code>sts</code> run for
+          cross-file <code>|</code> / <code>&amp;</code>
         </li>
         <li>
-          Start with one leaf brand file (ids / roles) → grow file by file.
-        </li>
-        <li>
-          Pass the <strong>whole <code>.sts</code> batch</strong> to <code>sts</code>
-          for cross-file <code>|</code> / <code>&amp;</code>; composing files still
-          <code>import</code> companions so emit typechecks under stock <code>tsc</code>.
+          Start with one leaf brand file (ids / roles) → grow file by file
         </li>
       </ul>
     </section>
