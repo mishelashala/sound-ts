@@ -647,7 +647,7 @@ validate type Label = {
     const result = transform(src);
     expect(result.code).toContain(`name: string | null;`);
     expect(result.code).toContain(
-      `(typeof v.name === "string") || (v.name === null)`,
+      `(typeof v["name"] === "string") || (v["name"] === null)`,
     );
   });
 
