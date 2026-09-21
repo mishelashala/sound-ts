@@ -186,9 +186,21 @@ node packages/cli/dist/cli.js ./src -o ./out</code></pre>
         out to the CLI. No full custom checker in v0.
       </p>
       <p>
-        <strong>Not on the Marketplace yet</strong> — install from this repo
-        (VSIX / “Install Extension from Location…” / Extension Development Host).
-        Marketplace publish comes later. Also <strong>not on npm</strong>.
+        <strong>Local (Cursor / VS&nbsp;Code):</strong>
+      </p>
+      <ol>
+        <li>Clone <code>mishelashala/superset-ts</code></li>
+        <li>
+          Extensions → <strong>…</strong> → <strong>Install from Location…</strong>
+          → pick <code>packages/vscode</code>
+        </li>
+      </ol>
+      <p>Optional one-liner for VSIX:</p>
+      <pre><code class="language-bash">cd packages/vscode &amp;&amp; npx @vscode/vsce package --no-dependencies</code></pre>
+      <p>then Install from VSIX…</p>
+      <p class="muted">
+        Transform command needs <code>pnpm build</code> so CLI dist exists.
+        Marketplace not listed yet. Also <strong>not on npm</strong>.
       </p>
     </section>
 
