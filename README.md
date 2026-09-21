@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/seal.svg" width="64" height="64" alt="sound-ts seal" />
+  <img src="docs/logo.png" width="64" height="64" alt="sound-ts" />
 </p>
 
 <h1 align="center">sound-ts</h1>
