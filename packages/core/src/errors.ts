@@ -1,5 +1,6 @@
 /**
- * Thrown when a value is not a member of a defined literal set.
+ * Thrown when a value is not a member of a branded literal set.
+ * Kept for internal / emitted runtime parity; not the product surface.
  */
 export class LiteralSetError extends Error {
   readonly setName: string;

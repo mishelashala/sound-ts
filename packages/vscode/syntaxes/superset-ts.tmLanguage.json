@@ -1,0 +1,42 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Superset TS",
+  "scopeName": "source.superset-ts",
+  "patterns": [
+    { "include": "#brand-type" },
+    { "include": "source.ts" }
+  ],
+  "repository": {
+    "brand-type": {
+      "name": "meta.brand-type.superset-ts",
+      "begin": "\\b(brand)\\s+(type)\\b",
+      "beginCaptures": {
+        "1": { "name": "keyword.other.brand.superset-ts" },
+        "2": { "name": "keyword.declaration.type.superset-ts" }
+      },
+      "end": "(?=;|$)",
+      "patterns": [
+        {
+          "name": "entity.name.type.superset-ts",
+          "match": "[A-Za-z_$][\\w$]*"
+        },
+        {
+          "name": "keyword.operator.assignment.superset-ts",
+          "match": "="
+        },
+        {
+          "name": "keyword.operator.union.superset-ts",
+          "match": "\\|"
+        },
+        {
+          "name": "string.quoted.double.superset-ts",
+          "match": "\"(?:[^\"\\\\]|\\\\.)*\""
+        },
+        {
+          "name": "string.quoted.single.superset-ts",
+          "match": "'(?:[^'\\\\]|\\\\.)*'"
+        }
+      ]
+    }
+  }
+}

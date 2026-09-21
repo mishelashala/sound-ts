@@ -1,0 +1,37 @@
+{
+  "scopeName": "source.superset-ts.injection",
+  "injectionSelector": "L:source.ts -comment -string, L:source.tsx -comment -string",
+  "patterns": [
+    {
+      "name": "meta.brand-type.superset-ts",
+      "begin": "\\b(brand)\\s+(type)\\b",
+      "beginCaptures": {
+        "1": { "name": "keyword.other.brand.superset-ts" },
+        "2": { "name": "keyword.declaration.type.superset-ts" }
+      },
+      "end": "(?=;|$)",
+      "patterns": [
+        {
+          "name": "entity.name.type.superset-ts",
+          "match": "[A-Za-z_$][\\w$]*"
+        },
+        {
+          "name": "keyword.operator.assignment.superset-ts",
+          "match": "="
+        },
+        {
+          "name": "keyword.operator.union.superset-ts",
+          "match": "\\|"
+        },
+        {
+          "name": "string.quoted.double.superset-ts",
+          "match": "\"(?:[^\"\\\\]|\\\\.)*\""
+        },
+        {
+          "name": "string.quoted.single.superset-ts",
+          "match": "'(?:[^'\\\\]|\\\\.)*'"
+        }
+      ]
+    }
+  ]
+}

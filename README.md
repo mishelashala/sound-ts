@@ -1,113 +1,95 @@
-# @mishelashala/superset-ts
+# superset-ts
 
-**Library-first helpers that emit plain valid TypeScript for stock `tsc` / Vite / VS Code — not a TypeScript fork or checker.** Codegen is not shipped yet.
+**Dialect + CLI:** write `brand type`, expand to plain TypeScript types + runtime companions (`Account.is` / `Account.from`) that stock `tsc` / Vite / VS Code already understand.
 
-> **Name note:** “superset-ts” can sound like a TypeScript fork. It is **not**. There is no patched `tsc`, no custom language server, and no alternate checker. You import a normal npm library; types and runtime helpers are ordinary TypeScript that the stock toolchain already understands.
+> **Not a TypeScript fork.** No patched `tsc`, no Microsoft fork to maintain, no custom checker in v0. The CLI rewrites source; bundlers consume **output** only.
 
-Package: `@mishelashala/superset-ts` · repo: [mishelashala/superset-ts](https://github.com/mishelashala/superset-ts) · docs: [mishelashala.github.io/superset-ts](https://mishelashala.github.io/superset-ts/) · **not published to npm yet** (install from git / local path).
-
----
-
-## What this is / isn’t
-
-| Is | Isn’t |
-| --- | --- |
-| A small **Mode A** library for closed/finite string literal sets | A fork of TypeScript or `tsc` |
-| Runtime helpers (`.values`, `.is`, `.from`) + union typing | A new checker, LSP, or TS language dialect |
-| Plain TS that works with stock tooling | Something you must wait for us to publish |
-| Library-first today (codegen not shipped yet) | A replacement for Zod / io-ts / etc. for all schemas |
-
-**Mode A (v0):** define a named closed set of string literals once; get a typed union for function params and runtime parse/guard helpers. Happy path needs **no casts**.
+Repo: [mishelashala/superset-ts](https://github.com/mishelashala/superset-ts) · docs: [mishelashala.github.io/superset-ts](https://mishelashala.github.io/superset-ts/) · **not published to npm**
 
 ---
 
-## Quickstart
+## Authoring (phase 1)
 
-```bash
-# from git (not on npm yet)
-pnpm add github:mishelashala/superset-ts
-# or: npm install github:mishelashala/superset-ts
+```ts
+brand type Account = "admin" | "regular";
 ```
 
-Local clone:
+String literal unions only in this cut. The CLI expands that into:
+
+- a plain `type Account = "admin" | "regular"`
+- a runtime companion `Account` with `.values`, `.is`, `.from` — usable from JS
+
+```ts
+// after sts transform — stock TypeScript
+type Account = "admin" | "regular";
+const Account = /* … runtime companion … */;
+
+function greet(role: Account): string {
+  return role === "admin" ? "hello, admin" : "hello";
+}
+
+greet(Account.from("admin")); // ok
+Account.is("guest");          // false
+Account.from("guest");        // throws
+```
+
+---
+
+## Quickstart (CLI)
 
 ```bash
 git clone https://github.com/mishelashala/superset-ts.git
 cd superset-ts
 pnpm install
-pnpm test
 pnpm build
+pnpm test
+
+# expand one file (.sts → .ts, or .ts → .gen.ts by default)
+pnpm --filter @mishelashala/superset-ts-cli exec sts path/to/file.sts
+# or after linking / running dist:
+node packages/cli/dist/cli.js path/to/file.sts -o path/to/out.ts
+
+# expand a directory
+node packages/cli/dist/cli.js ./src -o ./out
 ```
 
-### Define → use in a function param
+Point `tsc` / Vite at **`./out`** (the transformed files), not the dialect sources.
 
-```ts
-import { defineLiteralSet, type InferLiteral } from "@mishelashala/superset-ts";
-
-const AccountRole = defineLiteralSet("AccountRole", ["admin", "regular"] as const);
-type AccountRole = InferLiteral<typeof AccountRole>; // "admin" | "regular"
-
-// Call sites stay valid stock TypeScript — no casts on the happy path.
-function greet(role: AccountRole): string {
-  return role === "admin" ? "hello, admin" : "hello";
-}
-
-greet(AccountRole.from("admin")); // ok at compile time + runtime
-
-AccountRole.is("guest");          // false
-AccountRole.from("guest");        // throws LiteralSetError
-AccountRole.values;               // readonly ["admin", "regular"]
-```
-
-`AccountRole.from(x)` returns the narrowed union type. Invalid input fails at **runtime** with `LiteralSetError`. Valid string literals type-check like any other `"admin" | "regular"` union.
+Binaries after build: `superset-ts` / `sts` → `packages/cli/dist/cli.js`.
 
 ---
 
-## API
+## Packages
 
-### `defineLiteralSet(name, values)`
-
-Single Mode A entry point (closed literal set + runtime).
-
-```ts
-function defineLiteralSet<
-  Name extends string,
-  const Values extends readonly [string, ...string[]],
->(name: Name, values: Values): LiteralSet<Name, Values>
-```
-
-| Member | Role |
+| Package | Role |
 | --- | --- |
-| `.name` | Set name used in errors |
-| `.values` | Frozen list of allowed strings |
-| `.is(x)` | Type guard → `x is Values[number]` |
-| `.from(x)` | Parse / narrow, or throw `LiteralSetError` |
+| `packages/core` | Parse + transform `brand type` → plain TS + runtime |
+| `packages/cli` | One-command expand (`sts` / `superset-ts`) |
+| `packages/vscode` | Thin extension: highlight `brand type`, optional CLI command |
 
-### `InferLiteral<typeof SomeSet>`
+---
 
-Extracts the string-literal union for annotations and params.
+## What about `defineLiteralSet`?
 
-### `LiteralSetError`
+**Not the product API.** Authors write `brand type`. `defineLiteralSet` is an **internal** emit/runtime helper (optional emit target). Do not import it in app code — use the dialect + CLI.
 
-Thrown by `.from` when the value is not in the set. Fields: `setName`, `value`, `allowed`.
+---
 
-Definition-time checks: non-empty name, non-empty values, all strings, no duplicates.
+## VS Code
+
+`packages/vscode` registers `.sts`, TextMate highlighting for `brand type` (including injection into `.ts`), and a command that shells out to the CLI. No full custom checker in v0 — dialect shouldn’t be totally red-squiggled; transform story stays CLI-based.
 
 ---
 
 ## Non-goals (v0)
 
-- No TypeScript fork, plugin, or custom checker
-- No npm publish in this scaffold (personal repo only for now)
-- No full schema / object validation library
-- **Not nominal brands:** v0 is a **closed literal union + runtime**. Sets with the same members are assignable to each other even if differently named (structural / union semantics). [#64364](https://github.com/microsoft/TypeScript/issues/64364)-style nominal Mode A is **out of scope** for this cut.
-- Codegen is not shipped yet; this cut is library-first
-
----
-
-## Publish later
-
-This package is prepared (`package.json` name `@mishelashala/superset-ts`, MIT, exports) but **do not publish** until you choose to. Until then, consumers install from this GitHub repo or a path/workspace link.
+- **No Microsoft / TypeScript fork** to maintain
+- No custom TypeScript checker or language server fantasy
+- Phase 1: **string literal unions only** (`brand type Name = "a" \| "b"`)
+- Not nominal brands — closed literal union + runtime (structural)
+- Not a full schema / object validation library
+- **No npm publish** in this cut
+- `defineLiteralSet` is **not** the public authoring API
 
 ---
 

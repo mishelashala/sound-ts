@@ -3,23 +3,26 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>@mishelashala/superset-ts</title>
-  <meta name="description" content="Closed string literal sets with typed runtime helpers — plain TypeScript for stock tsc (not a TypeScript fork)." />
+  <title>superset-ts — brand type dialect + CLI</title>
+  <meta name="description" content="Write brand type string literal unions; CLI expands to plain TS + runtime companions. Not a TypeScript fork." />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <main>
     <header>
-      <h1><code>@mishelashala/superset-ts</code></h1>
+      <h1>superset-ts</h1>
       <p class="one-liner">
-        Library helpers over stock <code>tsc</code> / Vite / VS&nbsp;Code —
-        <strong>not</strong> a TypeScript fork, checker, or language dialect.
+        Dialect + CLI: <code>brand type</code> → plain types +
+        <code>Account.is</code> / <code>Account.from</code>.
+        Stock <code>tsc</code> / Vite consume <strong>output</strong> only —
+        <strong>not</strong> a Microsoft/TypeScript fork.
       </p>
     </header>
 
     <nav aria-label="On this page">
-      <a href="#quickstart">Quickstart</a>
-      <a href="#api">API</a>
+      <a href="#authoring">Authoring</a>
+      <a href="#cli">CLI</a>
+      <a href="#vscode">VS&nbsp;Code</a>
       <a href="#non-goals">Non-goals</a>
     </nav>
 
@@ -31,73 +34,81 @@
         </thead>
         <tbody>
           <tr>
-            <td>A small Mode&nbsp;A library for closed/finite string literal sets</td>
+            <td>A small dialect: <code>brand type</code> for closed string literal unions</td>
             <td>A fork of TypeScript or <code>tsc</code></td>
           </tr>
           <tr>
-            <td>Runtime helpers (<code>.values</code>, <code>.is</code>, <code>.from</code>) + union typing</td>
-            <td>A new checker, LSP, or TS language dialect</td>
+            <td>A CLI transform → plain TS + runtime companions</td>
+            <td>A custom checker / full language server (v0)</td>
           </tr>
           <tr>
-            <td>Plain TS that works with stock tooling</td>
-            <td>Published on npm yet (install from git)</td>
+            <td>Stock tooling on <strong>generated output</strong></td>
+            <td>Library-first <code>defineLiteralSet</code> as the product API</td>
           </tr>
         </tbody>
       </table>
     </section>
 
-    <section id="quickstart">
-      <h2>Quickstart</h2>
-      <pre><code># from git (not on npm yet)
-pnpm add github:mishelashala/superset-ts
-# or: npm install github:mishelashala/superset-ts</code></pre>
+    <section id="authoring">
+      <h2>Authoring (phase 1)</h2>
+      <p>String literal unions only:</p>
+      <pre><code>brand type Account = "admin" | "regular";
 
-      <h3>Define → use in a function param</h3>
-      <pre><code>import { defineLiteralSet, type InferLiteral } from "@mishelashala/superset-ts";
-
-const AccountRole = defineLiteralSet("AccountRole", ["admin", "regular"] as const);
-type AccountRole = InferLiteral&lt;typeof AccountRole&gt;; // "admin" | "regular"
-
-function greet(role: AccountRole): string {
+function greet(role: Account): string {
   return role === "admin" ? "hello, admin" : "hello";
 }
 
-greet(AccountRole.from("admin")); // ok at compile time + runtime
-
-AccountRole.is("guest");   // false
-AccountRole.from("guest"); // throws LiteralSetError
-AccountRole.values;        // readonly ["admin", "regular"]</code></pre>
+// After CLI transform, Account is also a runtime companion:
+greet(Account.from("admin"));
+Account.is("guest");   // false
+Account.from("guest"); // throws</code></pre>
     </section>
 
-    <section id="api">
-      <h2>API</h2>
-      <h3><code>defineLiteralSet(name, values)</code></h3>
-      <p>Single Mode&nbsp;A entry point: closed literal set + runtime.</p>
-      <table>
-        <thead>
-          <tr><th>Member</th><th>Role</th></tr>
-        </thead>
-        <tbody>
-          <tr><td><code>.name</code></td><td>Set name used in errors</td></tr>
-          <tr><td><code>.values</code></td><td>Frozen list of allowed strings</td></tr>
-          <tr><td><code>.is(x)</code></td><td>Type guard → <code>x is Values[number]</code></td></tr>
-          <tr><td><code>.from(x)</code></td><td>Parse / narrow, or throw <code>LiteralSetError</code></td></tr>
-        </tbody>
-      </table>
+    <section id="cli">
+      <h2>CLI quickstart</h2>
+      <pre><code>git clone https://github.com/mishelashala/superset-ts.git
+cd superset-ts
+pnpm install &amp;&amp; pnpm build &amp;&amp; pnpm test
+
+# one file
+node packages/cli/dist/cli.js ./example.sts -o ./out/example.ts
+
+# directory → out/
+node packages/cli/dist/cli.js ./src -o ./out</code></pre>
       <p>
-        Also: <code>InferLiteral&lt;typeof SomeSet&gt;</code> extracts the union;
-        <code>LiteralSetError</code> carries <code>setName</code>, <code>value</code>, <code>allowed</code>.
+        Binaries: <code>sts</code> / <code>superset-ts</code>.
+        Point bundlers at the <strong>output</strong> directory.
+      </p>
+    </section>
+
+    <section id="vscode">
+      <h2>VS Code (thin)</h2>
+      <p>
+        <code>packages/vscode</code> registers <code>.sts</code>, highlights
+        <code>brand type</code> (including in <code>.ts</code>), and can shell
+        out to the CLI. No full custom checker in v0.
+      </p>
+    </section>
+
+    <section id="defineLiteralSet">
+      <h2><code>defineLiteralSet</code>?</h2>
+      <p>
+        <strong>Internal emit / runtime helper — not the public API.</strong>
+        Authors write <code>brand type</code>; the CLI expands. Do not treat
+        <code>import &#123; defineLiteralSet &#125;</code> as the product.
       </p>
     </section>
 
     <section id="non-goals">
       <h2>Non-goals (v0)</h2>
       <ul>
-        <li>No TypeScript fork, plugin, or custom checker</li>
-        <li><strong>Closed literal union + runtime</strong> — not nominal brands. Same members ⇒ assignable across differently named sets.</li>
-        <li>Codegen is not shipped yet; this cut is library-first</li>
-        <li>Not a full schema / object validation library</li>
+        <li>No Microsoft / TypeScript fork to maintain</li>
+        <li>No custom checker or LSP fantasy in v0</li>
+        <li>Phase 1: string literal unions only</li>
+        <li>Closed literal union + runtime — not nominal brands</li>
+        <li>Not a full schema validation library</li>
         <li>Not on npm yet</li>
+        <li><code>defineLiteralSet</code> is not the authoring surface</li>
       </ul>
     </section>
   </main>
@@ -105,8 +116,8 @@ AccountRole.values;        // readonly ["admin", "regular"]</code></pre>
   <footer>
     <p>
       <a href="https://github.com/mishelashala/superset-ts">GitHub repo</a>
-      · package <code>@mishelashala/superset-ts</code>
-      · <strong>not on npm yet</strong>
+      · docs from <code>docs/</code> on <code>main</code>
+      · <strong>not on npm</strong>
     </p>
   </footer>
 </body>

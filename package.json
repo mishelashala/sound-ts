@@ -1,7 +1,8 @@
 {
-  "name": "@mishelashala/superset-ts",
-  "version": "0.1.0",
-  "description": "Closed string literal sets with typed runtime helpers — plain TypeScript for stock tsc (not a TypeScript fork). Not published to npm yet.",
+  "name": "superset-ts",
+  "private": true,
+  "version": "0.2.0",
+  "description": "TypeScript dialect + CLI: brand type string literal unions expand to plain TS + runtime companions. Not a TypeScript fork.",
   "license": "MIT",
   "author": "Michell Ayala",
   "repository": {
@@ -9,48 +10,18 @@
     "url": "git+https://github.com/mishelashala/superset-ts.git"
   },
   "homepage": "https://mishelashala.github.io/superset-ts/",
-  "bugs": {
-    "url": "https://github.com/mishelashala/superset-ts/issues"
-  },
-  "type": "module",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
-    }
-  },
-  "files": [
-    "dist",
-    "LICENSE",
-    "README.md"
-  ],
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
-    "prepublishOnly": "pnpm run build && pnpm test"
+    "build": "pnpm -r run build",
+    "test": "pnpm --filter @mishelashala/superset-ts-core test",
+    "typecheck": "pnpm -r run typecheck"
   },
   "engines": {
     "node": ">=18"
   },
-  "keywords": [
-    "typescript",
-    "literal",
-    "union",
-    "runtime",
-    "validation",
-    "brand",
-    "superset-ts"
-  ],
+  "packageManager": "pnpm@9.12.0",
   "devDependencies": {
+    "@types/node": "^26.6.2",
     "typescript": "^5.6.3",
     "vitest": "^2.1.4"
-  },
-  "publishConfig": {
-    "access": "public"
-  },
-  "private": true
+  }
 }

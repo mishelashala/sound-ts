@@ -1,0 +1,24 @@
+{
+  "name": "@mishelashala/superset-ts-cli",
+  "version": "0.2.0",
+  "private": true,
+  "description": "CLI: expand brand type → plain TS + runtime companions",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "superset-ts": "./dist/cli.js",
+    "sts": "./dist/cli.js"
+  },
+  "main": "./dist/cli.js",
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@mishelashala/superset-ts-core": "workspace:*"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
