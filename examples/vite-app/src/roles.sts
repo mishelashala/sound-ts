@@ -1,0 +1,3 @@
+brand type Account = "admin" | "regular";
+
+export { Account };

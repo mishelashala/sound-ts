@@ -18,6 +18,15 @@ importers:
         specifier: ^2.1.4
         version: 2.1.9(@types/node@26.6.2)
 
+  examples/vite-app:
+    devDependencies:
+      '@mishelashala/superset-ts-vite':
+        specifier: workspace:*
+        version: link:../../packages/vite
+      vite:
+        specifier: ^5.4.21
+        version: 5.4.21(@types/node@26.6.2)
+
   packages/cli:
     dependencies:
       '@mishelashala/superset-ts-core':
@@ -25,6 +34,16 @@ importers:
         version: link:../core
 
   packages/core: {}
+
+  packages/vite:
+    dependencies:
+      '@mishelashala/superset-ts-core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      vite:
+        specifier: ^5.4.21
+        version: 5.4.21(@types/node@26.6.2)
 
   packages/vscode: {}
 
