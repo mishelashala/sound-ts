@@ -40,4 +40,20 @@ brand type Live = "yes";
     expect(program.brands.map((b) => b.name)).toEqual(["Live"]);
     expect(program.validates).toHaveLength(0);
   });
+
+  it("accepts leading-pipe multiline literal unions", () => {
+    const src = `
+export brand type Env =
+  | "sandbox"
+  | "production";
+`;
+    const program = parseSts(src);
+    expect(program.brands).toHaveLength(1);
+    const brand = program.brands[0]!;
+    expect(brand.kind).toBe("literal");
+    if (brand.kind === "literal") {
+      expect(brand.values).toEqual(["sandbox", "production"]);
+    }
+    expect(brand.exported).toBe(true);
+  });
 });
