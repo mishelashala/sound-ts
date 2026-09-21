@@ -9,6 +9,10 @@
  * offsets still map to the original source; dialect `type` offsets are
  * recorded so structural-alias checks skip them. `cast<T>(…)` is already
  * a valid generic call and needs no rewrite. See `ast.ts`.
+ *
+ * 1.0 rules (#54) need project symbols — see `runSoundness1Checks` and
+ * `SOUNDNESS_1_0.md`. Wired from `transform` / `transformProject` after
+ * `buildProjectSymbols`.
  */
 
 import { assertNoAny } from "./rejectAny.js";
@@ -23,7 +27,7 @@ export type SoundnessCheckOptions = {
 };
 
 /**
- * Dialect soundness gates run before expand. Each check throws SyntaxError
+ * 0.x dialect soundness gates (AST bans). Each check throws SyntaxError
  * on violation; nothing is rewritten away.
  */
 export function runSoundnessChecks(
@@ -42,3 +46,12 @@ export { assertNoNonNullAssertions } from "./rejectNonNull.js";
 export { assertNoStructuralAliases } from "./rejectStructuralAlias.js";
 export { assertNoTypeAssertions } from "./rejectAs.js";
 export { assertNoWideTypes } from "./rejectWideTypes.js";
+
+export {
+  runSoundness1Checks,
+  assertNoBrandTypePredicates,
+  assertHonestRefinedPredicates,
+  assertNoBrandMutation,
+  assertBrandGenericSubset,
+  type Soundness1CheckOptions,
+} from "./soundness1.js";

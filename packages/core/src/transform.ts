@@ -13,7 +13,10 @@ import {
 import type { ValidateTypeDecl } from "./validate.js";
 import { rewriteCheckedCasts } from "./checkedCast.js";
 import { rewriteMethodsAsProperties } from "./emitMethods.js";
-import { runSoundnessChecks } from "./soundness/index.js";
+import {
+  runSoundnessChecks,
+  runSoundness1Checks,
+} from "./soundness/index.js";
 import {
   buildProjectSymbols,
   brandMapFromSymbols,
@@ -135,6 +138,7 @@ export function transform(
   let brandMap: BrandMap;
   let validateMap: ValidateMap;
   let names: ReadonlySet<string>;
+  let symbolsForChecks: DialectProjectSymbols | undefined;
 
   if (options.symbols) {
     resolveBrandMemberSymbols(options.symbols);
@@ -142,6 +146,7 @@ export function transform(
     validateMap = options.validateMap ?? validateMapFromSymbols(options.symbols);
     names =
       options.companionNames ?? companionNamesFromSymbols(options.symbols);
+    symbolsForChecks = options.symbols;
   } else if (options.brandMap && options.validateMap) {
     // Legacy injection path (maps without symbols).
     brandMap = options.brandMap;
@@ -149,6 +154,14 @@ export function transform(
     resolveBrandRefs(brandMap);
     assertNoCompanionNameCollisions(brandMap, validateMap);
     names = options.companionNames ?? companionNames(brandMap, validateMap);
+    // Build symbols for 1.0 rules from this file's dialect only.
+    symbolsForChecks = buildProjectSymbols([
+      {
+        filename: options.filename ?? "<stdin>",
+        source,
+        dialect,
+      },
+    ]);
   } else {
     const symbols = buildProjectSymbols([
       {
@@ -161,6 +174,16 @@ export function transform(
     brandMap = options.brandMap ?? brandMapFromSymbols(symbols);
     validateMap = options.validateMap ?? validateMapFromSymbols(symbols);
     names = options.companionNames ?? companionNamesFromSymbols(symbols);
+    symbolsForChecks = symbols;
+  }
+
+  if (symbolsForChecks) {
+    const checkOpts: {
+      symbols: DialectProjectSymbols;
+      filename?: string;
+    } = { symbols: symbolsForChecks };
+    if (options.filename !== undefined) checkOpts.filename = options.filename;
+    runSoundness1Checks(source, checkOpts);
   }
 
   if (decls.length === 0 && validateDecls.length === 0) {
@@ -223,6 +246,11 @@ export function transformProject(
       dialect: f.dialect,
     })),
   );
+
+  for (const f of parsed) {
+    runSoundness1Checks(f.source, { filename: f.filename, symbols });
+  }
+
   resolveBrandMemberSymbols(symbols);
 
   const brandMap = brandMapFromSymbols(symbols);
