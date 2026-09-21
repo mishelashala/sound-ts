@@ -1,10 +1,12 @@
 /**
- * Project-wide brand map: collect decls across a CLI batch, then resolve
- * `|` / `&` members and detect cycles. No module/import resolver — every
- * file on the transform input graph shares one map.
+ * Project-wide companion map: collect `brand type` and `validate type` decls
+ * across a CLI batch, then resolve `|` / `&` brand members and detect cycles.
+ * No module/import resolver — every file on the transform input graph shares
+ * one map (needed so `as! User` can see companions from other files).
  */
 
 import type { BrandTypeDecl, CombinedBrandDecl } from "./parse.js";
+import type { ValidateTypeDecl } from "./validate.js";
 
 export interface BrandMapEntry {
   /** Declaring file path (when known) */
@@ -14,9 +16,21 @@ export interface BrandMapEntry {
 
 export type BrandMap = Map<string, BrandMapEntry>;
 
+export interface ValidateMapEntry {
+  filename?: string;
+  decl: ValidateTypeDecl;
+}
+
+export type ValidateMap = Map<string, ValidateMapEntry>;
+
 export interface BrandSourceFile {
   filename?: string;
   decls: BrandTypeDecl[];
+}
+
+export interface ValidateSourceFile {
+  filename?: string;
+  decls: ValidateTypeDecl[];
 }
 
 /**
@@ -42,6 +56,61 @@ export function buildBrandMap(files: BrandSourceFile[]): BrandMap {
     }
   }
   return map;
+}
+
+/**
+ * Collect validate type declarations into a project map.
+ * Throws on duplicate validate names across the batch.
+ */
+export function buildValidateMap(files: ValidateSourceFile[]): ValidateMap {
+  const map: ValidateMap = new Map();
+  for (const file of files) {
+    for (const decl of file.decls) {
+      const prev = map.get(decl.name);
+      if (prev) {
+        const prevWhere = prev.filename ? ` in ${prev.filename}` : "";
+        const hereWhere = file.filename ? ` in ${file.filename}` : "";
+        throw new SyntaxError(
+          `validate type ${decl.name}: duplicate declaration` +
+            `${prevWhere}${hereWhere ? ` (also${hereWhere})` : ""}`,
+        );
+      }
+      const entry: ValidateMapEntry = { decl };
+      if (file.filename !== undefined) entry.filename = file.filename;
+      map.set(decl.name, entry);
+    }
+  }
+  return map;
+}
+
+/**
+ * Reject names that appear as both a brand and a validate type in the batch.
+ */
+export function assertNoCompanionNameCollisions(
+  brandMap: BrandMap,
+  validateMap: ValidateMap,
+): void {
+  for (const name of validateMap.keys()) {
+    if (brandMap.has(name)) {
+      const brandFile = brandMap.get(name)?.filename;
+      const validateFile = validateMap.get(name)?.filename;
+      const where =
+        brandFile || validateFile
+          ? ` (${[brandFile, validateFile].filter(Boolean).join(" / ")})`
+          : "";
+      throw new SyntaxError(
+        `companion name '${name}' is declared as both brand type and validate type${where}`,
+      );
+    }
+  }
+}
+
+/** All companion names (brands + validate types) visible to `as!`. */
+export function companionNames(
+  brandMap: BrandMap,
+  validateMap: ValidateMap,
+): Set<string> {
+  return new Set([...brandMap.keys(), ...validateMap.keys()]);
 }
 
 /**

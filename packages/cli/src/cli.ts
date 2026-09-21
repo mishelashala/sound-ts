@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * superset-ts / sts — expand `brand type` dialect into plain TypeScript
+ * superset-ts / sts — expand brand type / validate type / as! into plain TypeScript
  * that stock tsc / Vite consume. Not a TypeScript fork.
  */
 import { mkdir, readFile, writeFile, readdir, stat } from "node:fs/promises";
@@ -10,7 +10,7 @@ import { transformProject } from "@mishelashala/superset-ts-core";
 const VERSION = "0.3.2";
 
 function usage(): string {
-  return `superset-ts / sts — brand type → plain TS + runtime companions
+  return `superset-ts / sts — brand type / validate type / as! → plain TS + runtime companions
 
 Usage:
   sts <input> [-o <output>]
@@ -21,9 +21,10 @@ Usage:
 Input may be a .ts / .sts file or a directory (recurses *.ts, *.sts).
 Output defaults to <input> with .sts → .ts, or <dir>.out/ for directories.
 
-When multiple files are transformed together, brand names are collected across
-the whole batch so \`brand type Staff = Admin | Regular\` can reference brands
-declared in other input files. Point stock tsc / Vite at the **output** only.
+When multiple files are transformed together, brand and validate names are
+collected across the whole batch so \`brand type Staff = Admin | Regular\` and
+\`raw as! User\` can reference companions declared in other input files.
+Point stock tsc / Vite at the **output** only.
 `;
 }
 
@@ -168,10 +169,11 @@ async function main(): Promise<void> {
     const outFile = outputRoot;
     await mkdir(path.dirname(outFile), { recursive: true });
     await writeFile(outFile, result.code, "utf8");
-    totalDecls = result.decls.length;
+    totalDecls = result.decls.length + result.validateDecls.length;
     if (result.changed) changedFiles++;
+    const n = result.decls.length + result.validateDecls.length;
     console.log(
-      `Wrote ${path.relative(process.cwd(), outFile)} (${result.decls.length} brand type${result.decls.length === 1 ? "" : "s"})`,
+      `Wrote ${path.relative(process.cwd(), outFile)} (${n} dialect decl${n === 1 ? "" : "s"})`,
     );
   } else {
     await mkdir(outputRoot, { recursive: true });
@@ -199,12 +201,12 @@ async function main(): Promise<void> {
       const outFile = mapOutputPath(result.filename, input, outputRoot);
       await mkdir(path.dirname(outFile), { recursive: true });
       await writeFile(outFile, result.code, "utf8");
-      totalDecls += result.decls.length;
+      totalDecls += result.decls.length + result.validateDecls.length;
       if (result.changed) changedFiles++;
     }
     console.log(
       `Transformed ${files.length} file(s) → ${path.relative(process.cwd(), outputRoot)} ` +
-        `(${changedFiles} changed, ${totalDecls} brand type${totalDecls === 1 ? "" : "s"})`,
+        `(${changedFiles} changed, ${totalDecls} dialect decl${totalDecls === 1 ? "" : "s"})`,
     );
   }
 }

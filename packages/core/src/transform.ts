@@ -1,18 +1,29 @@
 import { parseBrandTypes, type BrandTypeDecl } from "./parse.js";
 import { transformSource, type EmitOptions } from "./emit.js";
 import {
+  assertNoCompanionNameCollisions,
   buildBrandMap,
+  buildValidateMap,
+  companionNames,
   orderBrandsDependenciesFirst,
   resolveBrandRefs,
   type BrandMap,
+  type ValidateMap,
 } from "./brandMap.js";
+import {
+  parseValidateTypes,
+  type ValidateTypeDecl,
+} from "./validate.js";
+import { rewriteCheckedCasts } from "./checkedCast.js";
 
 export interface TransformResult {
   /** Transformed source (plain TS) */
   code: string;
-  /** Declarations that were expanded */
+  /** Brand declarations that were expanded */
   decls: BrandTypeDecl[];
-  /** True when at least one brand type was rewritten */
+  /** Validate type declarations that were expanded */
+  validateDecls: ValidateTypeDecl[];
+  /** True when at least one dialect construct was rewritten */
   changed: boolean;
 }
 
@@ -24,6 +35,10 @@ export interface TransformFileOptions extends EmitOptions {
    * this file's decls only (still two-pass: collect, then resolve).
    */
   brandMap?: BrandMap;
+  /** Optional pre-built validate map (same batch as brandMap). */
+  validateMap?: ValidateMap;
+  /** Optional pre-computed companion names for `as!` (brands + validate). */
+  companionNames?: ReadonlySet<string>;
 }
 
 export interface ProjectFileInput {
@@ -38,17 +53,49 @@ export interface ProjectFileResult extends TransformResult {
 export interface TransformProjectResult {
   files: ProjectFileResult[];
   brandMap: BrandMap;
+  validateMap: ValidateMap;
   /** Brand names in dependency-first order */
   brandOrder: string[];
+  /** All companion names (brands + validate types) */
+  companionNames: Set<string>;
+}
+
+function expandFile(
+  source: string,
+  brandDecls: BrandTypeDecl[],
+  validateDecls: ValidateTypeDecl[],
+  options: EmitOptions,
+  castCompanions: ReadonlySet<string>,
+  filename?: string,
+): { code: string; changed: boolean } {
+  const allDecls = [...brandDecls, ...validateDecls];
+  let code = source;
+  let changed = false;
+  if (allDecls.length > 0) {
+    code = transformSource(source, allDecls, options);
+    changed = true;
+  }
+  const castOpts: {
+    companionNames: ReadonlySet<string>;
+    filename?: string;
+  } = { companionNames: castCompanions };
+  if (filename !== undefined) castOpts.filename = filename;
+  const cast = rewriteCheckedCasts(code, castOpts);
+  if (cast.count > 0) {
+    code = cast.code;
+    changed = true;
+  }
+  return { code, changed };
 }
 
 /**
- * Expand `brand type` into plain type aliases plus runtime companions
- * (`Name.is` / `Name.from`, and `Name.values` for string-literal brands).
+ * Expand `brand type` / `validate type` into plain type aliases plus runtime
+ * companions (`Name.is` / `Name.from`, and `Name.values` for string-literal
+ * brands), and rewrite `as!` checked casts.
  *
- * Supports string-literal brands, refined brands, and brand-only unions /
- * intersections. Combined members resolve against the project brand map
- * (this file alone, or a map from `transformProject`).
+ * Combined brand members resolve against the project brand map (this file
+ * alone, or a map from `transformProject`). `as!` targets resolve against
+ * primitives plus known companions in the batch.
  *
  * Stock `tsc` / Vite / bundlers consume the **output** only.
  */
@@ -57,30 +104,66 @@ export function transform(
   options: TransformFileOptions = {},
 ): TransformResult {
   const { decls } = parseBrandTypes(source);
-  if (decls.length === 0) {
-    return { code: source, decls, changed: false };
-  }
+  const { decls: validateDecls } = parseValidateTypes(source);
 
-  if (options.brandMap) {
-    // Project path already resolved the shared map; still ensure this file's
-    // combined members are covered (map must include them).
-    resolveBrandRefs(options.brandMap);
+  let brandMap: BrandMap;
+  let validateMap: ValidateMap;
+
+  if (options.brandMap && options.validateMap) {
+    brandMap = options.brandMap;
+    validateMap = options.validateMap;
+    resolveBrandRefs(brandMap);
+    assertNoCompanionNameCollisions(brandMap, validateMap);
   } else {
-    const file: { filename?: string; decls: BrandTypeDecl[] } = { decls };
-    if (options.filename !== undefined) file.filename = options.filename;
-    const map = buildBrandMap([file]);
-    resolveBrandRefs(map);
+    const brandFile: { filename?: string; decls: BrandTypeDecl[] } = {
+      decls,
+    };
+    if (options.filename !== undefined) brandFile.filename = options.filename;
+    const validateFile: { filename?: string; decls: ValidateTypeDecl[] } = {
+      decls: validateDecls,
+    };
+    if (options.filename !== undefined) validateFile.filename = options.filename;
+    brandMap = options.brandMap ?? buildBrandMap([brandFile]);
+    validateMap = options.validateMap ?? buildValidateMap([validateFile]);
+    resolveBrandRefs(brandMap);
+    assertNoCompanionNameCollisions(brandMap, validateMap);
   }
 
-  const code = transformSource(source, decls, options);
-  return { code, decls, changed: true };
+  const names =
+    options.companionNames ?? companionNames(brandMap, validateMap);
+
+  if (decls.length === 0 && validateDecls.length === 0) {
+    // Still may have as! casts
+    const castOpts: {
+      companionNames: ReadonlySet<string>;
+      filename?: string;
+    } = { companionNames: names };
+    if (options.filename !== undefined) castOpts.filename = options.filename;
+    const cast = rewriteCheckedCasts(source, castOpts);
+    return {
+      code: cast.code,
+      decls,
+      validateDecls,
+      changed: cast.count > 0,
+    };
+  }
+
+  const { code, changed } = expandFile(
+    source,
+    decls,
+    validateDecls,
+    options,
+    names,
+    options.filename,
+  );
+  return { code, decls, validateDecls, changed };
 }
 
 /**
- * Whole-program transform over the CLI input graph: collect brand decls from
- * every file, build one project brand map, resolve `|` / `&` members + cycles,
- * then emit each file. No import/module resolver — every path on the batch
- * shares the map.
+ * Whole-program transform over the CLI input graph: collect brand + validate
+ * decls from every file, build project maps, resolve `|` / `&` members +
+ * cycles, then emit each file and rewrite `as!`. No import/module resolver —
+ * every path on the batch shares the maps.
  */
 export function transformProject(
   files: ProjectFileInput[],
@@ -90,31 +173,46 @@ export function transformProject(
     filename: f.filename,
     source: f.source,
     decls: parseBrandTypes(f.source).decls,
+    validateDecls: parseValidateTypes(f.source).decls,
   }));
 
   const brandMap = buildBrandMap(
     parsed.map((f) => ({ filename: f.filename, decls: f.decls })),
   );
+  const validateMap = buildValidateMap(
+    parsed.map((f) => ({
+      filename: f.filename,
+      decls: f.validateDecls,
+    })),
+  );
+  assertNoCompanionNameCollisions(brandMap, validateMap);
   resolveBrandRefs(brandMap);
   const brandOrder = orderBrandsDependenciesFirst(brandMap);
+  const names = companionNames(brandMap, validateMap);
 
   const results: ProjectFileResult[] = parsed.map((f) => {
-    if (f.decls.length === 0) {
-      return {
-        filename: f.filename,
-        code: f.source,
-        decls: f.decls,
-        changed: false,
-      };
-    }
-    const code = transformSource(f.source, f.decls, options);
+    const { code, changed } = expandFile(
+      f.source,
+      f.decls,
+      f.validateDecls,
+      options,
+      names,
+      f.filename,
+    );
     return {
       filename: f.filename,
       code,
       decls: f.decls,
-      changed: true,
+      validateDecls: f.validateDecls,
+      changed,
     };
   });
 
-  return { files: results, brandMap, brandOrder };
+  return {
+    files: results,
+    brandMap,
+    validateMap,
+    brandOrder,
+    companionNames: names,
+  };
 }
