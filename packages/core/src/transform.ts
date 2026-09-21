@@ -1,4 +1,5 @@
-import { parseBrandTypes, type BrandTypeDecl } from "./parse.js";
+import { parseSts } from "./ast/index.js";
+import type { BrandTypeDecl } from "./parse.js";
 import { transformSource, type EmitOptions } from "./emit.js";
 import {
   assertNoCompanionNameCollisions,
@@ -10,10 +11,7 @@ import {
   type BrandMap,
   type ValidateMap,
 } from "./brandMap.js";
-import {
-  parseValidateTypes,
-  type ValidateTypeDecl,
-} from "./validate.js";
+import type { ValidateTypeDecl } from "./validate.js";
 import { rewriteCheckedCasts } from "./checkedCast.js";
 import { rewriteMethodsAsProperties } from "./emitMethods.js";
 import { runSoundnessChecks } from "./soundness/index.js";
@@ -82,6 +80,8 @@ function expandFile(
     filename?: string;
   } = { companionNames: castCompanions };
   if (filename !== undefined) castOpts.filename = filename;
+
+  // Re-discover casts on post-emit source (brand/validate splice shifts offsets).
   const cast = rewriteCheckedCasts(code, castOpts);
   if (cast.count > 0) {
     code = cast.code;
@@ -116,8 +116,9 @@ export function transform(
 ): TransformResult {
   runSoundnessChecks(source, options.filename);
 
-  const { decls } = parseBrandTypes(source);
-  const { decls: validateDecls } = parseValidateTypes(source);
+  const dialect = parseSts(source);
+  const decls = dialect.brands;
+  const validateDecls = dialect.validates;
 
   let brandMap: BrandMap;
   let validateMap: ValidateMap;
@@ -152,7 +153,7 @@ export function transform(
       filename?: string;
     } = { companionNames: names };
     if (options.filename !== undefined) castOpts.filename = options.filename;
-    const cast = rewriteCheckedCasts(source, castOpts);
+    const cast = rewriteCheckedCasts(source, castOpts, dialect.casts);
     const methods = rewriteMethodsAsProperties(cast.code);
     return {
       code: methods.code,
@@ -187,12 +188,15 @@ export function transformProject(
     runSoundnessChecks(f.source, f.filename);
   }
 
-  const parsed = files.map((f) => ({
-    filename: f.filename,
-    source: f.source,
-    decls: parseBrandTypes(f.source).decls,
-    validateDecls: parseValidateTypes(f.source).decls,
-  }));
+  const parsed = files.map((f) => {
+    const dialect = parseSts(f.source);
+    return {
+      filename: f.filename,
+      source: f.source,
+      decls: dialect.brands,
+      validateDecls: dialect.validates,
+    };
+  });
 
   const brandMap = buildBrandMap(
     parsed.map((f) => ({ filename: f.filename, decls: f.decls })),
