@@ -1,3 +1,16 @@
+/**
+ * Dialect soundness gates run before expand. Each check throws SyntaxError
+ * on violation; nothing is rewritten away.
+ *
+ * Parsing strategy (#52): bans use the official `typescript` package
+ * (`createSourceFile` + visitors), same pattern as `emitMethods.ts`.
+ * `.sts` may contain `brand type` / `validate type` (invalid TS). Before
+ * parse, those leading keywords are blanked with same-length spaces so
+ * offsets still map to the original source; dialect `type` offsets are
+ * recorded so structural-alias checks skip them. `cast<T>(…)` is already
+ * a valid generic call and needs no rewrite. See `ast.ts`.
+ */
+
 import { assertNoAny } from "./rejectAny.js";
 import { assertNoNonNullAssertions } from "./rejectNonNull.js";
 import { assertNoStructuralAliases } from "./rejectStructuralAlias.js";
