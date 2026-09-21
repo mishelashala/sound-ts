@@ -7,7 +7,7 @@ import { mkdir, readFile, writeFile, readdir, stat } from "node:fs/promises";
 import path from "node:path";
 import { transform } from "@mishelashala/superset-ts-core";
 
-const VERSION = "0.3.0";
+const VERSION = "0.3.2";
 
 function usage(): string {
   return `superset-ts / sts — brand type → plain TS + runtime companions
