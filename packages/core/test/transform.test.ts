@@ -255,7 +255,9 @@ brand type Staff = Admin | Regular;
     expect(b.code).not.toContain("brand type");
 
     const a = result.files.find((f) => f.filename === "a.sts")!;
-    expect(a.code).toContain(`type Admin = "admin";`);
+    expect(a.code).toContain(
+      `type Admin = "admin" | (string & { readonly [AdminBrand]: true });`,
+    );
     expect(a.code).toContain(`export { Admin, Regular };`);
   });
 
@@ -353,7 +355,9 @@ describe("transform", () => {
     const result = transform(src);
     expect(result.changed).toBe(true);
     expect(result.decls).toHaveLength(1);
-    expect(result.code).toContain(`type Account = "admin" | "regular";`);
+    expect(result.code).toContain(
+      `type Account = "admin" | "regular" | (string & { readonly [AccountBrand]: true });`,
+    );
     expect(result.code).toContain(`const Account =`);
     expect(result.code).toContain(`function is(value: unknown): value is Account`);
     expect(result.code).toContain(`function from(value: unknown): Account`);
@@ -372,7 +376,9 @@ describe("transform", () => {
     const result = transform(src);
     expect(result.code).toContain(`import { foo } from "./foo.js";`);
     expect(result.code).toContain(`export function greet(a: Account)`);
-    expect(result.code).toContain(`type Account = "admin" | "regular";`);
+    expect(result.code).toContain(
+      `type Account = "admin" | "regular" | (string & { readonly [AccountBrand]: true });`,
+    );
     expect(result.code).not.toContain("brand type");
   });
 
@@ -382,7 +388,9 @@ describe("transform", () => {
     expect(result.code).toContain(
       `const Account = defineLiteralSet("Account", ["admin", "regular"] as const);`,
     );
-    expect(result.code).toContain(`type Account = "admin" | "regular";`);
+    expect(result.code).toContain(
+      `type Account = "admin" | "regular" | (string & { readonly [AccountBrand]: true });`,
+    );
   });
 
   it("emitted companion shape matches defineLiteralSet runtime", () => {
@@ -415,7 +423,9 @@ describe("transform", () => {
       start: 0,
       end: 0,
     });
-    expect(block).toContain(`type Color = "red" | "blue";`);
+    expect(block).toContain(
+      `type Color = "red" | "blue" | (string & { readonly [ColorBrand]: true });`,
+    );
     expect(block).toContain("Object.freeze");
   });
 
@@ -490,7 +500,9 @@ brand type Account = "admin" | "regular";
     const result = transform(src);
     expect(result.changed).toBe(true);
     expect(result.decls).toHaveLength(1);
-    expect(result.code).toContain(`type Account = "admin" | "regular";`);
+    expect(result.code).toContain(
+      `type Account = "admin" | "regular" | (string & { readonly [AccountBrand]: true });`,
+    );
     expect(result.code).toContain("// note");
     expect(result.code).not.toContain("brand type");
   });
@@ -697,12 +709,35 @@ const n = cast<number>(raw);
 });
 
 describe("phantom brands under stock tsc", () => {
-  it("string-literal brands still emit closed unions (no unique symbol)", () => {
-    const src = `brand type Account = "admin" | "regular";\n`;
+  it("string-literal brands accept member literals and stay nominal (tsc)", () => {
+    const src = `
+brand type Account = "admin" | "regular";
+brand type OtherRole = "admin" | "regular";
+`;
     const { code } = transform(src);
-    expect(code).toContain(`type Account = "admin" | "regular";`);
-    expect(code).not.toContain("AccountBrand");
-    expect(code).not.toContain("unique symbol");
+    expect(code).toContain(`declare const AccountBrand: unique symbol;`);
+    expect(code).toContain(
+      `type Account = "admin" | "regular" | (string & { readonly [AccountBrand]: true });`,
+    );
+    const check = `${code}
+declare function setRole(role: Account): void;
+declare const raw: string;
+declare let a: Account;
+declare let b: OtherRole;
+setRole("admin");
+setRole(a);
+// @ts-expect-error widened string
+setRole(raw);
+// @ts-expect-error different brand
+setRole(b);
+// @ts-expect-error different brand
+a = b;
+declare function takesString(x: string): void;
+takesString(a);
+// @ts-expect-error brand does not flow back to the bare literal union
+const members: "admin" | "regular" = a;
+`;
+    expect(typecheckOk(check)).toEqual([]);
   });
 
   it("refined .from / cast return the branded type", () => {
