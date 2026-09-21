@@ -53,6 +53,14 @@ Library: `@mishelashala/sound-ts-core`.
 
 **Prefer `.sts` files.** Stock TypeScript language service will red-squiggle dialect keywords (`brand type`, `validate type`, `cast`) inside ordinary `.ts` / `.tsx`. The VS Code extension’s TextMate grammar covers `.sts`; injection into `.ts` only helps highlighting, not the checker.
 
+### Entry contract
+
+Unknown input enters with `.from`. `.from` always runs the check and throws on failure. A known string member is `Brand.Values.member`. A known number member is `Brand.Values[n]`. There is no `fromTrusted`, `fromPersisted`, or other companion method that skips `is`.
+
+The brand does not format. `toFixed`, slugify, and similar stay in a normal function that calls `.from`. A label stays a normal function over `.toPrimitive`, not a method on the companion.
+
+Invalid data at a source is fixed at that source. The brand still rejects it. Vacuous Mode B `is` bodies (empty, ignores the argument, or `return true`) stay rejected. That check does not prove the body is logically correct.
+
 ### String literal brands
 
 ```sts
@@ -270,6 +278,7 @@ pnpm --dir examples/vite-app build
 - [x] [Scopes and symbols](https://github.com/mishelashala/sound-ts/issues/53) — cross-file Sound-TS symbols for brands / companions / cast targets.
 - [x] [Complete soundness rules](https://github.com/mishelashala/sound-ts/issues/54) — 1.0 reject/accept matrix (boundaries, predicates, mutation, generics subset) on the AST + symbol layer.
 - [x] [One command, no project cache, watch](https://github.com/mishelashala/sound-ts/issues/71) — `sts build` / `sts watch` is the Node compiler step. Expanded TS for stock `tsc` stays in the OS temp directory. The app `tsconfig.json` does not point at `.sound-ts`.
+- [x] [`.from` is the only door](https://github.com/mishelashala/sound-ts/issues/75) — unknown input enters with `.from` (always checks). Known members are `Brand.Values.member` or `Brand.Values[n]`. No unchecked constructor. Formatting and labels stay normal functions. See [Entry contract](#entry-contract).
 
 ---
 

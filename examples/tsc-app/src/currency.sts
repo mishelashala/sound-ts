@@ -1,0 +1,7 @@
+brand type CurrencyNumber = string {
+  is(value: string): value is CurrencyNumber {
+    return /^\d+\.\d{2}$/.test(value);
+  }
+}
+
+export { CurrencyNumber };

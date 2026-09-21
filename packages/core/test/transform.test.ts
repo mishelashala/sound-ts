@@ -12,6 +12,38 @@ import {
   resolveBrandRefs,
 } from "../src/index.js";
 
+/** Public companion keys. Refined brands omit `values` / `Values`. */
+const LITERAL_COMPANION_KEYS = [
+  "Values",
+  "from",
+  "is",
+  "name",
+  "toPrimitive",
+  "values",
+] as const;
+
+const REFINED_COMPANION_KEYS = ["from", "is", "name", "toPrimitive"] as const;
+
+type EmittedCompanion = {
+  is: (value: unknown) => boolean;
+  from: (value: unknown) => unknown;
+};
+
+/** Run default emit and return the frozen companion. */
+function loadEmittedCompanion(source: string, name: string): EmittedCompanion {
+  const { code } = transform(source);
+  if (/\bfromTrusted\b|\bfromPersisted\b/.test(code)) {
+    throw new Error(`${name} emit includes an unchecked constructor`);
+  }
+  const js = ts.transpileModule(code, {
+    compilerOptions: {
+      target: ts.ScriptTarget.ES2022,
+      module: ts.ModuleKind.None,
+    },
+  }).outputText;
+  return new Function(`${js}\nreturn ${name};`)() as EmittedCompanion;
+}
+
 /** Compile a snippet with stock tsc; return formatted diagnostic messages. */
 function typecheckOk(source: string): string[] {
   const file = "snippet.ts";
@@ -436,6 +468,45 @@ describe("transform", () => {
     expect(Account.from("regular")).toBe("regular");
     expect(() => Account.from("guest")).toThrow(LiteralSetError);
     expect(Account.toPrimitive("admin")).toBe("admin");
+  });
+
+  it("emitted literal and refined companion keys are only the public set", () => {
+    const Account = loadEmittedCompanion(
+      `brand type Account = "admin" | "regular";`,
+      "Account",
+    );
+    expect(Object.getOwnPropertyNames(Account).sort()).toEqual([
+      ...LITERAL_COMPANION_KEYS,
+    ]);
+    expect("fromTrusted" in Account).toBe(false);
+    expect("fromPersisted" in Account).toBe(false);
+    expect(Account.is("guest")).toBe(false);
+    expect(() => Account.from("guest")).toThrow(/Invalid Account/);
+    expect(Account.from("admin")).toBe("admin");
+
+    const PositiveInt = loadEmittedCompanion(
+      `
+brand type PositiveInt = number {
+  is(n: number): n is PositiveInt {
+    return Number.isInteger(n) && n > 0;
+  }
+}
+`,
+      "PositiveInt",
+    );
+    expect(Object.getOwnPropertyNames(PositiveInt).sort()).toEqual([
+      ...REFINED_COMPANION_KEYS,
+    ]);
+    expect("fromTrusted" in PositiveInt).toBe(false);
+    expect("fromPersisted" in PositiveInt).toBe(false);
+    expect(PositiveInt.is(0)).toBe(false);
+    expect(() => PositiveInt.from(0)).toThrow(/Invalid PositiveInt/);
+    expect(PositiveInt.from(2)).toBe(2);
+
+    const helper = defineLiteralSet("Account", ["admin", "regular"] as const);
+    expect(Object.getOwnPropertyNames(helper).sort()).toEqual([
+      ...LITERAL_COMPANION_KEYS,
+    ]);
   });
 
   it("Values quotes non-identifier literals", () => {

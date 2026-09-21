@@ -1,0 +1,3 @@
+brand type Environment = "sandbox" | "live";
+
+export { Environment };
