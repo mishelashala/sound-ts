@@ -108,6 +108,7 @@ export function transform(
   options: TransformFileOptions = {},
 ): TransformResult {
   runSoundnessChecks(source, options.filename);
+
   const { decls } = parseBrandTypes(source);
   const { decls: validateDecls } = parseValidateTypes(source);
 
@@ -177,6 +178,7 @@ export function transformProject(
   for (const f of files) {
     runSoundnessChecks(f.source, f.filename);
   }
+
   const parsed = files.map((f) => ({
     filename: f.filename,
     source: f.source,

@@ -76,6 +76,8 @@ export {
 export { LiteralSetError } from "./errors.js";
 export {
   runSoundnessChecks,
+  assertNoAny,
   assertNoStructuralAliases,
+  assertNoWideTypes,
   type SoundnessCheckOptions,
 } from "./soundness/index.js";

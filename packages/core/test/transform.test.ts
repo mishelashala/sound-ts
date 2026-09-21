@@ -912,3 +912,76 @@ const b = Account.from(raw);
     expect(code).not.toMatch(/\bany\b/);
   });
 });
+
+describe("soundness: reject wide types (Object / {} / Function)", () => {
+  it("rejects : Object", () => {
+    expect(() => transform(`function take(value: Object) {}`)).toThrow(
+      /Object.*too wide/,
+    );
+  });
+
+  it("rejects : {}", () => {
+    expect(() => transform(`function take(value: {}) {}`)).toThrow(
+      /\{\}.*too wide/,
+    );
+  });
+
+  it("rejects : Function", () => {
+    expect(() => transform(`function take(value: Function) {}`)).toThrow(
+      /Function.*too wide/,
+    );
+  });
+
+  it("does not rewrite wide types to unknown", () => {
+    for (const src of [
+      `const x: Object = 1;`,
+      `const x: {} = {};`,
+      `const x: Function = () => {};`,
+    ]) {
+      let threw = false;
+      try {
+        transform(src);
+      } catch (err) {
+        threw = true;
+        const msg = (err as Error).message;
+        expect(msg).toMatch(/too wide/);
+        expect(msg).toMatch(/not rewritten to unknown/);
+        expect(msg).not.toMatch(/rewrote|replaced with unknown/i);
+      }
+      expect(threw).toBe(true);
+    }
+  });
+
+  it("allows empty object literal values", () => {
+    const { code, changed } = transform(`const empty = {};`);
+    expect(changed).toBe(false);
+    expect(code).toContain(`const empty = {}`);
+    expect(code).not.toMatch(/\bunknown\b/);
+  });
+
+  it("allows lowercase object, shapes, and function type literals", () => {
+    const src = `
+function a(value: object) {}
+function b(value: { id: string }) {}
+function c(value: (n: number) => void) {}
+validate type User = { id: string };
+`;
+    const { code } = transform(src);
+    expect(code).toContain(`value: object`);
+    expect(code).toContain(`value: { id: string }`);
+    expect(code).toContain(`(n: number) => void`);
+    expect(code).toContain(`declare const UserBrand`);
+    expect(code).not.toMatch(/value:\s*Object\b/);
+    expect(code).not.toMatch(/value:\s*Function\b/);
+    expect(code).not.toMatch(/value:\s*\{\s*\}/);
+  });
+
+  it("ignores Object / Function / {} inside comments and strings", () => {
+    const src = `
+// type Hint = Object | Function | {}
+const s = "Object Function {}";
+const empty = {};
+`;
+    expect(() => transform(src)).not.toThrow();
+  });
+});
