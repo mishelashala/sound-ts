@@ -19,13 +19,26 @@ export interface EmitOptions {
   useInternalHelper?: boolean;
 }
 
+/**
+ * Finite literals stay assignable (`setRole("admin")`). The phantom arm keeps
+ * two brands with the same members distinct under stock `tsc`.
+ * Outbound to `string` works; outbound to the bare literal union does not.
+ */
+function emitLiteralNominalType(name: string, union: string): string {
+  const brand = `${name}Brand`;
+  return [
+    `declare const ${brand}: unique symbol;`,
+    `type ${name} = ${union} | (string & { readonly [${brand}]: true });`,
+  ].join("\n");
+}
+
 function emitLiteralSelfContained(decl: LiteralBrandDecl): string {
   const { name, values } = decl;
   const litList = values.map((v) => JSON.stringify(v)).join(", ");
   const union = values.map((v) => JSON.stringify(v)).join(" | ");
 
   return [
-    `type ${name} = ${union};`,
+    emitLiteralNominalType(name, union),
     `const ${name} = /*#__PURE__*/ (() => {`,
     `  const __values = Object.freeze([${litList}] as const);`,
     `  const __set = new Set<string>(__values);`,
@@ -52,7 +65,7 @@ function emitLiteralWithHelper(decl: LiteralBrandDecl): string {
   const litList = values.map((v) => JSON.stringify(v)).join(", ");
   const union = values.map((v) => JSON.stringify(v)).join(" | ");
   return [
-    `type ${name} = ${union};`,
+    emitLiteralNominalType(name, union),
     `const ${name} = defineLiteralSet("${name}", [${litList}] as const);`,
   ].join("\n");
 }

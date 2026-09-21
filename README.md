@@ -20,6 +20,7 @@ TypeScript’s contract is **type safety with erased types** — no runtime comp
 
 **Where we claim soundness today**
 
+- `brand type` string-literal brands — member literals stay assignable; a phantom arm keeps two brands with the same members distinct. Outbound to `string` works; outbound to the bare literal union does not
 - `brand type` refined brands — phantom `unique symbol` emit; bare base not assignable under stock `tsc`
 - `validate type` — same phantom + `.is` / `.from`
 - `cast<Target>(expr)` — checked entry path (primitive checks or companion `.from`)
@@ -29,7 +30,6 @@ TypeScript’s contract is **type safety with erased types** — no runtime comp
 - assertions / `as` (stock TS)
 - `any` / `unknown` misuse
 - structural widen on non-branded types
-- string-literal brands stay structural unions (by design for now)
 
 Gate: new dialect surface should **close a soundness hole**, not paper over one.
 
@@ -54,7 +54,17 @@ Library: `@mishelashala/superset-ts-core`.
 brand type Account = "admin" | "regular";
 ```
 
-Expands to a plain closed string union (`type Account = "admin" | "regular"`) plus a runtime companion with `.values`, `.is`, `.from`. Not phantom-nominalized — string literal brands stay unions under stock `tsc`.
+Expands to the member literals **plus** a phantom arm, plus a runtime companion with `.values`, `.is`, `.from`:
+
+```ts
+declare const AccountBrand: unique symbol;
+type Account =
+  | "admin"
+  | "regular"
+  | (string & { readonly [AccountBrand]: true });
+```
+
+Under stock `tsc`, `setRole("admin")` is OK, widened `string` is not, and a second brand with the same members is not assignable to `Account`. A value of type `Account` is assignable to `string`, not back to `"admin" | "regular"`.
 
 ### Refined brands
 
@@ -222,7 +232,7 @@ See also: [FAQ: Why not TypeScript?](https://mishelashala.github.io/superset-ts/
 - **No custom TypeScript checker or language server** — stock `tsc` runs on expand output only.
 - **No open brands without `is`** (use refined brands with a custom `.is`)
 - Refined brands and `validate type` are **nominally opaque** under stock `tsc` (phantom unique-symbol brands) — not structural aliases of their bases. Enter via `.from` / `cast<>`.
-- String literal brands stay **closed string unions** (structural under stock `tsc`, not phantom-nominalized). Number/bigint literal brands not supported yet.
+- String literal brands are the member literals **or** a phantom arm (nominal under stock `tsc`; member literals still assign). They do not flow back to the bare literal union. Number/bigint literal brands not supported yet.
 - We do **not** patch stock `as` / assertions, `any` / `unknown` misuse, or structural widen on non-branded types — those remain TS holes outside the dialect surface.
 - Not a full schema library — `validate type` covers simple object shapes only (no nested objects, generics, `Date`, …)
 - VS Code extension **not on Marketplace** yet (local install only)

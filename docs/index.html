@@ -93,6 +93,12 @@
       <p><strong>Where we claim soundness today</strong></p>
       <ul>
         <li>
+          <code>brand type</code> string-literal brands — member literals stay
+          assignable; a phantom arm keeps two brands with the same members
+          distinct. Outbound to <code>string</code> works; outbound to the bare
+          literal union does not
+        </li>
+        <li>
           <code>brand type</code> refined brands — phantom
           <code>unique symbol</code> emit; bare base not assignable under stock
           <code>tsc</code>
@@ -111,9 +117,6 @@
         <li>assertions / <code>as</code> (stock TS)</li>
         <li><code>any</code> / <code>unknown</code> misuse</li>
         <li>structural widen on non-branded types</li>
-        <li>
-          string-literal brands stay structural unions (by design for now)
-        </li>
       </ul>
       <p class="muted">
         Gate: new dialect surface should <strong>close a soundness hole</strong>,
@@ -132,9 +135,12 @@
         highlighting, not the checker.
       </p>
       <p>
-        String literal brands emit as <strong>closed string unions</strong>
-        (<code>"admin" | "regular"</code>) — not phantom-nominalized.
-        Runtime companion still provides <code>.values</code> / <code>.is</code> / <code>.from</code>.
+        String literal brands emit as the member literals
+        <strong>or</strong> a phantom arm, plus a runtime companion
+        (<code>.values</code> / <code>.is</code> / <code>.from</code>).
+        <code>setRole("admin")</code> stays OK. A second brand with the same
+        members is not assignable. A value of the brand assigns to
+        <code>string</code>, not back to the bare literal union.
       </p>
       <pre><code class="language-typescript">// file: roles.sts
 brand type Account = "admin" | "regular";
@@ -147,7 +153,7 @@ function greet(role: Account): string {
 greet(Account.from("admin"));
 Account.is("guest");   // false
 Account.from("guest"); // throws</code></pre>
-      <p class="muted">Emit: <code>type Account = "admin" | "regular";</code> plus companion — no <code>unique symbol</code>.</p>
+      <p class="muted">Emit: <code>type Account = "admin" | "regular" | (string &amp; { readonly [AccountBrand]: true });</code></p>
     </section>
 
     <section id="refined">
@@ -426,7 +432,7 @@ node packages/cli/dist/cli.js ./example.sts -o ./out/example.ts</code></pre>
         <li><strong>No custom TypeScript checker or language server</strong> — stock <code>tsc</code> runs on expand output only.</li>
         <li><strong>No open brands without <code>is</code></strong> (use refined brands with a custom <code>.is</code>)</li>
         <li>Refined brands and <code>validate type</code> are <strong>nominally opaque</strong> under stock <code>tsc</code> (phantom unique-symbol brands) — not structural aliases of their bases. Enter via <code>.from</code> / <code>cast&lt;&gt;</code>.</li>
-        <li>String literal brands stay <strong>closed string unions</strong> (structural under stock <code>tsc</code>, not phantom-nominalized). Number/bigint literal brands not supported yet.</li>
+        <li>String literal brands are the member literals <strong>or</strong> a phantom arm (nominal under stock <code>tsc</code>; member literals still assign). They do not flow back to the bare literal union. Number/bigint literal brands not supported yet.</li>
         <li>We do <strong>not</strong> patch stock <code>as</code> / assertions, <code>any</code> / <code>unknown</code> misuse, or structural widen on non-branded types — those remain TS holes outside the dialect surface.</li>
         <li>Not a full schema library — <code>validate type</code> covers simple object shapes only (no nested objects, generics, <code>Date</code>, …)</li>
         <li>VS Code extension not on Marketplace yet (local install only)</li>
@@ -457,7 +463,7 @@ User.from(data); // throws on mismatch</code></pre>
         <li>
           Nominal / opaque / brand types with runtime companions
           <br />
-          <span class="muted">That’s what <code>brand type</code> + companions cover here — refined / validate are phantom-opaque under stock <code>tsc</code>; enter via <code>.from</code> / <code>cast&lt;&gt;</code>. See <a href="#refined">Refined brands</a> / <a href="#authoring">String literal brands</a> (still unions).</span>
+          <span class="muted">That’s what <code>brand type</code> + companions cover here — string-literal brands keep member-literal assignability and a phantom arm; refined / validate are phantom-opaque. Enter untrusted values via <code>.from</code> / <code>cast&lt;&gt;</code>. See <a href="#refined">Refined brands</a> / <a href="#authoring">String literal brands</a>.</span>
         </li>
         <li>
           Contracts / checked casts
@@ -469,7 +475,7 @@ const u = cast&lt;User&gt;(raw);   // ✅ User.from when companion is in the bat
       </ol>
       <p class="muted">
         Honest limits of the dialect live under <a href="#non-goals">Non-goals</a>
-        (no fork, no custom checker, string-literal brands stay structural, …) —
+        (no fork, no custom checker, brand does not flow back to the bare literal union, …) —
         not as a catalog of TypeScript declines we also don’t ship.
         TS already emits for some <em>expression</em> features (enum, namespace,
         parameter properties, downleveled class/async, decorators) — those aren’t
