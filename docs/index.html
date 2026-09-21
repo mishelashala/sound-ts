@@ -51,6 +51,7 @@
       <a href="#caveats">Caveats</a>
       <a href="#vscode">VS&nbsp;Code</a>
       <a href="#non-goals">Non-goals</a>
+      <a href="#faq">FAQ</a>
     </nav>
 
     <section id="what">
@@ -289,6 +290,71 @@ node packages/cli/dist/cli.js ./example.sts -o ./out/example.ts</code></pre>
         <li>VS Code extension not on Marketplace yet (local install only)</li>
         <li><code>defineLiteralSet</code> is not the authoring surface</li>
       </ul>
+    </section>
+
+    <section id="faq">
+      <h2>FAQ: Why not TypeScript?</h2>
+      <p>
+        TypeScript’s design non-goal: don’t add RTTI or emit different JS from
+        the type system — no runtime overhead from the type layer.
+      </p>
+      <p>
+        Features declined / left out for that reason (buckets, not a full
+        issue archive):
+      </p>
+      <ol>
+        <li>
+          Runtime validation from types (auto <code>.is</code> / assert)
+          <pre><code class="language-typescript">type User = { id: string; age: number };
+User.is(data); // ❌ no companion — use Zod / hand-written guard</code></pre>
+        </li>
+        <li>
+          Nominal / opaque / brand types with runtime companions
+          <br />
+          <span class="muted">That’s what <code>brand type</code> + companions cover here — see <a href="#cli">CLI quickstart</a> / <a href="#authoring">String literal brands</a>.</span>
+        </li>
+        <li>
+          Reified generics
+          <pre><code class="language-typescript">function empty&lt;T&gt;(): T[] { return []; }
+empty&lt;string&gt;().$type; // ❌ T is gone at runtime</code></pre>
+        </li>
+        <li>
+          Pattern matching / runtime exhaustiveness from unions
+          <pre><code class="language-typescript">match(status) {
+  "ok" =&gt; 1,
+  "err" =&gt; 0,
+} // ❌ no emit; switch + `never` check is manual</code></pre>
+        </li>
+        <li>
+          Traits / typeclasses as runtime dispatch
+          <pre><code class="language-typescript">trait Show&lt;T&gt; { show(t: T): string }
+show(42); // ❌ no runtime method table from the trait</code></pre>
+        </li>
+        <li>
+          Contracts / checked casts
+          <pre><code class="language-typescript">const n = raw as! number; // ❌ no throw-on-mismatch cast</code></pre>
+        </li>
+        <li>
+          Serialization codecs from types
+          <pre><code class="language-typescript">type Dto = { email: string };
+JSON.parse(s) as Dto; // ❌ no auto encode/decode / schema from Dto</code></pre>
+        </li>
+        <li>
+          Dependent / refinement types with runtime proofs without user <code>is</code>
+          <pre><code class="language-typescript">type PositiveInt = number &amp; { _brand: "pos" }; // type-only
+PositiveInt.from(-1); // ❌ TS won’t generate the check for you</code></pre>
+        </li>
+      </ol>
+      <p class="muted">
+        TS already emits for some <em>expression</em> features (enum, namespace,
+        parameter properties, downleveled class/async, decorators) — those aren’t
+        “types that generate companions.”
+      </p>
+      <p>
+        <strong>Bottom line:</strong> if the value is erase-the-type
+        <strong>and</strong> emit a runtime artifact from it, TS usually says no —
+        libraries / transformers / <code>sts</code> fill that gap.
+      </p>
     </section>
   </main>
 

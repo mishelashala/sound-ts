@@ -157,6 +157,8 @@ Keep most of the app as normal `.ts` (stock `tsc` / Vite). Add `.sts` only where
 
 ## Non-goals (this cut)
 
+See also: [FAQ: Why not TypeScript?](https://mishelashala.github.io/superset-ts/#faq) (why a dialect vs stock TS).
+
 - **No Microsoft / TypeScript fork** to maintain
 - **No custom TypeScript checker or language server** — stock `tsc` runs on expand output only.
 - **No open brands without `is`** (use refined brands; later tip for phantom ID opacity + `.from` — not open-without-`is`)
