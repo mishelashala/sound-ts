@@ -191,6 +191,33 @@ Keep most of the app as normal `.ts` (stock `tsc` / Vite). Add `.sts` only where
 - Whole `.sts` batch on each `sts` run for cross-file `|` / `&` and `cast` companions
 - Enter refined / validate types via `.from` or `cast<>` — bare bases are not assignable under stock `tsc`
 
+### Drop-in build
+
+`examples/tsc-app` is a plain `tsc` app. One command expands `.sts`, then runs `tsc`. If expand fails, `tsc` does not run.
+
+`package.json`:
+
+```json
+{
+  "scripts": {
+    "build": "node scripts/build.mjs"
+  }
+}
+```
+
+`scripts/build.mjs` runs this, and runs `tsc` only when expand exits 0:
+
+```bash
+node ../../packages/cli/dist/cli.js src -o .superset
+tsc -p tsconfig.json
+```
+
+`tsconfig.json` sets `rootDir` to `.superset` and `outDir` to `dist`. `include` is `.superset/**/*.ts`. It does not include `*.sts`.
+
+```bash
+pnpm --dir examples/tsc-app build
+```
+
 **Seamless integration** — [roadmap v1](https://github.com/mishelashala/superset-ts/issues?q=roadmap+v1). Check a box in this list only when that issue is delivered.
 
 - [ ] [Shadow emit](https://github.com/mishelashala/superset-ts/issues/27) — `sts` writes a gitignored cache, never a sibling `.ts`. CI fails if that output is committed.

@@ -1,0 +1,9 @@
+{
+  "name": "tsc-app",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "node --test test/fail-closed.test.mjs"
+  }
+}
