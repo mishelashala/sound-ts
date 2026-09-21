@@ -150,7 +150,7 @@ Keep most of the app as normal `.ts` (stock `tsc` / Vite). Add `.sts` only where
 
 - **No Microsoft / TypeScript fork** to maintain
 - No custom TypeScript checker or language server fantasy
-- **Not** open brands (`brand type Email = string` without an `is` block)
+- **No open brands without `is`** (use refined brands; later tip for phantom ID opacity + `.from` — not open-without-`is`)
 - **Not** nominal string-literal brands / number-or-bigint literal brands
 - Not a full schema / object validation library
 - VS Code extension not on Marketplace yet (local install only)
