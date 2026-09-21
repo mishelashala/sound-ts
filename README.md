@@ -149,11 +149,10 @@ Keep most of the app as normal `.ts` (stock `tsc` / Vite). Add `.sts` only where
 ## Non-goals (this cut)
 
 - **No Microsoft / TypeScript fork** to maintain
-- No custom TypeScript checker or language server fantasy
-- **Not** open brands (`brand type Email = string` without an `is` block)
-- **Not** nominal string-literal brands / number-or-bigint literal brands
+- **No custom TypeScript checker or language server** — stock `tsc` runs on expand output only.
+- **No open brands without `is`** (use refined brands; later tip for phantom ID opacity + `.from` — not open-without-`is`)
+- String literal brands are structural under stock `tsc` (not nominal). Number/bigint literal brands not supported yet.
 - Not a full schema / object validation library
-- VS Code extension not on Marketplace yet (local install only)
 - VS Code extension **not on Marketplace** yet (local install only)
 - `defineLiteralSet` is **not** the public authoring API
 
