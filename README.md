@@ -218,6 +218,22 @@ tsc -p tsconfig.json
 pnpm --dir examples/tsc-app build
 ```
 
+### Vite
+
+`examples/vite-app` expands `.sts` inside Vite. `dev` and `build` do not call `sts`.
+
+```ts
+import { supersetTs } from "@mishelashala/superset-ts-vite";
+```
+
+```ts
+import { Account } from "./roles.sts";
+```
+
+```bash
+pnpm --dir examples/vite-app build
+```
+
 **Seamless integration** — [roadmap v1](https://github.com/mishelashala/superset-ts/issues?q=roadmap+v1). Check a box in this list only when that issue is delivered.
 
 - [x] [Shadow emit](https://github.com/mishelashala/superset-ts/issues/27) — `sts` writes a gitignored cache, never a sibling `.ts`. CI fails if that output is committed.
@@ -233,6 +249,7 @@ pnpm --dir examples/tsc-app build
 | --- | --- |
 | `packages/core` | Parse + transform `brand type` / `validate type` / `cast<>` → plain TS + runtime |
 | `packages/cli` | One-command expand (`sts` / `superset-ts`) |
+| `packages/vite` | Vite plugin `supersetTs()`: expand `.sts` on dev and build |
 | `packages/vscode` | Thin extension: highlight `brand type`, optional CLI command |
 
 ---

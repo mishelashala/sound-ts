@@ -1,0 +1,39 @@
+{
+  "name": "@mishelashala/superset-ts-vite",
+  "version": "0.3.2",
+  "private": false,
+  "description": "Vite plugin: expand .sts (brand type / validate type / cast<>) during dev and build",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@mishelashala/superset-ts-core": "workspace:*"
+  },
+  "devDependencies": {
+    "vite": "^5.4.21"
+  },
+  "peerDependencies": {
+    "vite": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
