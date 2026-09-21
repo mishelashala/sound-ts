@@ -59,7 +59,11 @@ Library: `@mishelashala/sound-ts-core`.
 brand type Account = "admin" | "regular";
 ```
 
-Expands to the member literals **plus** a phantom arm, plus a runtime companion with `.values`, `.is`, `.from`, `.toPrimitive`:
+Expands to the member literals **plus** a phantom arm, plus a runtime companion with `.values`, `.Values`, `.is`, `.from`, `.toPrimitive`:
+
+- `Account.from(raw)` — unknown / external input
+- `Account.Values.admin` — known member constant (no string typo)
+- `Account.values` — readonly array (Joi / iteration)
 
 ```ts
 declare const AccountBrand: unique symbol;
