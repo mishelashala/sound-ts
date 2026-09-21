@@ -6,7 +6,7 @@
 
 **Dialect + CLI:** write `brand type`, expand to plain TypeScript types + runtime companions (`Account.is` / `Account.from`) that stock `tsc` / Vite / VS Code already understand.
 
-> **Not a TypeScript fork.** No patched `tsc`, no Microsoft fork to maintain, no custom checker in v0. The CLI rewrites source; bundlers consume **output** only.
+> **Not a TypeScript fork.** No patched `tsc`, no Microsoft fork to maintain, no custom checker. The CLI rewrites source; bundlers consume **output** only.
 
 Repo: [mishelashala/superset-ts](https://github.com/mishelashala/superset-ts) · docs: [mishelashala.github.io/superset-ts](https://mishelashala.github.io/superset-ts/) · npm: [`@mishelashala/superset-ts-cli`](https://www.npmjs.com/package/@mishelashala/superset-ts-cli) / [`@mishelashala/superset-ts-core`](https://www.npmjs.com/package/@mishelashala/superset-ts-core)
 
@@ -100,11 +100,11 @@ Point `tsc` / Vite at **`./out`** (the transformed files), not the dialect sourc
 
 Binaries after build: `superset-ts` / `sts` → `packages/cli/dist/cli.js`.
 
-### Parser notes (v0)
+### Parser notes
 
 `packages/core` parses `brand type` with a lightweight scanner (regex header + brace matching for refined brands). Line/block comments and string/template literals are masked before the scan so fake decls inside them are ignored; live decls after comments still expand. Remaining edges: regex literals; nested `${}` inside templates (the whole template is skipped).
 
-### Same-file brand unions (v0)
+### Same-file brand unions
 
 `brand type Staff = Admin | Regular` (and `&`) only sees brands declared **earlier in that same `.sts` file** — cross-file dialect composition isn’t supported yet. After the CLI transform, export/import the emitted `type` + companion and use `.is` / `.from` across files as normal TS.
 
@@ -128,7 +128,7 @@ Binaries after build: `superset-ts` / `sts` → `packages/cli/dist/cli.js`.
 
 ## VS Code
 
-`packages/vscode` registers `.sts`, TextMate highlighting for `brand type` (including injection into `.ts`), and a command that shells out to the CLI. No full custom checker in v0 — prefer authoring in **`.sts`** so stock `tsc` doesn’t red-squiggle the dialect.
+`packages/vscode` registers `.sts`, TextMate highlighting for `brand type` (including injection into `.ts`), and a command that shells out to the CLI. No full custom checker — prefer authoring in **`.sts`** so stock `tsc` doesn’t red-squiggle the dialect.
 
 **Local-only for now.** The extension is not on the VS Code Marketplace yet — install from this repo (e.g. “Install from VSIX…” or open `packages/vscode` for development). Marketplace publish comes later.
 

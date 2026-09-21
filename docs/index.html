@@ -65,7 +65,7 @@
           </tr>
           <tr>
             <td>A CLI transform → plain TS + runtime companions</td>
-            <td>A custom checker / full language server (v0)</td>
+            <td>A custom checker / full language server</td>
           </tr>
           <tr>
             <td>Stock tooling on <strong>generated output</strong></td>
@@ -181,7 +181,7 @@ node packages/cli/dist/cli.js ./example.sts -o ./out/example.ts</code></pre>
     </section>
 
     <section id="caveats">
-      <h2>Caveats (v0)</h2>
+      <h2>Caveats</h2>
       <ul>
         <li>
           <strong>Parser / comments:</strong>
@@ -216,7 +216,7 @@ node packages/cli/dist/cli.js ./example.sts -o ./out/example.ts</code></pre>
       <p>
         <code>packages/vscode</code> registers <code>.sts</code>, highlights
         <code>brand type</code> (including in <code>.ts</code>), and can shell
-        out to the CLI. No full custom checker in v0.
+        out to the CLI. No full custom checker.
       </p>
       <p>
         <strong>Local (Cursor / VS&nbsp;Code):</strong>
@@ -250,7 +250,7 @@ node packages/cli/dist/cli.js ./example.sts -o ./out/example.ts</code></pre>
       <h2>Non-goals (this cut)</h2>
       <ul>
         <li>No Microsoft / TypeScript fork to maintain</li>
-        <li>No custom checker or LSP fantasy in v0</li>
+        <li>No custom checker or LSP fantasy</li>
         <li>Not open brands (<code>brand type Email = string</code> without <code>is</code>)</li>
         <li>Not nominal string-literal brands / number–bigint literal brands</li>
         <li>Not a full schema validation library</li>
