@@ -19,6 +19,10 @@ export {
   type TransformProjectResult,
 } from "./transform.js";
 export {
+  parseSts,
+  type DialectProgram,
+} from "./ast/index.js";
+export {
   parseBrandTypes,
   maskCommentsAndStrings,
   type BrandTypeDecl,
