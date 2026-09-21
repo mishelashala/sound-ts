@@ -63,13 +63,13 @@ body.playground-body {
   accent-color: var(--accent);
 }
 
-.pane textarea {
+/* Shared pane surface: textarea overlay + compiled <pre> */
+.editor-stack,
+.compiled-output {
   width: 100%;
   min-height: 22rem;
   flex: 1;
-  resize: vertical;
   margin: 0;
-  padding: 0.85rem 1rem;
   border: 1px solid var(--code-border);
   border-left: 3px solid var(--accent);
   border-radius: 4px;
@@ -78,18 +78,107 @@ body.playground-body {
   font: inherit;
   font-size: 0.85rem;
   line-height: 1.45;
+  box-sizing: border-box;
 }
 
-.pane textarea:focus-visible {
+/* Transparent textarea over highlighted <pre> (grid stack keeps resize in sync). */
+.editor-stack {
+  display: grid;
+  position: relative;
+  overflow: hidden;
+}
+
+.editor-stack > * {
+  grid-area: 1 / 1;
+  margin: 0;
+  padding: 0.85rem 1rem;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  font: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  white-space: pre;
+  word-wrap: normal;
+  overflow-wrap: normal;
+  tab-size: 2;
+  box-sizing: border-box;
+  min-height: 22rem;
+  width: 100%;
+}
+
+.editor-stack .editor-highlight {
+  pointer-events: none;
+  overflow: auto;
+  color: var(--code-fg);
+}
+
+.editor-stack .editor-highlight code {
+  display: block;
+  font: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  white-space: inherit;
+  tab-size: inherit;
+  background: none;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  color: inherit;
+}
+
+.editor-stack textarea {
+  resize: vertical;
+  z-index: 1;
+  color: transparent;
+  caret-color: var(--code-fg);
+  overflow: auto;
+}
+
+.editor-stack textarea::selection {
+  background: rgba(45, 212, 191, 0.35);
+  color: transparent;
+}
+
+.editor-stack textarea:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
 }
 
-.pane textarea[readonly] {
+.compiled-output {
+  padding: 0.85rem 1rem;
+  overflow: auto;
+  white-space: pre;
+  word-wrap: normal;
+  overflow-wrap: normal;
+  tab-size: 2;
   cursor: text;
 }
 
-.pane textarea.is-error {
+.compiled-output code {
+  display: block;
+  font: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  white-space: inherit;
+  tab-size: inherit;
+  background: none;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  color: inherit;
+}
+
+.compiled-output:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.compiled-output.is-error {
   border-left-color: #f43f5e;
   color: #fda4af;
+}
+
+.compiled-output.is-error code {
+  color: inherit;
 }

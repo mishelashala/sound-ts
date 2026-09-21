@@ -10,6 +10,8 @@
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
   <link rel="stylesheet" href="playground.css" />
+  <!-- Prism (CDN): same pin as docs/index.html; token colors from styles.css. -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css" />
   <link rel="icon" href="favicon.ico" sizes="any" />
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
   <link rel="icon" href="favicon-32.png" type="image/png" sizes="32x32" />
@@ -43,10 +45,13 @@
     <div class="playground">
       <section class="pane" aria-label=".sts source">
         <label class="pane-label" for="sts-source">.sts source</label>
-        <textarea id="sts-source" spellcheck="false" autocomplete="off">brand type Account = "admin" | "regular";
+        <div class="editor-stack">
+          <pre class="editor-highlight" aria-hidden="true"><code id="sts-highlight" class="language-sts"></code></pre>
+          <textarea id="sts-source" spellcheck="false" autocomplete="off">brand type Account = "admin" | "regular";
 
 const admin = Account.from("admin");
 </textarea>
+        </div>
       </section>
       <section class="pane" aria-label="Compiled output">
         <fieldset class="output-mode" id="output-mode">
@@ -54,7 +59,7 @@ const admin = Account.from("admin");
           <label><input type="radio" name="output-lang" value="ts" checked /> TypeScript</label>
           <label><input type="radio" name="output-lang" value="js" /> JavaScript</label>
         </fieldset>
-        <textarea id="compiled-output" readonly aria-readonly="true" spellcheck="false" aria-label="Compiled output"></textarea>
+        <pre id="compiled-output" class="compiled-output" tabindex="0" aria-label="Compiled output" aria-live="polite"><code id="compiled-code" class="language-typescript"></code></pre>
       </section>
     </div>
     <p class="muted">
@@ -97,6 +102,9 @@ const admin = Account.from("admin");
     })();
   </script>
   <script src="https://cdn.jsdelivr.net/npm/typescript@5.9.3/lib/typescript.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-javascript.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-typescript.min.js"></script>
   <script type="module" src="playground.js"></script>
 </body>
 </html>
