@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Aperture">
+  <circle cx="64" cy="64" r="58" fill="#0d9488"/>
+  <!-- four large blades closing on a small center -->
+  <path d="M64 14 L98 50 L64 58 Z" fill="#f8fafc"/>
+  <path d="M114 64 L78 98 L70 64 Z" fill="#f8fafc"/>
+  <path d="M64 114 L30 78 L64 70 Z" fill="#f8fafc"/>
+  <path d="M14 64 L50 30 L58 64 Z" fill="#f8fafc"/>
+  <circle cx="64" cy="64" r="12" fill="#0d9488"/>
+</svg>
