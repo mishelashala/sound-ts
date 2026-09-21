@@ -20,7 +20,7 @@
         var stored = localStorage.getItem("theme");
         var theme = stored === "light" || stored === "dark"
           ? stored
-          : (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+          : "dark";
         document.documentElement.setAttribute("data-theme", theme);
       } catch (e) {}
     })();
@@ -30,7 +30,7 @@
   <main>
     <header>
       <div class="title-row">
-        <img class="seal" src="assets/seal.svg" width="32" height="32" alt="" />
+        <img class="seal" src="logo.png" width="32" height="32" alt="sound-ts" />
         <h1>sound-ts</h1>
         <button type="button" class="theme-toggle" id="theme-toggle" aria-label="Toggle color theme">Theme</button>
       </div>
@@ -54,6 +54,7 @@
       <a href="#vscode">VS&nbsp;Code</a>
       <a href="#non-goals">Non-goals</a>
       <a href="#faq">FAQ</a>
+      <a href="#palette">Palette</a>
     </nav>
 
     <section id="what">
@@ -624,6 +625,26 @@ const u = cast&lt;User&gt;(raw);   // ✅ User.from when companion is in the bat
         phantom emit).
       </p>
     </section>
+
+    <section id="palette">
+      <h2>Pages palette</h2>
+      <p class="palette-note">UX lock for this site. Brand blue is large/UI only on dark (≈3.9:1) — body copy uses text tokens. Signal is focus / logo highlight only. Error is fail-closed examples only.</p>
+      <table>
+        <thead>
+          <tr><th>Token</th><th>Value</th><th>Role</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><span class="swatch" style="background:#0066FC"></span><code>--color-brand</code></td><td><code>#0066FC</code></td><td>CTAs / logo mid (large/UI)</td></tr>
+          <tr><td><span class="swatch" style="background:#00D9FB"></span><code>--color-signal</code></td><td><code>#00D9FB</code></td><td>Focus / logo highlight</td></tr>
+          <tr><td><span class="swatch" style="background:#0B0F1A"></span><code>--color-bg</code></td><td><code>#0B0F1A</code></td><td>Page background</td></tr>
+          <tr><td><span class="swatch" style="background:#F4F7FB"></span><code>--color-text</code></td><td><code>#F4F7FB</code></td><td>Body text</td></tr>
+          <tr><td><span class="swatch" style="background:#9AA8C7"></span><code>--color-text-muted</code></td><td><code>#9AA8C7</code></td><td>Secondary text</td></tr>
+          <tr><td><span class="swatch" style="background:#243049"></span><code>--color-border</code></td><td><code>#243049</code></td><td>Borders / dividers</td></tr>
+          <tr><td><span class="swatch" style="background:#F04438"></span><code>--color-error</code></td><td><code>#F04438</code></td><td><span class="fail-closed">Fail-closed</span> examples only</td></tr>
+        </tbody>
+      </table>
+    </section>
+
   </main>
 
   <footer>

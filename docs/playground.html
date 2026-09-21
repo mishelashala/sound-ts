@@ -21,7 +21,7 @@
         var stored = localStorage.getItem("theme");
         var theme = stored === "light" || stored === "dark"
           ? stored
-          : (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+          : "dark";
         document.documentElement.setAttribute("data-theme", theme);
       } catch (e) {}
     })();
@@ -31,7 +31,7 @@
   <main>
     <header>
       <div class="title-row">
-        <img class="seal" src="assets/seal.svg" width="32" height="32" alt="" />
+        <img class="seal" src="logo.png" width="32" height="32" alt="sound-ts" />
         <h1>sound-ts</h1>
         <button type="button" class="theme-toggle" id="theme-toggle" aria-label="Toggle color theme">Theme</button>
       </div>
