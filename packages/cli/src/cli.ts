@@ -3,7 +3,14 @@
  * superset-ts / sts — expand brand type / validate type / cast<> into plain TypeScript
  * that stock tsc / Vite consume. Not a TypeScript fork.
  */
-import { mkdir, readFile, writeFile, readdir, stat } from "node:fs/promises";
+import {
+  copyFile,
+  mkdir,
+  readFile,
+  readdir,
+  stat,
+  writeFile,
+} from "node:fs/promises";
 import path from "node:path";
 import { transformProject } from "@mishelashala/superset-ts-core";
 import { mapOutputPath, resolveOutputTarget, SUPERSET_CACHE_DIR } from "./outputPath.js";
@@ -19,7 +26,7 @@ Usage:
   sts --help
   sts --version
 
-Input may be a .ts / .sts file or a directory (recurses *.ts, *.sts).
+Input may be a .ts / .tsx / .sts file or a directory (recurses *.ts, *.tsx, *.sts).
 sts never emits .js. Re-running sts overwrites files in the output.
 
 Default output is a gitignored .superset/ cache:
@@ -27,7 +34,9 @@ Default output is a gitignored .superset/ cache:
   - Input outside the cwd → <dirname(input)>/.superset/
     (a directory is cached next to that directory; a file is cached in
     <file-dir>/.superset/<name>.ts)
-Directory inputs are mirrored under the cache, and .sts files become .ts.
+Directory inputs are mirrored under the cache: .sts files expand to .ts, and
+unchanged .ts / .tsx files are copied beside that output. Import specifiers
+are not rewritten.
 A single file roles.sts becomes .superset/roles.ts, not a sibling roles.ts.
 Explicit -o overrides the cache (output file for one input, directory for a directory).
 
@@ -71,7 +80,13 @@ function parseArgs(argv: string[]): Args {
 }
 
 function isSourceFile(file: string): boolean {
-  return file.endsWith(".ts") || file.endsWith(".sts");
+  return file.endsWith(".ts") || file.endsWith(".tsx") || file.endsWith(".sts");
+}
+
+/** Plain scripts stay byte-for-byte. `.sts` is expanded (even when unchanged). */
+function isUnchangedPlainScript(filename: string, changed: boolean): boolean {
+  if (changed) return false;
+  return filename.endsWith(".ts") || filename.endsWith(".tsx");
 }
 
 async function collectFiles(input: string): Promise<string[]> {
@@ -139,7 +154,7 @@ async function main(): Promise<void> {
 
   const files = await collectFiles(input);
   if (files.length === 0) {
-    console.error("No .ts / .sts files found.");
+    console.error("No .ts / .tsx / .sts files found.");
     process.exitCode = 1;
     return;
   }
@@ -198,16 +213,24 @@ async function main(): Promise<void> {
       if (!emitted.has(f.filename)) orderedFiles.push(f);
     }
 
+    let mirrored = 0;
     for (const result of orderedFiles) {
       const outFile = mapOutputPath(result.filename, target.inputRoot, outputRoot);
       await mkdir(path.dirname(outFile), { recursive: true });
-      await writeFile(outFile, result.code, "utf8");
+      // Copy unchanged .ts/.tsx so stock tsc on the output tree resolves
+      // `./roles.js` (brand lives in .sts) and `./app.js` (plain .ts) as written.
+      if (isUnchangedPlainScript(result.filename, result.changed)) {
+        await copyFile(result.filename, outFile);
+        mirrored++;
+      } else {
+        await writeFile(outFile, result.code, "utf8");
+      }
       totalDecls += result.decls.length + result.validateDecls.length;
       if (result.changed) changedFiles++;
     }
     console.log(
       `Transformed ${files.length} file(s) → ${path.relative(process.cwd(), outputRoot)} ` +
-        `(${changedFiles} changed, ${totalDecls} dialect decl${totalDecls === 1 ? "" : "s"})`,
+        `(${changedFiles} changed, ${mirrored} mirrored, ${totalDecls} dialect decl${totalDecls === 1 ? "" : "s"})`,
     );
   }
 }
