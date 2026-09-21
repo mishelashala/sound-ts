@@ -53,15 +53,30 @@ function emitValuesMemberKey(literal: string | number): string {
   return /^[A-Za-z_$][\w$]*$/.test(literal) ? literal : JSON.stringify(literal);
 }
 
+function emitEnumMemberLines(
+  brandName: string,
+  members: LiteralBrandDecl["members"],
+): string[] {
+  if (!members || members.length === 0) return [];
+  return members.map(
+    (member) =>
+      `    ${member.name}: ${emitLiteralToken(member.value)} as ${brandName},`,
+  );
+}
+
 /** Nested `Values` map: known members without going through `.from(...)`. */
 function emitValuesConst(
   brandName: string,
   values: readonly (string | number)[],
+  members?: LiteralBrandDecl["members"],
 ): string {
-  const entries = values.map((v) => {
-    const key = emitValuesMemberKey(v);
-    return `    ${key}: ${emitLiteralToken(v)} as ${brandName},`;
-  });
+  const entries = [
+    ...values.map((v) => {
+      const key = emitValuesMemberKey(v);
+      return `    ${key}: ${emitLiteralToken(v)} as ${brandName},`;
+    }),
+    ...emitEnumMemberLines(brandName, members),
+  ];
   return [
     `  const Values = Object.freeze({`,
     ...entries,
@@ -70,7 +85,7 @@ function emitValuesConst(
 }
 
 function emitLiteralSelfContained(decl: LiteralBrandDecl): string {
-  const { name, values, exported, primitive } = decl;
+  const { name, values, exported, primitive, members } = decl;
   const litList = values.map((v) => emitLiteralToken(v)).join(", ");
   const union = values.map((v) => emitLiteralToken(v)).join(" | ");
   const exp = exported ? "export " : "";
@@ -96,7 +111,7 @@ function emitLiteralSelfContained(decl: LiteralBrandDecl): string {
     `    }`,
     `    throw new Error(\`Invalid ${name} primitive: \${JSON.stringify(value)}\`);`,
     `  }`,
-    emitValuesConst(name, values),
+    emitValuesConst(name, values, members),
     `  return Object.freeze({`,
     `    name: "${name}" as const,`,
     `    values: __values,`,
@@ -104,6 +119,7 @@ function emitLiteralSelfContained(decl: LiteralBrandDecl): string {
     `    is,`,
     `    from,`,
     `    toPrimitive,`,
+    ...emitEnumMemberLines(name, members),
     `  });`,
     `})();`,
   ].join("\n");

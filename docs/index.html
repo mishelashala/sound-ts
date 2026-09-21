@@ -44,6 +44,7 @@
     <nav aria-label="On this page">
       <a href="#soundness">Soundness</a>
       <a href="#authoring">Authoring</a>
+      <a href="#brand-enum">Brand&nbsp;enum</a>
       <a href="#refined">Refined&nbsp;brands</a>
       <a href="#unions">Unions / intersections</a>
       <a href="#validate">Validate&nbsp;type</a>
@@ -181,7 +182,8 @@
         Unknown input enters with <code>.from</code>. <code>.from</code> always
         runs the check and throws on failure. A known string member is
         <code>Brand.Values.member</code>; a known number member is
-        <code>Brand.Values[n]</code>. The companion does not format and has no
+        <code>Brand.Values[n]</code>, or <code>Brand.Name</code> on a
+        <code>brand enum</code>. The companion does not format and has no
         method that skips <code>is</code>. <code>toFixed</code> and slugify stay
         in a normal function that calls <code>.from</code>. A label stays a
         normal function over <code>.toPrimitive</code>.
@@ -208,6 +210,31 @@ function currencyFromAmount(amount: number): CurrencyNumber {
   return CurrencyNumber.from(amount.toFixed(2));
 }</code></pre>
       <p class="muted">For plain TS / JS after expand, use the <a href="playground.html">playground</a>.</p>
+    </section>
+
+    <section id="brand-enum">
+      <h2>Brand enum</h2>
+      <p>
+        A closed number set with a name for each value. Same checks as a
+        number literal brand. The name is a property on the companion.
+        <code>from</code>, <code>is</code>, <code>values</code>,
+        <code>Values</code>, <code>name</code>, and <code>toPrimitive</code>
+        cannot be member names.
+      </p>
+      <pre><code class="language-typescript">brand enum AccountCode {
+  Zero = 0,
+  One = 1,
+  Two = 2,
+  Three = 3,
+}
+
+const code: AccountCode = AccountCode.Zero;
+AccountCode.from(1);
+AccountCode.from(4); // throws</code></pre>
+      <p class="muted">
+        <code>AccountCode.Values[0]</code> is the same member.
+        Runnable copy: <code>examples/tsc-app/src/account-code.sts</code>.
+      </p>
     </section>
 
     <section id="refined">

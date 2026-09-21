@@ -4,7 +4,7 @@
   "patterns": [
     {
       "name": "meta.brand-type.sound-ts",
-      "begin": "\\b(brand)\\s+(type)\\b",
+      "begin": "\\b(brand)\\s+(type|enum)\\b",
       "beginCaptures": {
         "1": {
           "name": "keyword.control.brand.sound-ts"

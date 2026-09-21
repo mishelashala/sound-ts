@@ -55,7 +55,7 @@ Library: `@mishelashala/sound-ts-core`.
 
 ### Entry contract
 
-Unknown input enters with `.from`. `.from` always runs the check and throws on failure. A known string member is `Brand.Values.member`. A known number member is `Brand.Values[n]`. There is no `fromTrusted`, `fromPersisted`, or other companion method that skips `is`.
+Unknown input enters with `.from`. `.from` always runs the check and throws on failure. A known string member is `Brand.Values.member`. A known number member is `Brand.Values[n]`, or `Brand.Name` when the brand is a `brand enum`. There is no `fromTrusted`, `fromPersisted`, or other companion method that skips `is`.
 
 The brand does not format. `toFixed`, slugify, and similar stay in a normal function that calls `.from`. A label stays a normal function over `.toPrimitive`, not a method on the companion.
 
@@ -76,6 +76,24 @@ Expands to the member literals **plus** a phantom arm, plus a runtime companion 
 Under stock `tsc`, `setRole("admin")` is OK, widened `string` is not, and a second brand with the same members is not assignable to `Account`. A value of type `Account` is assignable to `string`, not back to `"admin" | "regular"`.
 
 See the [playground](https://mishelashala.github.io/sound-ts/playground.html) for expanded TypeScript / JavaScript.
+
+### Brand enum
+
+A closed number set with a name for each value. Same checks as a number literal brand. The name is a property on the companion. `from`, `is`, `values`, `Values`, `name`, and `toPrimitive` are reserved and cannot be member names.
+
+```sts
+brand enum AccountCode {
+  Zero = 0,
+  One = 1,
+  Two = 2,
+  Three = 3,
+}
+
+const code: AccountCode = AccountCode.Zero;
+AccountCode.from(1);
+```
+
+`AccountCode.from(4)` throws. A widened `number` does not assign. `AccountCode.Values[0]` is still the same member. The runnable file is [`examples/tsc-app/src/account-code.sts`](examples/tsc-app/src/account-code.sts).
 
 ### Refined brands
 
