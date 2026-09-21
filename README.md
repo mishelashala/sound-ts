@@ -248,7 +248,7 @@ pnpm --dir examples/vite-app build
 
 - [ ] [Reject `as`](https://github.com/mishelashala/superset-ts/issues/36) — a type assertion in `.sts` fails expand. `as const` and `cast<>` stay. `as` is not rewritten into `cast`.
 - [x] [Reject `any`](https://github.com/mishelashala/superset-ts/issues/37) — `any` in `.sts` fails expand. `unknown` stays. `any` is not rewritten to `unknown`.
-- [ ] [No structural aliases](https://github.com/mishelashala/superset-ts/issues/38) — a bare object alias in `.sts` fails expand. `validate type` stays nominal. Outbound widen to the naked structure stays a stock `tsc` hole.
+- [x] [No structural aliases](https://github.com/mishelashala/superset-ts/issues/38) — a bare object alias in `.sts` fails expand. `validate type` stays nominal. Outbound widen to the naked structure stays a stock `tsc` hole.
 - [ ] [Method parameters](https://github.com/mishelashala/superset-ts/issues/40) — a method in `.sts` emits as a readonly function property, so stock `strictFunctionTypes` checks parameters contravariantly.
 - [ ] [Reject `!`](https://github.com/mishelashala/superset-ts/issues/41) — `value!` and `prop!: Type` in `.sts` fail expand. `!==` stays. `!` is not deleted.
 - [ ] [Reject `Object`, `{}`, `Function`](https://github.com/mishelashala/superset-ts/issues/42) — those types in `.sts` fail expand. An empty object literal stays. They are not rewritten to `unknown`.
