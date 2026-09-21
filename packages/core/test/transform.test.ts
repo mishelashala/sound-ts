@@ -857,6 +857,25 @@ const n = cast<PositiveInt>(raw);
     );
   });
 
+  it("refined companion includes .toPrimitive returning the base type", () => {
+    const src = `
+brand type PositiveInt = number {
+  is(n: number): n is PositiveInt {
+    return Number.isInteger(n) && n > 0;
+  }
+}
+`;
+    const { code } = transform(src);
+    expect(code).toContain("function toPrimitive(value: PositiveInt): number");
+    expect(code).toMatch(/\btoPrimitive,/);
+    const check = `${code}
+const n = PositiveInt.from(3);
+const back: number = PositiveInt.toPrimitive(n);
+void back;
+`;
+    expect(typecheckOk(check)).toEqual([]);
+  });
+
   it("bare number is not assignable to refined brand (tsc)", () => {
     const src = `
 brand type PositiveInt = number {

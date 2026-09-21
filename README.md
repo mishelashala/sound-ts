@@ -85,12 +85,13 @@ brand type PositiveInt = number {
 }
 ```
 
-Expands to a **phantom unique-symbol brand** plus a companion that keeps your `.is` body and **generates** `.from` (validate via `.is`):
+Expands to a **phantom unique-symbol brand** plus a companion that keeps your `.is` body and **generates** `.from` (validate via `.is`) and `.toPrimitive` (identity back to the base type):
 
 ```ts
 declare const PositiveIntBrand: unique symbol;
 type PositiveInt = number & { readonly [PositiveIntBrand]: true };
-// companions: .is is a type predicate; .from / cast<> return PositiveInt
+// companions: .is is a type predicate; .from / cast<> return PositiveInt;
+// .toPrimitive(value) → number
 ```
 
 Under stock `tsc`, bare `number` is **not** assignable to `PositiveInt` — enter via `.from` / `cast<PositiveInt>(…)`. Runtime checks still matter at boundaries; the brand alone is not enough. No separate `.d.ts` emit — plain `.ts` only.
