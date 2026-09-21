@@ -2,7 +2,7 @@
   "name": "@mishelashala/superset-ts-core",
   "version": "0.3.2",
   "private": false,
-  "description": "Transform: brand type / validate type / as! \u2192 plain TS types + runtime companions",
+  "description": "Transform: brand type / validate type / cast<> \u2192 plain TS types + runtime companions",
   "license": "MIT",
   "type": "module",
   "main": "./dist/index.js",

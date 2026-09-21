@@ -2,7 +2,7 @@
  * Project-wide companion map: collect `brand type` and `validate type` decls
  * across a CLI batch, then resolve `|` / `&` brand members and detect cycles.
  * No module/import resolver — every file on the transform input graph shares
- * one map (needed so `as! User` can see companions from other files).
+ * one map (needed so `cast<User>(…)` can see companions from other files).
  */
 
 import type { BrandTypeDecl, CombinedBrandDecl } from "./parse.js";
@@ -105,7 +105,7 @@ export function assertNoCompanionNameCollisions(
   }
 }
 
-/** All companion names (brands + validate types) visible to `as!`. */
+/** All companion names (brands + validate types) visible to `cast`. */
 export function companionNames(
   brandMap: BrandMap,
   validateMap: ValidateMap,

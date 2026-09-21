@@ -101,7 +101,7 @@
     },
     "checked-cast": {
       "name": "keyword.operator.checked-cast.superset-ts",
-      "match": "\\bas!"
+      "match": "\\bcast\b"
     }
   }
 }

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * superset-ts / sts — expand brand type / validate type / as! into plain TypeScript
+ * superset-ts / sts — expand brand type / validate type / cast<> into plain TypeScript
  * that stock tsc / Vite consume. Not a TypeScript fork.
  */
 import { mkdir, readFile, writeFile, readdir, stat } from "node:fs/promises";
@@ -10,7 +10,7 @@ import { transformProject } from "@mishelashala/superset-ts-core";
 const VERSION = "0.3.2";
 
 function usage(): string {
-  return `superset-ts / sts — brand type / validate type / as! → plain TS + runtime companions
+  return `superset-ts / sts — brand type / validate type / cast<> → plain TS + runtime companions
 
 Usage:
   sts <input> [-o <output>]
@@ -23,7 +23,7 @@ Output defaults to <input> with .sts → .ts, or <dir>.out/ for directories.
 
 When multiple files are transformed together, brand and validate names are
 collected across the whole batch so \`brand type Staff = Admin | Regular\` and
-\`raw as! User\` can reference companions declared in other input files.
+\`cast<User>(raw)\` can reference companions declared in other input files.
 Point stock tsc / Vite at the **output** only.
 `;
 }

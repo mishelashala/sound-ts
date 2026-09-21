@@ -1,7 +1,7 @@
 /**
  * @mishelashala/superset-ts-core
  *
- * Product: `brand type` / `validate type` dialect + `as!` checked casts →
+ * Product: `brand type` / `validate type` dialect + `cast<…>(…)` checked casts →
  * plain TS + runtime companions. Not a TypeScript fork. Stock tooling
  * consumes transform output only.
  *
