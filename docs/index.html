@@ -324,8 +324,8 @@ node packages/cli/dist/cli.js ./example.sts -o ./out/example.ts</code></pre>
       <ul>
         <li><code>sts</code> never emits <code>.js</code></li>
         <li>
-          Default dir → <code>dir.out/</code> or <code>-o</code> you choose
-          (e.g. <code>src/brands.generated/</code>)
+          Default output → <code>&lt;cwd&gt;/.superset/</code> (gitignored; input
+          outside the cwd caches next to that input) or <code>-o</code> you choose
         </li>
         <li>Stock Nest / <code>tsc</code> still owns <code>dist/</code></li>
         <li>Don’t point <code>tsc</code> at raw <code>.sts</code></li>
