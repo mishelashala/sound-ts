@@ -47,6 +47,7 @@
       <a href="#refined">Refined&nbsp;brands</a>
       <a href="#unions">Unions / intersections</a>
       <a href="#cli">CLI</a>
+      <a href="#adoption">Adoption</a>
       <a href="#caveats">Caveats</a>
       <a href="#vscode">VS&nbsp;Code</a>
       <a href="#non-goals">Non-goals</a>
@@ -191,6 +192,28 @@ sts ./example.sts -o ./out/example.ts
 cd superset-ts
 pnpm install &amp;&amp; pnpm build &amp;&amp; pnpm test
 node packages/cli/dist/cli.js ./example.sts -o ./out/example.ts</code></pre>
+    </section>
+
+
+    <section id="adoption">
+      <h2>Adoption recipe (not all-or-nothing)</h2>
+      <p>
+        Keep most of the app as normal <code>.ts</code> (stock <code>tsc</code> / Vite).
+        Add <code>.sts</code> only where you want <code>brand type</code>.
+      </p>
+      <ul>
+        <li>
+          Expand in CI (<code>sts … -o …</code>), then compile the output as usual.
+        </li>
+        <li>
+          Start with one leaf brand file (ids / roles) → grow file by file.
+        </li>
+        <li>
+          Pass the <strong>whole <code>.sts</code> batch</strong> to <code>sts</code>
+          for cross-file <code>|</code> / <code>&amp;</code>; composing files still
+          <code>import</code> companions so emit typechecks under stock <code>tsc</code>.
+        </li>
+      </ul>
     </section>
 
     <section id="caveats">
