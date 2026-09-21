@@ -154,7 +154,7 @@ pnpm install
 pnpm build
 pnpm test
 
-# expand one file (.sts → .ts, or .ts → .gen.ts by default)
+# expand one file into .superset/ (roles.sts → .superset/roles.ts, not a sibling .ts)
 pnpm --filter @mishelashala/superset-ts-cli exec sts path/to/file.sts
 # or after linking / running dist:
 node packages/cli/dist/cli.js path/to/file.sts -o path/to/out.ts
@@ -185,7 +185,7 @@ Keep most of the app as normal `.ts` (stock `tsc` / Vite). Add `.sts` only where
 ```
 
 - `sts` never emits `.js`
-- Default dir → `dir.out/` or `-o` you choose (e.g. `src/brands.generated/`)
+- Default output → `<cwd>/.superset/` (gitignored; input outside the cwd caches next to that input) or `-o` you choose
 - Stock Nest / `tsc` still owns `dist/`
 - Don’t point `tsc` at raw `.sts`
 - Whole `.sts` batch on each `sts` run for cross-file `|` / `&` and `cast` companions

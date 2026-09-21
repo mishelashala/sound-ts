@@ -6,6 +6,7 @@
 import { mkdir, readFile, writeFile, readdir, stat } from "node:fs/promises";
 import path from "node:path";
 import { transformProject } from "@mishelashala/superset-ts-core";
+import { mapOutputPath, resolveOutputTarget, SUPERSET_CACHE_DIR } from "./outputPath.js";
 
 const VERSION = "0.3.2";
 
@@ -19,7 +20,16 @@ Usage:
   sts --version
 
 Input may be a .ts / .sts file or a directory (recurses *.ts, *.sts).
-Output defaults to <input> with .sts → .ts, or <dir>.out/ for directories.
+sts never emits .js. Re-running sts overwrites files in the output.
+
+Default output is a gitignored .superset/ cache:
+  - Input inside the cwd (or the cwd itself) → <cwd>/.superset/
+  - Input outside the cwd → <dirname(input)>/.superset/
+    (a directory is cached next to that directory; a file is cached in
+    <file-dir>/.superset/<name>.ts)
+Directory inputs are mirrored under the cache, and .sts files become .ts.
+A single file roles.sts becomes .superset/roles.ts, not a sibling roles.ts.
+Explicit -o overrides the cache (output file for one input, directory for a directory).
 
 When multiple files are transformed together, brand and validate names are
 collected across the whole batch so \`brand type Staff = Admin | Regular\` and
@@ -64,12 +74,6 @@ function isSourceFile(file: string): boolean {
   return file.endsWith(".ts") || file.endsWith(".sts");
 }
 
-function mapOutputPath(inputPath: string, inputRoot: string, outputRoot: string): string {
-  const rel = path.relative(inputRoot, inputPath);
-  const mapped = rel.endsWith(".sts") ? rel.slice(0, -4) + ".ts" : rel;
-  return path.join(outputRoot, mapped);
-}
-
 async function collectFiles(input: string): Promise<string[]> {
   const s = await stat(input);
   if (s.isFile()) {
@@ -80,7 +84,12 @@ async function collectFiles(input: string): Promise<string[]> {
     for (const ent of await readdir(dir, { withFileTypes: true })) {
       const p = path.join(dir, ent.name);
       if (ent.isDirectory()) {
-        if (ent.name === "node_modules" || ent.name === "dist" || ent.name === ".git") {
+        if (
+          ent.name === "node_modules" ||
+          ent.name === "dist" ||
+          ent.name === ".git" ||
+          ent.name === SUPERSET_CACHE_DIR
+        ) {
           continue;
         }
         await walk(p);
@@ -121,21 +130,12 @@ async function main(): Promise<void> {
     return;
   }
 
-  let outputRoot: string;
-  if (args.output) {
-    outputRoot = path.resolve(args.output);
-  } else if (inputStat.isDirectory()) {
-    outputRoot = input + ".out";
-  } else {
-    // single file: default beside input, .sts → .ts, else overwrite caution → .gen.ts
-    if (input.endsWith(".sts")) {
-      outputRoot = input.slice(0, -4) + ".ts";
-    } else {
-      const dir = path.dirname(input);
-      const base = path.basename(input, path.extname(input));
-      outputRoot = path.join(dir, base + ".gen.ts");
-    }
-  }
+  const target = resolveOutputTarget({
+    input,
+    isDirectory: inputStat.isDirectory(),
+    cwd: process.cwd(),
+    ...(args.output !== undefined ? { explicitOutput: args.output } : {}),
+  });
 
   const files = await collectFiles(input);
   if (files.length === 0) {
@@ -164,9 +164,9 @@ async function main(): Promise<void> {
   let totalDecls = 0;
   let changedFiles = 0;
 
-  if (inputStat.isFile()) {
+  if (target.kind === "file") {
     const result = project.files[0]!;
-    const outFile = outputRoot;
+    const outFile = target.outputFile;
     await mkdir(path.dirname(outFile), { recursive: true });
     await writeFile(outFile, result.code, "utf8");
     totalDecls = result.decls.length + result.validateDecls.length;
@@ -176,6 +176,7 @@ async function main(): Promise<void> {
       `Wrote ${path.relative(process.cwd(), outFile)} (${n} dialect decl${n === 1 ? "" : "s"})`,
     );
   } else {
+    const outputRoot = target.outputRoot;
     await mkdir(outputRoot, { recursive: true });
     // Emit in dependency-first brand order grouped by file appearance in brandOrder,
     // falling back to input order for files with no brands.
@@ -198,7 +199,7 @@ async function main(): Promise<void> {
     }
 
     for (const result of orderedFiles) {
-      const outFile = mapOutputPath(result.filename, input, outputRoot);
+      const outFile = mapOutputPath(result.filename, target.inputRoot, outputRoot);
       await mkdir(path.dirname(outFile), { recursive: true });
       await writeFile(outFile, result.code, "utf8");
       totalDecls += result.decls.length + result.validateDecls.length;
