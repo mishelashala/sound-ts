@@ -24,13 +24,21 @@ interface BrandTypeDeclBase {
   exported: boolean;
 }
 
-/** Closed string or number literal union (Mode A). */
+/** Named number on a `brand enum`. The name is a companion property. */
+export interface BrandEnumMember {
+  name: string;
+  value: number;
+}
+
+/** Closed string or number literal union (Mode A), or a `brand enum`. */
 export interface LiteralBrandDecl extends BrandTypeDeclBase {
   kind: "literal";
   /** All members are this primitive. Mixed string|number unions are rejected. */
   primitive: "string" | "number";
   /** Ordered unique literals */
   values: (string | number)[];
+  /** Present for `brand enum`. Same order as `values`. */
+  members?: readonly BrandEnumMember[];
 }
 
 /** Phase 2 Mode B: base type + custom `is`, generated `from` */

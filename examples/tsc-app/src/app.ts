@@ -17,7 +17,7 @@ export function environmentFromChecked(raw: unknown): Environment | undefined {
   return Environment.from(raw);
 }
 
-export const codeZero: AccountCode = AccountCode.Values[0];
+export const codeZero: AccountCode = AccountCode.Zero;
 
 export function accountCodeLabel(code: AccountCode): string {
   switch (AccountCode.toPrimitive(code)) {

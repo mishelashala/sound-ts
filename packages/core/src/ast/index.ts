@@ -10,7 +10,7 @@ import type { ValidateTypeDecl } from "../validate.js";
 import type { CheckedCastSite } from "../checkedCast.js";
 import type { DialectProgram } from "./types.js";
 import { createTriviaSkippingScanner, isIdent } from "./helpers.js";
-import { parseBrandAt } from "./parseBrand.js";
+import { parseBrandAt, parseBrandEnumAt } from "./parseBrand.js";
 import { parseValidateAt } from "./parseValidate.js";
 import { parseCastAt } from "./parseCast.js";
 import { maskCommentsAndStrings } from "../mask.js";
@@ -45,6 +45,15 @@ export function parseSts(source: string): DialectProgram {
         scanner.scan();
         // Parse against original source (spans match masked offsets).
         const decl = parseBrandAt(source, scanner);
+        brands.push(decl);
+        scanner.setTextPos(decl.end);
+        token = scanner.scan();
+        continue;
+      }
+      if (scanner.getToken() === ts.SyntaxKind.EnumKeyword) {
+        scanner.setTextPos(brandPos);
+        scanner.scan();
+        const decl = parseBrandEnumAt(source, scanner);
         brands.push(decl);
         scanner.setTextPos(decl.end);
         token = scanner.scan();

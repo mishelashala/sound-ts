@@ -35,15 +35,17 @@ export function prepareDialectForTsAst(source: string): {
   const scan = maskCommentsAndStrings(source);
   const out = source.split("");
   const dialectTypeOffsets = new Set<number>();
-  const re = /\b(brand|validate)(\s+)(type)\b/g;
+  const re = /\b(brand|validate)(\s+)(type)\b|\b(brand)(\s+)(enum)\b/g;
   let m: RegExpExecArray | null;
   while ((m = re.exec(scan)) !== null) {
-    const kw = m[1]!;
-    const ws = m[2]!;
+    const kw = m[1] ?? m[4]!;
+    const ws = m[2] ?? m[5]!;
     for (let i = 0; i < kw.length; i++) {
       out[m.index + i] = " ";
     }
-    dialectTypeOffsets.add(m.index + kw.length + ws.length);
+    if (m[3] === "type") {
+      dialectTypeOffsets.add(m.index + kw.length + ws.length);
+    }
   }
   return { parseText: out.join(""), dialectTypeOffsets };
 }

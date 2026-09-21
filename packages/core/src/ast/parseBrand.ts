@@ -452,6 +452,126 @@ function parseRefinedBrand(
   };
 }
 
+const ENUM_RESERVED = new Set([
+  "name",
+  "values",
+  "Values",
+  "is",
+  "from",
+  "toPrimitive",
+]);
+
+/**
+ * Parse `brand enum`. Scanner must be on `brand`.
+ * A member name is a companion property (`AccountCode.Zero`).
+ */
+export function parseBrandEnumAt(
+  source: string,
+  scanner: ts.Scanner,
+): LiteralBrandDecl {
+  const brandTokenStart = scanner.getTokenPos();
+  const { start: declStart, exported } = leadingExportStart(
+    source,
+    brandTokenStart,
+  );
+  scanner.scan();
+  if (scanner.getToken() !== ts.SyntaxKind.EnumKeyword) {
+    throw new SyntaxError(`expected 'enum' after 'brand'`);
+  }
+  scanner.scan();
+  if (scanner.getToken() !== ts.SyntaxKind.Identifier) {
+    throw new SyntaxError(`brand enum: expected name`);
+  }
+  const name = scanner.getTokenValue();
+  scanner.scan();
+  if (scanner.getToken() !== ts.SyntaxKind.OpenBraceToken) {
+    throw new SyntaxError(`brand enum ${name}: expected '{'`);
+  }
+  scanner.scan();
+
+  const members: { name: string; value: number }[] = [];
+  const seenNames = new Set<string>();
+  const seenValues = new Set<number>();
+
+  while (scanner.getToken() !== ts.SyntaxKind.CloseBraceToken) {
+    if (scanner.getToken() === ts.SyntaxKind.EndOfFileToken) {
+      throw new SyntaxError(`brand enum ${name}: expected '}'`);
+    }
+    const memberName = scanner.getTokenValue();
+    if (ENUM_RESERVED.has(memberName)) {
+      throw new SyntaxError(
+        `brand enum ${name}: member '${memberName}' is reserved`,
+      );
+    }
+    if (scanner.getToken() !== ts.SyntaxKind.Identifier) {
+      throw new SyntaxError(`brand enum ${name}: expected member name`);
+    }
+    if (seenNames.has(memberName)) {
+      throw new SyntaxError(
+        `brand enum ${name}: duplicate member '${memberName}'`,
+      );
+    }
+    scanner.scan();
+    if (scanner.getToken() !== ts.SyntaxKind.EqualsToken) {
+      throw new SyntaxError(
+        `brand enum ${name}: expected '=' after '${memberName}'`,
+      );
+    }
+    scanner.scan();
+    let value: number;
+    if (scanner.getToken() === ts.SyntaxKind.MinusToken) {
+      scanner.scan();
+      if (scanner.getToken() !== ts.SyntaxKind.NumericLiteral) {
+        throw new SyntaxError(
+          `brand enum ${name}: expected number after '-'`,
+        );
+      }
+      value = -Number(scanner.getTokenValue());
+    } else if (scanner.getToken() === ts.SyntaxKind.NumericLiteral) {
+      value = Number(scanner.getTokenValue());
+    } else {
+      throw new SyntaxError(
+        `brand enum ${name}: expected number literal for '${memberName}'`,
+      );
+    }
+    if (!Number.isFinite(value)) {
+      throw new SyntaxError(
+        `brand enum ${name}: expected finite number for '${memberName}'`,
+      );
+    }
+    if (seenValues.has(value)) {
+      throw new SyntaxError(`brand enum ${name}: duplicate value ${value}`);
+    }
+    seenNames.add(memberName);
+    seenValues.add(value);
+    members.push({ name: memberName, value });
+    scanner.scan();
+    if (scanner.getToken() === ts.SyntaxKind.CommaToken) {
+      scanner.scan();
+    }
+  }
+  if (members.length === 0) {
+    throw new SyntaxError(`brand enum ${name}: expected at least one member`);
+  }
+  scanner.scan();
+  if (scanner.getToken() === ts.SyntaxKind.SemicolonToken) {
+    scanner.scan();
+  }
+  const end = scanner.getTokenPos();
+  const decl: LiteralBrandDecl = {
+    kind: "literal",
+    name,
+    primitive: "number",
+    values: members.map((member) => member.value),
+    members,
+    raw: source.slice(declStart, end),
+    start: declStart,
+    end,
+    exported,
+  };
+  return decl;
+}
+
 /**
  * Parse brand decl. Scanner must be on `brand`. Returns decl and end offset;
  * caller should setTextPos(end) before continuing.

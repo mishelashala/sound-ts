@@ -1165,6 +1165,45 @@ const members: 7 | 30 | 90 = a;
     expect(typecheckOk(check)).toEqual([]);
   });
 
+  it("brand enum names the number on the companion", () => {
+    const src = `brand enum AccountCode {
+  Zero = 0,
+  One = 1,
+  Two = 2,
+  Three = 3,
+};
+`;
+    const { code } = transform(src);
+    expect(code).toContain(
+      `type AccountCode = 0 | 1 | 2 | 3 | (number & { readonly [AccountCodeBrand]: true });`,
+    );
+    expect(code).toContain("Zero: 0 as AccountCode");
+    const AccountCode = loadEmittedCompanion(src, "AccountCode") as EmittedCompanion & {
+      Zero: number;
+      Values: { 0: number; Zero: number };
+    };
+    expect(Object.getOwnPropertyNames(AccountCode).sort()).toEqual(
+      ["One", "Three", "Two", "Zero", ...LITERAL_COMPANION_KEYS].sort(),
+    );
+    expect(AccountCode.Zero).toBe(0);
+    expect(AccountCode.Values[0]).toBe(0);
+    expect(AccountCode.Values.Zero).toBe(0);
+    expect(() => AccountCode.from(4)).toThrow(/Invalid AccountCode: 4/);
+    const check = `${code}
+const code: AccountCode = AccountCode.Zero;
+declare const raw: number;
+// @ts-expect-error widened number
+const widened: AccountCode = raw;
+`;
+    expect(typecheckOk(check)).toEqual([]);
+  });
+
+  it("brand enum rejects a reserved member name", () => {
+    expect(() => transform(`brand enum AccountCode { from = 0 }`)).toThrow(
+      /reserved/,
+    );
+  });
+
   it("refined .from / cast return the branded type", () => {
     const src = `
 brand type PositiveInt = number {

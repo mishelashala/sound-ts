@@ -16,6 +16,21 @@ setRole(Account.from("admin"));
 `,
   },
   {
+    id: "enum",
+    label: "Brand enum",
+    source: `brand enum AccountCode {
+  Zero = 0,
+  One = 1,
+  Two = 2,
+  Three = 3,
+}
+
+const code: AccountCode = AccountCode.Zero;
+AccountCode.from(1);
+// AccountCode.from(4); // throws
+`,
+  },
+  {
     id: "refined",
     label: "Refined brand",
     source: `brand type PositiveInt = number {
