@@ -10,6 +10,7 @@ import type {
   ValidateTypeDecl,
 } from "../validate.js";
 import {
+  leadingExportStart,
   parseTypeSnippet,
   scanBalancedBrace,
   skipWs,
@@ -143,7 +144,11 @@ export function parseValidateAt(
   source: string,
   scanner: ts.Scanner,
 ): ValidateTypeDecl {
-  const declStart = scanner.getTokenPos();
+  const validateTokenStart = scanner.getTokenPos();
+  const { start: declStart, exported } = leadingExportStart(
+    source,
+    validateTokenStart,
+  );
   scanner.scan(); // type
   if (scanner.getToken() !== ts.SyntaxKind.TypeKeyword) {
     throw new SyntaxError(`expected 'type' after 'validate'`);
@@ -179,5 +184,6 @@ export function parseValidateAt(
     raw: source.slice(declStart, end),
     start: declStart,
     end,
+    exported,
   };
 }

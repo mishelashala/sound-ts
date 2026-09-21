@@ -1,10 +1,9 @@
 import { parseSts } from "./ast/index.js";
+import type { DialectProgram } from "./ast/types.js";
 import type { BrandTypeDecl } from "./parse.js";
 import { transformSource, type EmitOptions } from "./emit.js";
 import {
   assertNoCompanionNameCollisions,
-  buildBrandMap,
-  buildValidateMap,
   companionNames,
   resolveBrandRefs,
   type BrandMap,
@@ -75,6 +74,20 @@ export interface TransformProjectResult {
   symbols: DialectProjectSymbols;
 }
 
+/**
+ * Dialect soundness + rewrites apply to `.sts` (and stdin / unspecified).
+ * Plain `.ts` / `.tsx` in a mixed `sts` mirror batch stay byte-for-byte so
+ * gradual adoption does not ban `as` / rewrite methods across a stock app.
+ */
+export function isDialectSurface(filename?: string): boolean {
+  if (filename === undefined || filename === "<stdin>") return true;
+  return /\.sts$/i.test(filename);
+}
+
+function emptyDialect(source: string): DialectProgram {
+  return { source, brands: [], validates: [], casts: [] };
+}
+
 function expandFile(
   source: string,
   brandDecls: BrandTypeDecl[],
@@ -129,6 +142,15 @@ export function transform(
   source: string,
   options: TransformFileOptions = {},
 ): TransformResult {
+  if (!isDialectSurface(options.filename)) {
+    return {
+      code: source,
+      decls: [],
+      validateDecls: [],
+      changed: false,
+    };
+  }
+
   runSoundnessChecks(source, options.filename);
 
   const dialect = parseSts(source);
@@ -219,16 +241,32 @@ export function transform(
  * decls from every file, build project symbols (scopes + import links), resolve
  * `|` / `&` members + cycles, then emit each file and rewrite `cast`.
  * Relative imports of companions stay stock TS after emit.
+ *
+ * Plain `.ts` / `.tsx` are mirrored unchanged (no soundness bans, no method
+ * rewrite). Only `.sts` is the dialect surface.
  */
 export function transformProject(
   files: ProjectFileInput[],
   options: EmitOptions = {},
 ): TransformProjectResult {
   for (const f of files) {
-    runSoundnessChecks(f.source, f.filename);
+    if (isDialectSurface(f.filename)) {
+      runSoundnessChecks(f.source, f.filename);
+    }
   }
 
   const parsed = files.map((f) => {
+    if (!isDialectSurface(f.filename)) {
+      const dialect = emptyDialect(f.source);
+      return {
+        filename: f.filename,
+        source: f.source,
+        dialect,
+        decls: dialect.brands,
+        validateDecls: dialect.validates,
+        dialectSurface: false as const,
+      };
+    }
     const dialect = parseSts(f.source);
     return {
       filename: f.filename,
@@ -236,6 +274,7 @@ export function transformProject(
       dialect,
       decls: dialect.brands,
       validateDecls: dialect.validates,
+      dialectSurface: true as const,
     };
   });
 
@@ -248,7 +287,9 @@ export function transformProject(
   );
 
   for (const f of parsed) {
-    runSoundness1Checks(f.source, { filename: f.filename, symbols });
+    if (f.dialectSurface) {
+      runSoundness1Checks(f.source, { filename: f.filename, symbols });
+    }
   }
 
   resolveBrandMemberSymbols(symbols);
@@ -259,6 +300,15 @@ export function transformProject(
   const names = companionNamesFromSymbols(symbols);
 
   const results: ProjectFileResult[] = parsed.map((f) => {
+    if (!f.dialectSurface) {
+      return {
+        filename: f.filename,
+        code: f.source,
+        decls: [],
+        validateDecls: [],
+        changed: false,
+      };
+    }
     const { code, changed } = expandFile(
       f.source,
       f.decls,
