@@ -179,7 +179,7 @@ brand type Authed = User &amp; Session;
 
 
     <section id="validate">
-      <h2><code>validate type</code> (MVP)</h2>
+      <h2><code>validate type</code></h2>
       <p>
         Object types with primitive fields expand to the same
         <code>.is</code> / <code>.from</code> companion shape as brands.
@@ -190,7 +190,7 @@ validate type User = { id: string; age: number };
 
 User.is(data);   // boolean
 User.from(data); // throws on mismatch</code></pre>
-      <p><strong>MVP field shapes:</strong></p>
+      <p><strong>Supported field shapes:</strong></p>
       <ul>
         <li><code>string</code> | <code>number</code> | <code>boolean</code></li>
         <li>optional <code>?</code></li>
@@ -338,7 +338,7 @@ node packages/cli/dist/cli.js ./example.sts -o ./out/example.ts</code></pre>
         <li><strong>No custom TypeScript checker or language server</strong> — stock <code>tsc</code> runs on expand output only.</li>
         <li><strong>No open brands without <code>is</code></strong> (use refined brands; later tip for phantom ID opacity + <code>.from</code> — not open-without-<code>is</code>)</li>
         <li>String literal brands are structural under stock <code>tsc</code> (not nominal). Number/bigint literal brands not supported yet.</li>
-        <li>Not a full schema library — <code>validate type</code> MVP covers simple object shapes only</li>
+        <li>Not a full schema library — <code>validate type</code> covers simple object shapes only (no nested objects, generics, <code>Date</code>, …)</li>
         <li>VS Code extension not on Marketplace yet (local install only)</li>
         <li><code>defineLiteralSet</code> is not the authoring surface</li>
       </ul>
@@ -358,7 +358,7 @@ node packages/cli/dist/cli.js ./example.sts -o ./out/example.ts</code></pre>
         <li>
           Runtime validation from types (auto <code>.is</code> / assert)
           <br />
-          <span class="muted">This dialect covers it (MVP) via <code>validate type</code> — see <a href="#validate">Validate type</a>.</span>
+          <span class="muted">This dialect covers it via <code>validate type</code> — see <a href="#validate">Validate type</a>.</span>
           <pre><code class="language-typescript">validate type User = { id: string; age: number };
 User.is(data);   // ✅ companion
 User.from(data); // throws on mismatch</code></pre>
@@ -388,7 +388,7 @@ show(42); // ❌ no runtime method table from the trait</code></pre>
         <li>
           Contracts / checked casts
           <br />
-          <span class="muted">This dialect covers it (MVP) via <code>as!</code> — see <a href="#casts">Checked casts</a>.</span>
+          <span class="muted">This dialect covers it via <code>as!</code> — see <a href="#casts">Checked casts</a>.</span>
           <pre><code class="language-typescript">const n = raw as! number; // ✅ throws on mismatch
 const u = raw as! User;   // ✅ User.from when companion is in the batch</code></pre>
         </li>

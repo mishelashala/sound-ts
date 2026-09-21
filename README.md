@@ -81,7 +81,7 @@ Account.is("guest");          // false
 Account.from("guest");        // throws
 ```
 
-### Validate type (MVP)
+### Validate type
 
 Object types with primitive fields → same `.is` / `.from` companions:
 
@@ -92,7 +92,7 @@ User.is(data);
 User.from(data); // throws on mismatch
 ```
 
-**MVP field shapes:** `string` | `number` | `boolean`, optional `?`, arrays of those (`string[]`), and unions of those. Nested objects, generics, `Date`, imported aliases as field types, etc. error clearly at transform time.
+**Supported field shapes:** `string` | `number` | `boolean`, optional `?`, arrays of those (`string[]`), and unions of those. Nested objects, generics, `Date`, imported aliases as field types, etc. error clearly at transform time.
 
 ### Checked casts (`as!`)
 
@@ -185,7 +185,7 @@ See also: [FAQ: Why not TypeScript?](https://mishelashala.github.io/superset-ts/
 - **No custom TypeScript checker or language server** — stock `tsc` runs on expand output only.
 - **No open brands without `is`** (use refined brands; later tip for phantom ID opacity + `.from` — not open-without-`is`)
 - String literal brands are structural under stock `tsc` (not nominal). Number/bigint literal brands not supported yet.
-- Not a full schema library — `validate type` MVP covers simple object shapes only
+- Not a full schema library — `validate type` covers simple object shapes only (no nested objects, generics, `Date`, …)
 - VS Code extension **not on Marketplace** yet (local install only)
 - `defineLiteralSet` is **not** the public authoring API
 
