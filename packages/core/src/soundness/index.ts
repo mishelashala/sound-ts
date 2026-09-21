@@ -1,4 +1,5 @@
 import { assertNoAny } from "./rejectAny.js";
+import { assertNoNonNullAssertions } from "./rejectNonNull.js";
 import { assertNoStructuralAliases } from "./rejectStructuralAlias.js";
 import { assertNoTypeAssertions } from "./rejectAs.js";
 import { assertNoWideTypes } from "./rejectWideTypes.js";
@@ -20,9 +21,11 @@ export function runSoundnessChecks(
   assertNoStructuralAliases(source, filename);
   assertNoWideTypes(source, filename);
   assertNoTypeAssertions(source, filename);
+  assertNoNonNullAssertions(source, filename);
 }
 
 export { assertNoAny } from "./rejectAny.js";
+export { assertNoNonNullAssertions } from "./rejectNonNull.js";
 export { assertNoStructuralAliases } from "./rejectStructuralAlias.js";
 export { assertNoTypeAssertions } from "./rejectAs.js";
 export { assertNoWideTypes } from "./rejectWideTypes.js";
