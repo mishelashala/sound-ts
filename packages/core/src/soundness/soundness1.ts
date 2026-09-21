@@ -9,6 +9,7 @@ import type { DialectProjectSymbols } from "../symbols/types.js";
 import { assertBrandGenericSubset } from "./rejectBrandGenericPartial.js";
 import { assertNoBrandMutation } from "./rejectBrandMutation.js";
 import { assertNoBrandTypePredicates } from "./rejectBrandTypePredicates.js";
+import { assertNoOutboundWiden } from "./rejectOutboundWiden.js";
 import { assertHonestRefinedPredicates } from "./rejectDishonestRefinedIs.js";
 
 export type Soundness1CheckOptions = {
@@ -29,9 +30,11 @@ export function runSoundness1Checks(
   assertHonestRefinedPredicates(symbols, filename);
   assertNoBrandMutation(source, symbols, filename);
   assertBrandGenericSubset(source, symbols, filename);
+  assertNoOutboundWiden(source, symbols, filename);
 }
 
 export { assertNoBrandTypePredicates } from "./rejectBrandTypePredicates.js";
 export { assertHonestRefinedPredicates } from "./rejectDishonestRefinedIs.js";
 export { assertNoBrandMutation } from "./rejectBrandMutation.js";
 export { assertBrandGenericSubset } from "./rejectBrandGenericPartial.js";
+export { assertNoOutboundWiden } from "./rejectOutboundWiden.js";

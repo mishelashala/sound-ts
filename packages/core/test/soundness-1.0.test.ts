@@ -176,6 +176,148 @@ const u = User.from({ id: "a" });
   });
 });
 
+describe("soundness 1.0: outbound widen", () => {
+  it("rejects a validate type value as its naked field structure", () => {
+    const src = `
+validate type User = { id: string };
+const u: User = User.from({ id: "a" });
+const plain: { id: string } = u;
+`;
+    expect(() => transform(src)).toThrow(/naked field structure/);
+    expect(() => transform(src)).toThrow(/'User'/);
+    expect(() => transform(src)).toThrow(/this visitor is the gate/);
+  });
+
+  it("rejects a validate-type .from initializer and cast<>", () => {
+    expect(() =>
+      transform(`
+validate type User = { id: string };
+const raw: unknown = { id: "a" };
+const plain: { id: string } = User.from(raw);
+`),
+    ).toThrow(/naked field structure/);
+    expect(() =>
+      transform(`
+validate type User = { id: string };
+const raw: unknown = { id: "a" };
+const plain: { id: string } = cast<User>(raw);
+`),
+    ).toThrow(/naked field structure/);
+  });
+
+  it("rejects an unannotated binding that holds a validate value", () => {
+    const src = `
+validate type User = { id: string; age: number };
+const u = User.from({ id: "a", age: 1 });
+const plain: { age: number; id: string } = u;
+`;
+    expect(() => transform(src)).toThrow(/naked field structure/);
+  });
+
+  it("rejects a later assignment to a naked-annotated binding", () => {
+    const src = `
+validate type User = { id: string };
+const u = User.from({ id: "a" });
+let plain: { id: string } = { id: "b" };
+plain = u;
+`;
+    expect(() => transform(src)).toThrow(/naked field structure/);
+  });
+
+  it("allows field reads and a fresh object with the same shape", () => {
+    const src = `
+validate type User = { id: string };
+const u = User.from({ id: "a" });
+const id = u.id;
+const plain: { id: string } = { id: "b" };
+void id;
+void plain;
+`;
+    const { code } = transform(src);
+    expect(code).toContain(`const id = u.id`);
+    expect(code).toContain(`const plain: { id: string } = { id: "b" }`);
+  });
+
+  it("rejects a literal brand as its bare union and accepts .toPrimitive", () => {
+    const rejected = `
+brand type Account = "admin" | "regular";
+const a = Account.from("admin");
+const members: "admin" | "regular" = a;
+`;
+    expect(() => transform(rejected)).toThrow(/bare literal union/);
+    expect(() => transform(rejected)).toThrow(/Account\.toPrimitive/);
+
+    const accepted = `
+brand type Account = "admin" | "regular";
+const a = Account.from("admin");
+const members: "admin" | "regular" = Account.toPrimitive(a);
+const wide: string = a;
+const literal: "admin" | "regular" = "admin";
+void members;
+void wide;
+void literal;
+`;
+    const { code } = transform(accepted);
+    expect(code).toContain(`Account.toPrimitive(a)`);
+    expect(code).toContain(`const wide: string = a`);
+  });
+
+  it("rejects a number literal brand and Values member as the bare union", () => {
+    expect(() =>
+      transform(`
+brand type Days = 7 | 30 | 90;
+const d: Days = Days.from(7);
+const members: 90 | 7 | 30 = d;
+`),
+    ).toThrow(/bare literal union/);
+
+    const src = `
+brand type Days = 7 | 30 | 90;
+const d = Days.from(7);
+const members: 7 | 30 | 90 = Days.toPrimitive(d);
+const wide: number = d;
+const viaValues: 7 | 30 | 90 = Days.Values[7];
+void members;
+void wide;
+`;
+    expect(() => transform(src)).toThrow(/Days\.toPrimitive/);
+    expect(() => transform(src)).toThrow(/bare literal union/);
+  });
+
+  it("allows .toPrimitive for a number literal brand when Values is not assigned", () => {
+    const src = `
+brand type Days = 7 | 30 | 90;
+const d = Days.from(7);
+const members: 7 | 30 | 90 = Days.toPrimitive(d);
+const wide: number = d;
+void members;
+void wide;
+`;
+    const { code } = transform(src);
+    expect(code).toContain(`Days.toPrimitive(d)`);
+    expect(code).toContain(`const wide: number = d`);
+  });
+
+  it("rejects an imported validate type widened to its naked fields", () => {
+    expect(() =>
+      transformProject([
+        {
+          filename: "user.sts",
+          source: `validate type User = { id: string };\nexport { User };\n`,
+        },
+        {
+          filename: "main.sts",
+          source: `
+import { User } from "./user.js";
+const u: User = User.from({ id: "a" });
+const plain: { readonly id: string } = u;
+`,
+        },
+      ]),
+    ).toThrow(/naked field structure/);
+  });
+});
+
 describe("soundness 1.0: runSoundness1Checks entry", () => {
   it("runs against an explicit symbol table", () => {
     const source = `
