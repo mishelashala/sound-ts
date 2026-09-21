@@ -7,13 +7,16 @@ import {
   emitBrandType,
 } from "../src/index.js";
 
-describe("parseBrandTypes", () => {
+describe("parseBrandTypes (Mode A literals)", () => {
   it("parses a single brand type", () => {
     const src = `brand type Account = "admin" | "regular";`;
     const { decls } = parseBrandTypes(src);
     expect(decls).toHaveLength(1);
+    expect(decls[0]!.kind).toBe("literal");
     expect(decls[0]!.name).toBe("Account");
-    expect(decls[0]!.values).toEqual(["admin", "regular"]);
+    if (decls[0]!.kind === "literal") {
+      expect(decls[0]!.values).toEqual(["admin", "regular"]);
+    }
   });
 
   it("parses multiple decls and single-member unions", () => {
@@ -23,14 +26,119 @@ brand type Role = "a" | "b" | "c";
 `;
     const { decls } = parseBrandTypes(src);
     expect(decls.map((d) => d.name)).toEqual(["Status", "Role"]);
-    expect(decls[0]!.values).toEqual(["ok"]);
-    expect(decls[1]!.values).toEqual(["a", "b", "c"]);
+    expect(decls[0]!.kind).toBe("literal");
+    if (decls[0]!.kind === "literal") {
+      expect(decls[0]!.values).toEqual(["ok"]);
+    }
+    if (decls[1]!.kind === "literal") {
+      expect(decls[1]!.values).toEqual(["a", "b", "c"]);
+    }
   });
 
   it("rejects duplicate literals", () => {
     expect(() =>
       parseBrandTypes(`brand type Bad = "a" | "a";`),
     ).toThrow(/duplicate/);
+  });
+});
+
+describe("parseBrandTypes (Mode B refined)", () => {
+  it("parses refined brand with custom is", () => {
+    const src = `
+brand type PositiveInt = number {
+  is(n: number): n is PositiveInt {
+    return Number.isInteger(n) && n > 0;
+  }
+}
+`;
+    const { decls } = parseBrandTypes(src);
+    expect(decls).toHaveLength(1);
+    const d = decls[0]!;
+    expect(d.kind).toBe("refined");
+    expect(d.name).toBe("PositiveInt");
+    if (d.kind === "refined") {
+      expect(d.baseType).toBe("number");
+      expect(d.isParamName).toBe("n");
+      expect(d.isParamType).toBe("number");
+      expect(d.isBody).toContain("Number.isInteger(n) && n > 0");
+    }
+  });
+
+  it("rejects Mode B with wrong type predicate name", () => {
+    expect(() =>
+      parseBrandTypes(`
+brand type PositiveInt = number {
+  is(n: number): n is Other {
+    return n > 0;
+  }
+}
+`),
+    ).toThrow(/refine 'PositiveInt'/);
+  });
+});
+
+describe("parseBrandTypes (brand unions / intersections)", () => {
+  it("parses union of already-declared brands", () => {
+    const src = `
+brand type Admin = "admin";
+brand type Regular = "regular";
+brand type Staff = Admin | Regular;
+`;
+    const { decls } = parseBrandTypes(src);
+    expect(decls).toHaveLength(3);
+    expect(decls[2]!.kind).toBe("union");
+    if (decls[2]!.kind === "union") {
+      expect(decls[2]!.members).toEqual(["Admin", "Regular"]);
+    }
+  });
+
+  it("parses intersection of already-declared brands", () => {
+    const src = `
+brand type User = "u";
+brand type Session = "s";
+brand type Authed = User & Session;
+`;
+    const { decls } = parseBrandTypes(src);
+    expect(decls[2]!.kind).toBe("intersection");
+    if (decls[2]!.kind === "intersection") {
+      expect(decls[2]!.members).toEqual(["User", "Session"]);
+    }
+  });
+
+  it("rejects non-brand members in union", () => {
+    expect(() =>
+      parseBrandTypes(`brand type Bad = Admin | Regular;`),
+    ).toThrow(/not an already-declared brand name/);
+  });
+
+  it("rejects open string in brand union", () => {
+    expect(() =>
+      parseBrandTypes(`
+brand type Admin = "admin";
+brand type Bad = Admin | string;
+`),
+    ).toThrow(/'string' is not an already-declared brand name/);
+  });
+
+  it("rejects mixing | and &", () => {
+    expect(() =>
+      parseBrandTypes(`
+brand type A = "a";
+brand type B = "b";
+brand type C = "c";
+brand type Bad = A | B & C;
+`),
+    ).toThrow(/cannot mix/);
+  });
+
+  it("rejects forward reference (not already declared)", () => {
+    expect(() =>
+      parseBrandTypes(`
+brand type Staff = Admin | Regular;
+brand type Admin = "admin";
+brand type Regular = "regular";
+`),
+    ).toThrow(/not an already-declared brand name/);
   });
 });
 
@@ -75,14 +183,15 @@ describe("transform", () => {
   it("emitted companion shape matches defineLiteralSet runtime", () => {
     const src = `brand type Account = "admin" | "regular";`;
     const { decls, code } = transform(src);
-    expect(decls[0]!.values).toEqual(["admin", "regular"]);
+    expect(decls[0]!.kind).toBe("literal");
+    if (decls[0]!.kind === "literal") {
+      expect(decls[0]!.values).toEqual(["admin", "regular"]);
+    }
     expect(code).toMatch(/name:\s*"Account"/);
     expect(code).toMatch(/values:\s*__values/);
     expect(code).toMatch(/\bis,/);
     expect(code).toMatch(/\bfrom,/);
 
-    // Runtime behavior is defined by the internal companion builder
-    // (same shape the self-contained emit implements).
     const Account = defineLiteralSet("Account", ["admin", "regular"] as const);
     expect(Account.name).toBe("Account");
     expect([...Account.values]).toEqual(["admin", "regular"]);
@@ -92,8 +201,9 @@ describe("transform", () => {
     expect(() => Account.from("guest")).toThrow(LiteralSetError);
   });
 
-  it("emitBrandType produces standalone block", () => {
+  it("emitBrandType produces standalone block for literals", () => {
     const block = emitBrandType({
+      kind: "literal",
       name: "Color",
       values: ["red", "blue"],
       raw: "",
@@ -102,6 +212,49 @@ describe("transform", () => {
     });
     expect(block).toContain(`type Color = "red" | "blue";`);
     expect(block).toContain("Object.freeze");
+  });
+
+  it("Mode B emits type alias + user is + generated from", () => {
+    const src = `
+brand type PositiveInt = number {
+  is(n: number): n is PositiveInt {
+    return Number.isInteger(n) && n > 0;
+  }
+}
+`;
+    const { code, changed } = transform(src);
+    expect(changed).toBe(true);
+    expect(code).toContain(`type PositiveInt = number;`);
+    expect(code).toContain(`function is(n: number): n is PositiveInt`);
+    expect(code).toContain(`Number.isInteger(n) && n > 0`);
+    expect(code).toContain(`function from(value: unknown): PositiveInt`);
+    expect(code).toContain(`if (is(value as number)) return value as PositiveInt;`);
+    expect(code).not.toContain("brand type");
+    expect(code).not.toMatch(/values:/);
+  });
+
+  it("union emits type alias + delegated is/from", () => {
+    const src = `
+brand type Admin = "admin";
+brand type Regular = "regular";
+brand type Staff = Admin | Regular;
+`;
+    const { code } = transform(src);
+    expect(code).toContain(`type Staff = Admin | Regular;`);
+    expect(code).toContain(`return Admin.is(value) || Regular.is(value);`);
+    expect(code).toContain(`function from(value: unknown): Staff`);
+    expect(code).not.toContain("brand type");
+  });
+
+  it("intersection emits && delegation", () => {
+    const src = `
+brand type User = "u";
+brand type Session = "s";
+brand type Authed = User & Session;
+`;
+    const { code } = transform(src);
+    expect(code).toContain(`type Authed = User & Session;`);
+    expect(code).toContain(`return User.is(value) && Session.is(value);`);
   });
 });
 

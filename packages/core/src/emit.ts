@@ -1,15 +1,21 @@
-import type { BrandTypeDecl } from "./parse.js";
+import type {
+  BrandTypeDecl,
+  CombinedBrandDecl,
+  LiteralBrandDecl,
+  RefinedBrandDecl,
+} from "./parse.js";
 
 export interface EmitOptions {
   /**
    * When true, emit a call to an injected `defineLiteralSet` helper
    * (internal emit target). Default false: self-contained companion
    * with zero runtime dependency on this package.
+   * Only applies to kind: "literal" declarations.
    */
   useInternalHelper?: boolean;
 }
 
-function emitSelfContained(decl: BrandTypeDecl): string {
+function emitLiteralSelfContained(decl: LiteralBrandDecl): string {
   const { name, values } = decl;
   const litList = values.map((v) => JSON.stringify(v)).join(", ");
   const union = values.map((v) => JSON.stringify(v)).join(" | ");
@@ -37,7 +43,7 @@ function emitSelfContained(decl: BrandTypeDecl): string {
   ].join("\n");
 }
 
-function emitWithHelper(decl: BrandTypeDecl): string {
+function emitLiteralWithHelper(decl: LiteralBrandDecl): string {
   const { name, values } = decl;
   const litList = values.map((v) => JSON.stringify(v)).join(", ");
   const union = values.map((v) => JSON.stringify(v)).join(" | ");
@@ -47,14 +53,98 @@ function emitWithHelper(decl: BrandTypeDecl): string {
   ].join("\n");
 }
 
+/**
+ * Mode B: type alias to base + companion with user `.is` body and generated `.from`.
+ */
+function emitRefined(decl: RefinedBrandDecl): string {
+  const { name, baseType, isParamName, isParamType, isBody } = decl;
+  // Indent user body one level if it has content
+  // Dedent user body, then indent to companion scope
+  const rawLines = isBody.split("\n");
+  const nonEmpty = rawLines.filter((l) => l.trim().length > 0);
+  const minIndent = nonEmpty.length
+    ? Math.min(...nonEmpty.map((l) => (l.match(/^\s*/)?.[0].length ?? 0)))
+    : 0;
+  const indentedBody = rawLines
+    .map((line) => {
+      if (line.trim() === "") return "";
+      return "    " + line.slice(minIndent);
+    })
+    .join("\n");
+
+  return [
+    `type ${name} = ${baseType};`,
+    `const ${name} = /*#__PURE__*/ (() => {`,
+    `  function is(${isParamName}: ${isParamType}): ${isParamName} is ${name} {`,
+    indentedBody,
+    `  }`,
+    `  function from(value: unknown): ${name} {`,
+    `    if (is(value as ${isParamType})) return value as ${name};`,
+    `    const preview = typeof value === "string" ? JSON.stringify(value) : \`typeof \${typeof value}\`;`,
+    `    throw new Error(\`Invalid ${name}: \${preview}\`);`,
+    `  }`,
+    `  return Object.freeze({`,
+    `    name: "${name}" as const,`,
+    `    is,`,
+    `    from,`,
+    `  });`,
+    `})();`,
+  ].join("\n");
+}
+
+/**
+ * Brand-only union or intersection: type alias + companion that
+ * delegates `.is` to member brands (`||` / `&&`).
+ */
+function emitCombined(decl: CombinedBrandDecl): string {
+  const { name, members, kind } = decl;
+  const typeExpr =
+    kind === "intersection" ? members.join(" & ") : members.join(" | ");
+  const isExpr =
+    kind === "intersection"
+      ? members.map((m) => `${m}.is(value)`).join(" && ")
+      : members.map((m) => `${m}.is(value)`).join(" || ");
+
+  return [
+    `type ${name} = ${typeExpr};`,
+    `const ${name} = /*#__PURE__*/ (() => {`,
+    `  function is(value: unknown): value is ${name} {`,
+    `    return ${isExpr};`,
+    `  }`,
+    `  function from(value: unknown): ${name} {`,
+    `    if (is(value)) return value;`,
+    `    const preview = typeof value === "string" ? JSON.stringify(value) : \`typeof \${typeof value}\`;`,
+    `    throw new Error(\`Invalid ${name}: \${preview}\`);`,
+    `  }`,
+    `  return Object.freeze({`,
+    `    name: "${name}" as const,`,
+    `    is,`,
+    `    from,`,
+    `  });`,
+    `})();`,
+  ].join("\n");
+}
+
 /** Emit plain TS for one `brand type` declaration. */
 export function emitBrandType(
   decl: BrandTypeDecl,
   options: EmitOptions = {},
 ): string {
-  return options.useInternalHelper
-    ? emitWithHelper(decl)
-    : emitSelfContained(decl);
+  switch (decl.kind) {
+    case "literal":
+      return options.useInternalHelper
+        ? emitLiteralWithHelper(decl)
+        : emitLiteralSelfContained(decl);
+    case "refined":
+      return emitRefined(decl);
+    case "union":
+    case "intersection":
+      return emitCombined(decl);
+    default: {
+      const _exhaustive: never = decl;
+      return _exhaustive;
+    }
+  }
 }
 
 /**
