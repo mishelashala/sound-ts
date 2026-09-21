@@ -67,8 +67,9 @@ function splitLiterals(unionSrc: string): string[] {
 
 /**
  * Find all `brand type` declarations in source text.
- * Skips matches inside line/block comments in a best-effort way by
- * stripping comments first for matching, then mapping back via raw scan.
+ *
+ * Caveat (v0): comment-skipping is incomplete — the regex can still match
+ * inside line/block comments. Documented in README / Pages; fix later.
  */
 export function parseBrandTypes(source: string): ParseResult {
   const decls: BrandTypeDecl[] = [];

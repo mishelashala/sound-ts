@@ -22,6 +22,7 @@
     <nav aria-label="On this page">
       <a href="#authoring">Authoring</a>
       <a href="#cli">CLI</a>
+      <a href="#caveats">Caveats</a>
       <a href="#vscode">VS&nbsp;Code</a>
       <a href="#non-goals">Non-goals</a>
     </nav>
@@ -51,8 +52,17 @@
 
     <section id="authoring">
       <h2>Authoring (phase 1)</h2>
+      <p>
+        <strong>Prefer <code>.sts</code> files.</strong>
+        Stock TypeScript language service will red-squiggle
+        <code>brand type</code> inside ordinary <code>.ts</code> /
+        <code>.tsx</code>. The VS&nbsp;Code TextMate grammar covers
+        <code>.sts</code>; injection into <code>.ts</code> only helps
+        highlighting, not the checker.
+      </p>
       <p>String literal unions only:</p>
-      <pre><code>brand type Account = "admin" | "regular";
+      <pre><code>// file: roles.sts
+brand type Account = "admin" | "regular";
 
 function greet(role: Account): string {
   return role === "admin" ? "hello, admin" : "hello";
@@ -81,12 +91,34 @@ node packages/cli/dist/cli.js ./src -o ./out</code></pre>
       </p>
     </section>
 
+    <section id="caveats">
+      <h2>Caveats (v0)</h2>
+      <ul>
+        <li>
+          <strong>Parser / comments:</strong>
+          <code>parse.ts</code> matches <code>brand type</code> with a regex.
+          Comment-skipping is incomplete — a decl inside a line or block
+          comment can still match and be rewritten. Avoid live-looking decls
+          in comments until a proper skip lands.
+        </li>
+        <li>
+          <strong>Editor:</strong> author in <code>.sts</code> to avoid stock
+          <code>tsc</code> red squiggles on the dialect keywords.
+        </li>
+      </ul>
+    </section>
+
     <section id="vscode">
-      <h2>VS Code (thin)</h2>
+      <h2>VS Code (thin, local-only)</h2>
       <p>
         <code>packages/vscode</code> registers <code>.sts</code>, highlights
         <code>brand type</code> (including in <code>.ts</code>), and can shell
         out to the CLI. No full custom checker in v0.
+      </p>
+      <p>
+        <strong>Not on the Marketplace yet</strong> — install from this repo
+        (VSIX / “Install Extension from Location…” / Extension Development Host).
+        Marketplace publish comes later. Also <strong>not on npm</strong>.
       </p>
     </section>
 
@@ -108,6 +140,7 @@ node packages/cli/dist/cli.js ./src -o ./out</code></pre>
         <li>Closed literal union + runtime — not nominal brands</li>
         <li>Not a full schema validation library</li>
         <li>Not on npm yet</li>
+        <li>VS Code extension not on Marketplace yet (local install only)</li>
         <li><code>defineLiteralSet</code> is not the authoring surface</li>
       </ul>
     </section>
@@ -118,6 +151,7 @@ node packages/cli/dist/cli.js ./src -o ./out</code></pre>
       <a href="https://github.com/mishelashala/superset-ts">GitHub repo</a>
       · docs from <code>docs/</code> on <code>main</code>
       · <strong>not on npm</strong>
+      · extension <strong>local-only</strong> until Marketplace publish
     </p>
   </footer>
 </body>

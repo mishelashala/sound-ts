@@ -10,7 +10,9 @@ Repo: [mishelashala/superset-ts](https://github.com/mishelashala/superset-ts) ·
 
 ## Authoring (phase 1)
 
-```ts
+**Prefer `.sts` files.** Stock TypeScript language service will red-squiggle `brand type` inside ordinary `.ts` / `.tsx` (unknown keywords). The VS Code extension’s TextMate grammar covers `.sts`; injection into `.ts` only helps highlighting, not the checker.
+
+```sts
 brand type Account = "admin" | "regular";
 ```
 
@@ -57,6 +59,10 @@ Point `tsc` / Vite at **`./out`** (the transformed files), not the dialect sourc
 
 Binaries after build: `superset-ts` / `sts` → `packages/cli/dist/cli.js`.
 
+### Parser caveat (v0)
+
+`packages/core` parses `brand type` with a regex. **Comment-skipping is incomplete** — a `brand type …` appearing inside a line or block comment can still match and be rewritten. Don’t put live-looking decls in comments for now; a proper skip will come later.
+
 ---
 
 ## Packages
@@ -77,7 +83,9 @@ Binaries after build: `superset-ts` / `sts` → `packages/cli/dist/cli.js`.
 
 ## VS Code
 
-`packages/vscode` registers `.sts`, TextMate highlighting for `brand type` (including injection into `.ts`), and a command that shells out to the CLI. No full custom checker in v0 — dialect shouldn’t be totally red-squiggled; transform story stays CLI-based.
+`packages/vscode` registers `.sts`, TextMate highlighting for `brand type` (including injection into `.ts`), and a command that shells out to the CLI. No full custom checker in v0 — prefer authoring in **`.sts`** so stock `tsc` doesn’t red-squiggle the dialect.
+
+**Local-only for now.** The extension is not on the VS Code Marketplace yet — install from this repo (e.g. “Install from VSIX…” or open `packages/vscode` for development). Marketplace publish comes later.
 
 ---
 
@@ -89,6 +97,7 @@ Binaries after build: `superset-ts` / `sts` → `packages/cli/dist/cli.js`.
 - Not nominal brands — closed literal union + runtime (structural)
 - Not a full schema / object validation library
 - **No npm publish** in this cut
+- VS Code extension **not on Marketplace** yet (local install only)
 - `defineLiteralSet` is **not** the public authoring API
 
 ---
