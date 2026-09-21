@@ -1044,3 +1044,40 @@ const ok = Account.from("admin");
     ).not.toThrow();
   });
 });
+
+describe("reject non-null assertions", () => {
+  it("rejects postfix value!", () => {
+    expect(() => transform(`const name = user.name!;`)).toThrow(
+      /non-null \/ definite-assignment '!'.*narrow with a check/,
+    );
+  });
+
+  it("rejects definite-assignment prop!: Type", () => {
+    expect(() =>
+      transform(`class C { prop!: string; }`),
+    ).toThrow(/non-null \/ definite-assignment '!'.*narrow with a check/);
+  });
+
+  it("still expands a !== b", () => {
+    const { code, changed } = transform(
+      `const ok = a !== b;\nconst also = a != null;\n`,
+    );
+    expect(changed).toBe(false);
+    expect(code).toContain(`a !== b`);
+    expect(code).toContain(`a != null`);
+  });
+
+  it("allows boolean not and ignores ! in comments/strings", () => {
+    const src = `
+// const x = value!;
+const s = "value!";
+const flag = !cond;
+if (!ready) {}
+`;
+    expect(() => transform(src)).not.toThrow();
+  });
+
+  it("does not strip ! and continue", () => {
+    expect(() => transform(`const x = value!;`)).toThrow(SyntaxError);
+  });
+});
