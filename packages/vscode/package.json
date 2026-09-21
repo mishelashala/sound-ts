@@ -2,7 +2,7 @@
   "name": "sound-ts",
   "displayName": "Sound TS",
   "description": "Thin language support for the sound-ts brand type dialect. Not a TypeScript fork or custom checker.",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "publisher": "mishelashala",
   "private": true,
   "license": "MIT",

@@ -7,10 +7,10 @@
       "begin": "\\b(brand)\\s+(type)\\b",
       "beginCaptures": {
         "1": {
-          "name": "storage.type.brand.sound-ts"
+          "name": "keyword.control.brand.sound-ts"
         },
         "2": {
-          "name": "storage.type.sound-ts"
+          "name": "keyword.control.type.sound-ts"
         }
       },
       "end": "(?<=\\})\\s*;?|(?=;|$)",
@@ -54,10 +54,10 @@
       "begin": "\\b(validate)\\s+(type)\\b",
       "beginCaptures": {
         "1": {
-          "name": "storage.type.validate.sound-ts"
+          "name": "keyword.control.validate.sound-ts"
         },
         "2": {
-          "name": "storage.type.sound-ts"
+          "name": "keyword.control.type.sound-ts"
         }
       },
       "end": "(?<=\\})\\s*;?|(?=;|$)",
