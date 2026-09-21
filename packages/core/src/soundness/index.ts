@@ -1,4 +1,5 @@
 import { assertNoAny } from "./rejectAny.js";
+import { assertNoStructuralAliases } from "./rejectStructuralAlias.js";
 
 /**
  * Dialect soundness gates run before expand. Each check throws SyntaxError
@@ -9,6 +10,8 @@ export function runSoundnessChecks(
   filename?: string,
 ): void {
   assertNoAny(source, filename);
+  assertNoStructuralAliases(source, filename);
 }
 
 export { assertNoAny } from "./rejectAny.js";
+export { assertNoStructuralAliases } from "./rejectStructuralAlias.js";
