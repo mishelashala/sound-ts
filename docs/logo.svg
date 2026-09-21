@@ -1,34 +1,3 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="sound-ts">
-  <!-- Flat recreation of locked ChatGPT brace-shield + ribbon S (source: docs/brand/chatgpt-brace-s.png). -->
-  <!-- UX: brand #0066FC · signal #00D9FB · navy #002878 -->
-  <defs>
-    <linearGradient id="braceL" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#0066FC"/>
-      <stop offset="100%" stop-color="#002878"/>
-    </linearGradient>
-    <linearGradient id="braceR" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#3B82F6"/>
-      <stop offset="100%" stop-color="#0066FC"/>
-    </linearGradient>
-  </defs>
-  <!-- Left brace { -->
-  <path fill="url(#braceL)" d="M60 8
-    L22 34 L22 48 L44 64 L22 80 L22 94 L60 120
-    L60 106 L36 88 L36 80 L56 64 L36 48 L36 40 L60 22 Z"/>
-  <!-- Right brace } -->
-  <path fill="url(#braceR)" d="M68 8
-    L106 34 L106 48 L84 64 L106 80 L106 94 L68 120
-    L68 106 L92 88 L92 80 L72 64 L92 48 L92 40 L68 22 Z"/>
-  <!-- Ribbon S — bottom bar (navy, under) -->
-  <path fill="#002878" d="M38 86 H90 V98 H34 V90 Q34 86 38 86 Z"/>
-  <!-- Ribbon S — lower diagonal + mid bar (brand) -->
-  <path fill="#0066FC" d="M90 70 H50 L38 86 H78 L90 70 Z"/>
-  <path fill="#0066FC" d="M38 58 H90 V70 H38 Z"/>
-  <!-- Ribbon S — upper diagonal (brand) -->
-  <path fill="#0066FC" d="M38 58 L50 42 H90 L78 58 Z"/>
-  <!-- Ribbon S — top bar (signal highlight) -->
-  <path fill="#00D9FB" d="M38 30 H90 V42 H34 V36 Q34 30 38 30 Z"/>
-  <!-- Fold facets -->
-  <path fill="#0052CC" d="M78 58 L90 70 L84 70 L74 60 Z"/>
-  <path fill="#001F5C" d="M50 42 L38 58 L44 58 L54 44 Z"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="sound-ts">
+  <image href="logo.png" width="512" height="512"/>
 </svg>
