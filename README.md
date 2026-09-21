@@ -13,6 +13,28 @@ Repo: [mishelashala/superset-ts](https://github.com/mishelashala/superset-ts) ·
 ---
 
 
+
+## Soundness (project goal)
+
+TypeScript’s contract is **type safety with erased types** — no runtime companions from the type layer. Superset-TS aims for **F#-style soundness**: opaque / branded (phantom) types plus runtime companions so values enter through checked paths.
+
+**Where we claim soundness today**
+
+- `brand type` refined brands — phantom `unique symbol` emit; bare base not assignable under stock `tsc`
+- `validate type` — same phantom + `.is` / `.from`
+- `cast<Target>(expr)` — checked entry path (primitive checks or companion `.from`)
+
+**Where we still lean on stock TS unsoundness** (honest Non-goals)
+
+- assertions / `as` (stock TS)
+- `any` / `unknown` misuse
+- structural widen on non-branded types
+- string-literal brands stay structural unions (by design for now)
+
+Gate: new dialect surface should **close a soundness hole**, not paper over one.
+
+---
+
 ## Install
 
 ```bash
@@ -142,11 +164,11 @@ Remaining scanner edges: regex literals; nested `${}` inside templates (the whol
 ---
 
 
-## Adoption recipe (not all-or-nothing)
+## Adoption / roadmap
 
-Keep most of the app as normal `.ts` (stock `tsc` / Vite). Add `.sts` only where you want `brand type`, `validate type`, or `cast`.
+Keep most of the app as normal `.ts` (stock `tsc` / Vite). Add `.sts` only where you want `brand type`, `validate type`, or `cast`. VS Code already highlights `.sts`, so “just add a file” isn’t red-squiggle hell.
 
-**Two-step compilation** (expand, then stock build):
+**Today — two-step compilation** (expand, then stock build):
 
 ```
 .sts  --sts -o …-->  plain .ts  --tsc/nest-->  .js in normal build out
@@ -157,8 +179,14 @@ Keep most of the app as normal `.ts` (stock `tsc` / Vite). Add `.sts` only where
 - Stock Nest / `tsc` still owns `dist/`
 - Don’t point `tsc` at raw `.sts`
 - Whole `.sts` batch on each `sts` run for cross-file `|` / `&` and `cast` companions
-- Start with one leaf brand file (ids / roles) → grow file by file
 - Enter refined / validate types via `.from` or `cast<>` — bare bases are not assignable under stock `tsc`
+
+**Seamless integration** (ordered):
+
+1. **Shadow emit** — expand `.sts` → gitignored cache / `outDir` (not sibling `.ts`); CI fails if expanded `.ts` is committed
+2. **Bidirectional resolve** — `.ts` ↔ `.sts` imports with no path rewrites
+3. **Drop-in scripts** — swap `package.json` build only (`prebuild: sts` → Nest / `tsc`); fail-closed
+4. **Loader later** — Vite / Nest unplugin after 1–3 feel like early TypeScript
 
 ---
 
@@ -188,13 +216,14 @@ Keep most of the app as normal `.ts` (stock `tsc` / Vite). Add `.sts` only where
 
 ## Non-goals (this cut)
 
-See also: [FAQ: Why not TypeScript?](https://mishelashala.github.io/superset-ts/#faq) (why a dialect vs stock TS).
+See also: [FAQ: Why not TypeScript?](https://mishelashala.github.io/superset-ts/#faq) (why a dialect vs stock TS) · [Soundness](#soundness-project-goal).
 
 - **No Microsoft / TypeScript fork** to maintain
 - **No custom TypeScript checker or language server** — stock `tsc` runs on expand output only.
 - **No open brands without `is`** (use refined brands with a custom `.is`)
 - Refined brands and `validate type` are **nominally opaque** under stock `tsc` (phantom unique-symbol brands) — not structural aliases of their bases. Enter via `.from` / `cast<>`.
 - String literal brands stay **closed string unions** (structural under stock `tsc`, not phantom-nominalized). Number/bigint literal brands not supported yet.
+- We do **not** patch stock `as` / assertions, `any` / `unknown` misuse, or structural widen on non-branded types — those remain TS holes outside the dialect surface.
 - Not a full schema library — `validate type` covers simple object shapes only (no nested objects, generics, `Date`, …)
 - VS Code extension **not on Marketplace** yet (local install only)
 - `defineLiteralSet` is **not** the public authoring API

@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>superset-ts — brand type / validate type dialect + CLI</title>
-  <meta name="description" content="Write brand type and validate type; cast&lt;&gt; checked casts; CLI expands to plain TS + runtime companions. Not a TypeScript fork." />
+  <meta name="description" content="F#-style soundness via brand type / validate type / cast&lt;&gt; — phantom brands + runtime companions. Not a TypeScript fork." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
@@ -44,6 +44,7 @@
     </header>
 
     <nav aria-label="On this page">
+      <a href="#soundness">Soundness</a>
       <a href="#authoring">Authoring</a>
       <a href="#refined">Refined&nbsp;brands</a>
       <a href="#unions">Unions / intersections</a>
@@ -78,6 +79,46 @@
           </tr>
         </tbody>
       </table>
+    </section>
+
+
+    <section id="soundness">
+      <h2>Soundness (project goal)</h2>
+      <p>
+        TypeScript’s contract is <strong>type safety with erased types</strong> —
+        no runtime companions from the type layer. Superset-TS aims for
+        <strong>F#-style soundness</strong>: opaque / branded (phantom) types plus
+        runtime companions so values enter through checked paths.
+      </p>
+      <p><strong>Where we claim soundness today</strong></p>
+      <ul>
+        <li>
+          <code>brand type</code> refined brands — phantom
+          <code>unique symbol</code> emit; bare base not assignable under stock
+          <code>tsc</code>
+        </li>
+        <li>
+          <code>validate type</code> — same phantom + <code>.is</code> /
+          <code>.from</code>
+        </li>
+        <li>
+          <code>cast&lt;Target&gt;(expr)</code> — checked entry path (primitive
+          checks or companion <code>.from</code>)
+        </li>
+      </ul>
+      <p><strong>Where we still lean on stock TS unsoundness</strong></p>
+      <ul>
+        <li>assertions / <code>as</code> (stock TS)</li>
+        <li><code>any</code> / <code>unknown</code> misuse</li>
+        <li>structural widen on non-branded types</li>
+        <li>
+          string-literal brands stay structural unions (by design for now)
+        </li>
+      </ul>
+      <p class="muted">
+        Gate: new dialect surface should <strong>close a soundness hole</strong>,
+        not paper over one. See also <a href="#non-goals">Non-goals</a>.
+      </p>
     </section>
 
     <section id="authoring">
@@ -267,12 +308,15 @@ node packages/cli/dist/cli.js ./example.sts -o ./out/example.ts</code></pre>
 
 
     <section id="adoption">
-      <h2>Adoption recipe (not all-or-nothing)</h2>
+      <h2>Adoption / roadmap</h2>
       <p>
         Keep most of the app as normal <code>.ts</code> (stock <code>tsc</code> / Vite).
-        Add <code>.sts</code> only where you want <code>brand type</code>, <code>validate type</code>, or <code>cast</code>.
+        Add <code>.sts</code> only where you want <code>brand type</code>,
+        <code>validate type</code>, or <code>cast</code>.
+        VS&nbsp;Code already highlights <code>.sts</code>, so “just add a file”
+        isn’t red-squiggle hell.
       </p>
-      <p><strong>Two-step compilation</strong> (expand, then stock build):</p>
+      <p><strong>Today — two-step compilation</strong> (expand, then stock build):</p>
       <pre><code>.sts  --sts -o …-->  plain .ts  --tsc/nest-->  .js in normal build out</code></pre>
       <ul>
         <li><code>sts</code> never emits <code>.js</code></li>
@@ -287,14 +331,31 @@ node packages/cli/dist/cli.js ./example.sts -o ./out/example.ts</code></pre>
           cross-file <code>|</code> / <code>&amp;</code> and <code>cast</code> companions
         </li>
         <li>
-          Start with one leaf brand file (ids / roles) → grow file by file
-        </li>
-        <li>
           Enter refined / <code>validate type</code> values via
           <code>.from</code> or <code>cast&lt;&gt;</code> — bare bases are not
           assignable under stock <code>tsc</code>
         </li>
       </ul>
+      <p><strong>Seamless integration</strong> (ordered):</p>
+      <ol>
+        <li>
+          <strong>Shadow emit</strong> — expand <code>.sts</code> → gitignored
+          cache / <code>outDir</code> (not sibling <code>.ts</code>); CI fails if
+          expanded <code>.ts</code> is committed
+        </li>
+        <li>
+          <strong>Bidirectional resolve</strong> — <code>.ts</code> ↔
+          <code>.sts</code> imports with no path rewrites
+        </li>
+        <li>
+          <strong>Drop-in scripts</strong> — swap <code>package.json</code> build
+          only (<code>prebuild: sts</code> → Nest / <code>tsc</code>); fail-closed
+        </li>
+        <li>
+          <strong>Loader later</strong> — Vite / Nest unplugin after 1–3 feel
+          like early TypeScript
+        </li>
+      </ol>
     </section>
 
     <section id="caveats">
@@ -356,12 +417,17 @@ node packages/cli/dist/cli.js ./example.sts -o ./out/example.ts</code></pre>
 
     <section id="non-goals">
       <h2>Non-goals (this cut)</h2>
+      <p class="muted">
+        See also <a href="#soundness">Soundness</a> (where we claim soundness vs
+        where we still lean on stock TS holes).
+      </p>
       <ul>
         <li>No Microsoft / TypeScript fork to maintain</li>
         <li><strong>No custom TypeScript checker or language server</strong> — stock <code>tsc</code> runs on expand output only.</li>
         <li><strong>No open brands without <code>is</code></strong> (use refined brands with a custom <code>.is</code>)</li>
         <li>Refined brands and <code>validate type</code> are <strong>nominally opaque</strong> under stock <code>tsc</code> (phantom unique-symbol brands) — not structural aliases of their bases. Enter via <code>.from</code> / <code>cast&lt;&gt;</code>.</li>
         <li>String literal brands stay <strong>closed string unions</strong> (structural under stock <code>tsc</code>, not phantom-nominalized). Number/bigint literal brands not supported yet.</li>
+        <li>We do <strong>not</strong> patch stock <code>as</code> / assertions, <code>any</code> / <code>unknown</code> misuse, or structural widen on non-branded types — those remain TS holes outside the dialect surface.</li>
         <li>Not a full schema library — <code>validate type</code> covers simple object shapes only (no nested objects, generics, <code>Date</code>, …)</li>
         <li>VS Code extension not on Marketplace yet (local install only)</li>
         <li><code>defineLiteralSet</code> is not the authoring surface</li>
