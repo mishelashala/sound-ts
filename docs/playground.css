@@ -136,7 +136,7 @@ body.playground-body {
 .editor-stack,
 .compiled-output {
   --editor-font-size: 13.6px;
-  --editor-line-height: 20px;
+  --editor-line-height: 2;
   --editor-pad-y: 14px;
   --editor-pad-x: 16px;
   width: 100%;

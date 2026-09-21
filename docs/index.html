@@ -8,12 +8,12 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <!-- Prism (CDN) first; brand/signal token colors win from styles.css (same order as playground). -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css" />
   <link rel="stylesheet" href="styles.css" />
   <link rel="icon" href="favicon.ico" sizes="any" />
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
   <link rel="icon" href="favicon-32.png" type="image/png" sizes="32x32" />
-  <!-- Prism (CDN): highlight .sts / TS / shell samples. Theme colors overridden in styles.css. -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css" />
   <script>
     (function () {
       try {
@@ -207,7 +207,7 @@ brand type CurrencyNumber = string {
 function currencyFromAmount(amount: number): CurrencyNumber {
   return CurrencyNumber.from(amount.toFixed(2));
 }</code></pre>
-      <p class="muted">Emit: <code>type Account = "admin" | "regular" | (string &amp; { readonly [AccountBrand]: true });</code></p>
+      <p class="muted">For plain TS / JS after expand, use the <a href="playground.html">playground</a>.</p>
     </section>
 
     <section id="refined">
@@ -226,19 +226,7 @@ brand type PositiveInt = number {
     return Number.isInteger(n) &amp;&amp; n &gt; 0;
   }
 }</code></pre>
-      <p>Emit shape (plain TS after transform):</p>
-      <pre><code class="language-typescript">declare const PositiveIntBrand: unique symbol;
-type PositiveInt = number &amp; { readonly [PositiveIntBrand]: true };
-const PositiveInt = /*#__PURE__*/ (() =&gt; {
-  function is(n: number): n is PositiveInt {
-    return Number.isInteger(n) &amp;&amp; n &gt; 0;
-  }
-  function from(value: unknown): PositiveInt {
-    if (is(value as number)) return value as PositiveInt;
-    throw new Error(/* … */);
-  }
-  return Object.freeze({ name: "PositiveInt" as const, is, from });
-})();</code></pre>
+      <p class="muted">See the <a href="playground.html">playground</a> for the expanded TypeScript / JavaScript.</p>
     </section>
 
     <section id="unions">
@@ -265,21 +253,10 @@ brand type Staff = Admin | Regular;</code></pre>
         brand map sees every declaration, then point stock <code>tsc</code> at
         the expanded output.
       </p>
-      <p>Union emit delegates <code>.is</code> to members:</p>
-      <pre><code class="language-typescript">type Staff = Admin | Regular;
-const Staff = /*#__PURE__*/ (() =&gt; {
-  function is(value: unknown): value is Staff {
-    return Admin.is(value) || Regular.is(value);
-  }
-  function from(value: unknown): Staff {
-    if (is(value)) return value;
-    throw new Error(/* … */);
-  }
-  return Object.freeze({ name: "Staff" as const, is, from });
-})();</code></pre>
       <p>Call-site usage of the runtime companions:</p>
       <pre><code class="language-typescript">Staff.is("admin");     // true (Admin member)
 Staff.from(raw);       // throws if neither brand matches</code></pre>
+      <p class="muted">Expanded TS / JS lives in the <a href="playground.html">playground</a>.</p>
       <p>Same-file intersections still work:</p>
       <pre><code class="language-typescript">brand type User = "u";
 brand type Session = "s";
@@ -302,13 +279,7 @@ validate type User = { id: string; age: number };
 
 User.is(data);   // boolean
 User.from(data); // throws on mismatch; returns User</code></pre>
-      <p>Emit shape (plain TS after transform):</p>
-      <pre><code class="language-typescript">declare const UserBrand: unique symbol;
-type User = {
-  id: string;
-  age: number;
-} &amp; { readonly [UserBrand]: true };
-const User = /*#__PURE__*/ (() =&gt; { /* .is / .from */ })();</code></pre>
+      <p class="muted">See the <a href="playground.html">playground</a> for the expanded TypeScript / JavaScript.</p>
       <p><strong>Supported field shapes:</strong></p>
       <ul>
         <li><code>string</code> | <code>number</code> | <code>boolean</code> | <code>null</code></li>
