@@ -1,5 +1,6 @@
 import { assertNoAny } from "./rejectAny.js";
 import { assertNoStructuralAliases } from "./rejectStructuralAlias.js";
+import { assertNoTypeAssertions } from "./rejectAs.js";
 import { assertNoWideTypes } from "./rejectWideTypes.js";
 
 export type SoundnessCheckOptions = {
@@ -18,8 +19,10 @@ export function runSoundnessChecks(
   assertNoAny(source, filename);
   assertNoStructuralAliases(source, filename);
   assertNoWideTypes(source, filename);
+  assertNoTypeAssertions(source, filename);
 }
 
 export { assertNoAny } from "./rejectAny.js";
 export { assertNoStructuralAliases } from "./rejectStructuralAlias.js";
+export { assertNoTypeAssertions } from "./rejectAs.js";
 export { assertNoWideTypes } from "./rejectWideTypes.js";

@@ -985,3 +985,62 @@ const empty = {};
     expect(() => transform(src)).not.toThrow();
   });
 });
+
+describe("soundness: reject type assertions", () => {
+  it("fails expand on `as Account`", () => {
+    const src = `
+brand type Account = "admin" | "regular";
+const punched = "admin" as Account;
+`;
+    expect(() => transform(src)).toThrow(/cast<>/);
+    expect(() => transform(src)).toThrow(/not allowed/);
+  });
+
+  it("fails expand on angle-bracket assertion", () => {
+    const src = `
+brand type Account = "admin" | "regular";
+const punched = <Account>"admin";
+`;
+    expect(() => transform(src)).toThrow(/cast<>/);
+  });
+
+  it("still expands `as const`", () => {
+    const src = `
+brand type Account = "admin" | "regular";
+const values = ["admin", "regular"] as const;
+const ok = Account.from("admin");
+`;
+    const { code, changed } = transform(src);
+    expect(changed).toBe(true);
+    expect(code).toContain(`as const`);
+    expect(code).toContain(`Account.from("admin")`);
+  });
+
+  it("still expands cast<> and .from", () => {
+    const src = `
+brand type Account = "admin" | "regular";
+const a = cast<Account>(raw);
+const b = Account.from(raw);
+`;
+    const { code } = transform(src);
+    expect(code).toContain(`Account.from(raw)`);
+    expect(code).not.toContain("cast<");
+  });
+
+  it("ignores `as` inside comments and strings", () => {
+    const src = `
+brand type Account = "admin" | "regular";
+// const x = "admin" as Account;
+const s = "as Account";
+const ok = Account.from("admin");
+`;
+    expect(() => transform(src)).not.toThrow();
+  });
+
+  it("does not ban `as` in ordinary .ts files", () => {
+    const src = `const punched = "admin" as string;\n`;
+    expect(() =>
+      transform(src, { filename: "plain.ts" }),
+    ).not.toThrow();
+  });
+});
