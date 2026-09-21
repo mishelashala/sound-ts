@@ -1072,13 +1072,17 @@ function ensureStsGrammar() {
   const Prism = globalThis.Prism;
   if (!Prism?.languages?.typescript) return null;
   if (Prism.languages.sts) return Prism.languages.sts;
-  Prism.languages.sts = Prism.languages.extend("typescript", {});
-  Prism.languages.insertBefore("sts", "keyword", {
-    "dialect-keyword": {
-      pattern: /\b(?:brand|validate|cast)\b/,
-      alias: "keyword"
-    }
-  });
+  try {
+    Prism.languages.sts = Prism.languages.extend("typescript", {});
+    Prism.languages.insertBefore("sts", "keyword", {
+      "dialect-keyword": {
+        pattern: /\b(?:brand|validate|cast)\b/,
+        alias: "keyword"
+      }
+    });
+  } catch {
+    return null;
+  }
   return Prism.languages.sts;
 }
 function highlightInto(codeEl, source, language) {
@@ -1111,12 +1115,14 @@ function boot() {
   const outputEl = document.getElementById("compiled-output");
   const codeEl = document.getElementById("compiled-code");
   const modeEl = document.getElementById("output-mode");
-  if (!(sourceEl instanceof HTMLTextAreaElement)) return;
-  if (!(highlightEl instanceof HTMLElement)) return;
-  if (!(highlightPre instanceof HTMLElement)) return;
-  if (!(outputEl instanceof HTMLElement)) return;
-  if (!(codeEl instanceof HTMLElement)) return;
-  if (!(modeEl instanceof HTMLFieldSetElement)) return;
+  if (!(sourceEl instanceof HTMLTextAreaElement) || !(highlightEl instanceof HTMLElement) || !(highlightPre instanceof HTMLElement) || !(outputEl instanceof HTMLElement) || !(codeEl instanceof HTMLElement) || !(modeEl instanceof HTMLFieldSetElement)) {
+    const fallback = document.getElementById("compiled-output");
+    if (fallback instanceof HTMLElement) {
+      fallback.textContent = "Playground UI is out of date. Hard-refresh this page (Cmd+Shift+R).";
+      fallback.classList.add("is-error");
+    }
+    return;
+  }
   ensureStsGrammar();
   let timer = 0;
   function syncHighlightScroll() {
