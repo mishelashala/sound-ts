@@ -788,6 +788,79 @@ take(User.from({ id: "a", age: 1 }));
 `;
     expect(typecheckOk(check)).toEqual([]);
   });
+
+  it("two same-shaped validate types are not mutually assignable (tsc)", () => {
+    const src = `
+validate type User = { id: string };
+validate type Account = { id: string };
+`;
+    const { code } = transform(src);
+    const check = `${code}
+declare let u: User;
+declare let a: Account;
+// @ts-expect-error different phantom brands — not structural aliases
+u = a;
+// @ts-expect-error different phantom brands — not structural aliases
+a = u;
+// Note: outbound widen to naked { id: string } remains a stock tsc hole
+// (excess-property checks only apply to fresh object literals). Not asserted here.
+`;
+    expect(typecheckOk(check)).toEqual([]);
+  });
+});
+
+describe("reject structural object aliases", () => {
+  it("rejects bare type User = { id: string }", () => {
+    expect(() => transform(`type User = { id: string };`)).toThrow(
+      /structural object alias 'User'.*validate type.*brand type/,
+    );
+  });
+
+  it("rejects bare interface User", () => {
+    expect(() =>
+      transform(`interface User { id: string }`),
+    ).toThrow(/structural interface 'User'.*validate type.*brand type/);
+  });
+
+  it("rejects export type object alias", () => {
+    expect(() =>
+      transform(`export type User = { id: string };`),
+    ).toThrow(/structural object alias 'User'/);
+  });
+
+  it("does not silently wrap bare type in a phantom brand", () => {
+    expect(() => transform(`type User = { id: string };`)).toThrow();
+    // Contrast: validate type still expands to phantom + companions
+    const { code } = transform(`validate type User = { id: string };`);
+    expect(code).toContain(`declare const UserBrand: unique symbol`);
+    expect(code).toContain(`function from(value: unknown): User`);
+    expect(code).not.toContain("validate type");
+  });
+
+  it("allows non-object type aliases", () => {
+    const { code, changed } = transform(`type Id = string;\ntype Flags = boolean | number;\n`);
+    expect(changed).toBe(false);
+    expect(code).toContain(`type Id = string`);
+  });
+
+  it("ignores type aliases inside comments and strings", () => {
+    const src = `
+// type User = { id: string };
+const s = "type User = { id: string }";
+type Id = string;
+`;
+    expect(() => transform(src)).not.toThrow();
+  });
+
+  it("validate type still expands", () => {
+    const { code, validateDecls } = transform(
+      `validate type User = { id: string };`,
+    );
+    expect(validateDecls).toHaveLength(1);
+    expect(code).toContain(`declare const UserBrand: unique symbol`);
+    expect(code).toContain(`readonly [UserBrand]: true`);
+    expect(code).toMatch(/type User = \{[\s\S]*id: string/);
+  });
 });
 
 describe("soundness: reject any", () => {

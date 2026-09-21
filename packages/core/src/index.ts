@@ -74,3 +74,8 @@ export {
   type InferLiteral,
 } from "./defineLiteralSet.js";
 export { LiteralSetError } from "./errors.js";
+export {
+  runSoundnessChecks,
+  assertNoStructuralAliases,
+  type SoundnessCheckOptions,
+} from "./soundness/index.js";
