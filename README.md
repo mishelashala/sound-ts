@@ -1,6 +1,6 @@
 # @mishelashala/superset-ts
 
-**Library + optional tiny codegen that emit plain valid TypeScript for stock `tsc` / Vite / VS Code — not a TypeScript fork or checker.**
+**Library-first helpers that emit plain valid TypeScript for stock `tsc` / Vite / VS Code — not a TypeScript fork or checker.** Codegen is not shipped yet.
 
 > **Name note:** “superset-ts” can sound like a TypeScript fork. It is **not**. There is no patched `tsc`, no custom language server, and no alternate checker. You import a normal npm library; types and runtime helpers are ordinary TypeScript that the stock toolchain already understands.
 
@@ -15,7 +15,7 @@ Package: `@mishelashala/superset-ts` · repo: [mishelashala/superset-ts](https:/
 | A small **Mode A** library for closed/finite string literal sets | A fork of TypeScript or `tsc` |
 | Runtime helpers (`.values`, `.is`, `.from`) + union typing | A new checker, LSP, or TS language dialect |
 | Plain TS that works with stock tooling | Something you must wait for us to publish |
-| Optional tiny codegen later (library-first today) | A replacement for Zod / io-ts / etc. for all schemas |
+| Library-first today (codegen not shipped yet) | A replacement for Zod / io-ts / etc. for all schemas |
 
 **Mode A (v0):** define a named closed set of string literals once; get a typed union for function params and runtime parse/guard helpers. Happy path needs **no casts**.
 
@@ -67,7 +67,7 @@ AccountRole.values;               // readonly ["admin", "regular"]
 
 ### `defineLiteralSet(name, values)`
 
-Single Mode A entry point (branded/closed literal set).
+Single Mode A entry point (closed literal set + runtime).
 
 ```ts
 function defineLiteralSet<
@@ -100,7 +100,8 @@ Definition-time checks: non-empty name, non-empty values, all strings, no duplic
 - No TypeScript fork, plugin, or custom checker
 - No npm publish in this scaffold (personal repo only for now)
 - No full schema / object validation library
-- Codegen CLI is optional; library-first is enough for Mode A
+- **Not nominal brands:** v0 is a **closed literal union + runtime**. Sets with the same members are assignable to each other even if differently named (structural / union semantics). [#64364](https://github.com/microsoft/TypeScript/issues/64364)-style nominal Mode A is **out of scope** for this cut.
+- Codegen is not shipped yet; this cut is library-first
 
 ---
 
