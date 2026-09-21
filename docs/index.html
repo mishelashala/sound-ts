@@ -146,19 +146,23 @@ Staff.from(raw);       // throws if neither brand matches</code></pre>
 
     <section id="cli">
       <h2>CLI quickstart</h2>
+      <p><strong>Install from npm</strong> (scoped packages under <code>@mishelashala</code>):</p>
+      <pre><code class="language-bash">npm i -g @mishelashala/superset-ts-cli
+# or
+pnpm add -g @mishelashala/superset-ts-cli
+
+sts ./example.sts -o ./out/example.ts
+# same binary: superset-ts</code></pre>
+      <p>
+        Library: <code>@mishelashala/superset-ts-core</code>.
+        Bins: <code>sts</code> / <code>superset-ts</code>.
+        Point bundlers at the <strong>transformed</strong> output.
+      </p>
+      <p class="muted">From source (contributors):</p>
       <pre><code class="language-bash">git clone https://github.com/mishelashala/superset-ts.git
 cd superset-ts
 pnpm install &amp;&amp; pnpm build &amp;&amp; pnpm test
-
-# one file
-node packages/cli/dist/cli.js ./example.sts -o ./out/example.ts
-
-# directory → out/
-node packages/cli/dist/cli.js ./src -o ./out</code></pre>
-      <p>
-        Binaries: <code>sts</code> / <code>superset-ts</code>.
-        Point bundlers at the <strong>output</strong> directory.
-      </p>
+node packages/cli/dist/cli.js ./example.sts -o ./out/example.ts</code></pre>
     </section>
 
     <section id="caveats">
@@ -200,7 +204,7 @@ node packages/cli/dist/cli.js ./src -o ./out</code></pre>
       <p>then Install from VSIX…</p>
       <p class="muted">
         Transform command needs <code>pnpm build</code> so CLI dist exists.
-        Marketplace not listed yet. Also <strong>not on npm</strong>.
+        Marketplace not listed yet (extension is local-only; CLI/core are on npm).
       </p>
     </section>
 
@@ -221,7 +225,6 @@ node packages/cli/dist/cli.js ./src -o ./out</code></pre>
         <li>Not open brands (<code>brand type Email = string</code> without <code>is</code>)</li>
         <li>Not nominal Mode A / number–bigint literal Mode A</li>
         <li>Not a full schema validation library</li>
-        <li>Not on npm yet</li>
         <li>VS Code extension not on Marketplace yet (local install only)</li>
         <li><code>defineLiteralSet</code> is not the authoring surface</li>
       </ul>
@@ -232,7 +235,7 @@ node packages/cli/dist/cli.js ./src -o ./out</code></pre>
     <p>
       <a href="https://github.com/mishelashala/superset-ts">GitHub repo</a>
       · docs from <code>docs/</code> on <code>main</code>
-      · <strong>not on npm</strong>
+      · <a href="https://www.npmjs.com/package/@mishelashala/superset-ts-cli">npm</a>
       · extension <strong>local-only</strong> until Marketplace publish
     </p>
   </footer>
