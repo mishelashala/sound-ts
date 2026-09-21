@@ -309,7 +309,7 @@ See also: [FAQ: Why not TypeScript?](https://mishelashala.github.io/sound-ts/#fa
 - **No custom TypeScript language server in 0.x** — stock `tsc` runs on expand output; 1.0 adds a Sound-TS semantic phase *before* emit, still not a Microsoft fork
 - **No open brands without `is`** (use refined brands with a custom `.is`)
 - Refined brands and `validate type` are **nominally opaque** under stock `tsc` (phantom unique-symbol brands) — not structural aliases of their bases. Enter via `.from` / `cast<>`.
-- String literal brands are the member literals **or** a phantom arm (nominal under stock `tsc`; member literals still assign). They do not flow back to the bare literal union. Number/bigint literal brands not supported yet.
+- String and number literal brands are the member literals **or** a phantom arm (nominal under stock `tsc`; member literals still assign). They do not flow back to the bare literal union. Bigint literal brands are not supported yet.
 - **0.x delivered** surface bans and tooling ([roadmap v1](https://github.com/mishelashala/sound-ts/issues?q=roadmap+v1) / [v2](https://github.com/mishelashala/sound-ts/issues?q=roadmap+v2)). Outbound widen from a `validate type` to the naked structure remains a stock `tsc` hole until a later design closes it.
 - **1.0 roadmap issues #50–#54 delivered** (AST + symbols + initial rule slice). Deferred items: [`SOUNDNESS_1_0.md`](packages/core/src/soundness/SOUNDNESS_1_0.md). Package version may still be `0.x` until a `1.0.0` release cut.
 - Not a full schema library — `validate type` covers simple object shapes only (no nested objects, generics, `Date`, …)

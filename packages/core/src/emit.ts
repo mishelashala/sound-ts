@@ -28,26 +28,39 @@ export interface EmitOptions {
 function emitLiteralNominalType(
   name: string,
   union: string,
+  primitive: "string" | "number",
   exported: boolean,
 ): string {
   const brand = `${name}Brand`;
   const exp = exported ? "export " : "";
   return [
     `declare const ${brand}: unique symbol;`,
-    `${exp}type ${name} = ${union} | (string & { readonly [${brand}]: true });`,
+    `${exp}type ${name} = ${union} | (${primitive} & { readonly [${brand}]: true });`,
   ].join("\n");
 }
 
+function emitLiteralToken(value: string | number): string {
+  return typeof value === "number" ? String(value) : JSON.stringify(value);
+}
+
 /** Property key for a Mode A `Values` member (quote when not a JS identifier). */
-function emitValuesMemberKey(literal: string): string {
+function emitValuesMemberKey(literal: string | number): string {
+  if (typeof literal === "number") {
+    return /^\d+(\.\d+)?$/.test(String(literal))
+      ? String(literal)
+      : JSON.stringify(literal);
+  }
   return /^[A-Za-z_$][\w$]*$/.test(literal) ? literal : JSON.stringify(literal);
 }
 
-/** Nested `Values` map: known members without going through `.from("…")`. */
-function emitValuesConst(brandName: string, values: readonly string[]): string {
+/** Nested `Values` map: known members without going through `.from(...)`. */
+function emitValuesConst(
+  brandName: string,
+  values: readonly (string | number)[],
+): string {
   const entries = values.map((v) => {
     const key = emitValuesMemberKey(v);
-    return `    ${key}: ${JSON.stringify(v)} as ${brandName},`;
+    return `    ${key}: ${emitLiteralToken(v)} as ${brandName},`;
   });
   return [
     `  const Values = Object.freeze({`,
@@ -57,19 +70,20 @@ function emitValuesConst(brandName: string, values: readonly string[]): string {
 }
 
 function emitLiteralSelfContained(decl: LiteralBrandDecl): string {
-  const { name, values, exported } = decl;
-  const litList = values.map((v) => JSON.stringify(v)).join(", ");
-  const union = values.map((v) => JSON.stringify(v)).join(" | ");
+  const { name, values, exported, primitive } = decl;
+  const litList = values.map((v) => emitLiteralToken(v)).join(", ");
+  const union = values.map((v) => emitLiteralToken(v)).join(" | ");
   const exp = exported ? "export " : "";
+  const typeofCheck = primitive === "number" ? "number" : "string";
 
   return [
-    emitLiteralNominalType(name, union, exported),
+    emitLiteralNominalType(name, union, primitive, exported),
     `${exp}const ${name} = /*#__PURE__*/ (() => {`,
     `  const __values = Object.freeze([${litList}] as const);`,
-    `  const __set = new Set<string>(__values);`,
+    `  const __set = new Set<${typeofCheck}>(__values);`,
     `  type __Literal = (typeof __values)[number];`,
     `  function is(value: unknown): value is ${name} {`,
-    `    return typeof value === "string" && __set.has(value);`,
+    `    return typeof value === "${typeofCheck}" && __set.has(value);`,
     `  }`,
     `  function from(value: unknown): ${name} {`,
     `    if (is(value)) return value;`,
@@ -96,12 +110,15 @@ function emitLiteralSelfContained(decl: LiteralBrandDecl): string {
 }
 
 function emitLiteralWithHelper(decl: LiteralBrandDecl): string {
+  if (decl.primitive === "number") {
+    return emitLiteralSelfContained(decl);
+  }
   const { name, values, exported } = decl;
-  const litList = values.map((v) => JSON.stringify(v)).join(", ");
-  const union = values.map((v) => JSON.stringify(v)).join(" | ");
+  const litList = values.map((v) => emitLiteralToken(v)).join(", ");
+  const union = values.map((v) => emitLiteralToken(v)).join(" | ");
   const exp = exported ? "export " : "";
   return [
-    emitLiteralNominalType(name, union, exported),
+    emitLiteralNominalType(name, union, "string", exported),
     `${exp}const ${name} = defineLiteralSet("${name}", [${litList}] as const);`,
   ].join("\n");
 }
