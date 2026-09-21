@@ -73,15 +73,9 @@ Expands to the member literals **plus** a phantom arm, plus a runtime companion 
 - `Account.Values.admin` — known member constant (no string typo)
 - `Account.values` — readonly array (Joi / iteration)
 
-```ts
-declare const AccountBrand: unique symbol;
-type Account =
-  | "admin"
-  | "regular"
-  | (string & { readonly [AccountBrand]: true });
-```
-
 Under stock `tsc`, `setRole("admin")` is OK, widened `string` is not, and a second brand with the same members is not assignable to `Account`. A value of type `Account` is assignable to `string`, not back to `"admin" | "regular"`.
+
+See the [playground](https://mishelashala.github.io/sound-ts/playground.html) for expanded TypeScript / JavaScript.
 
 ### Refined brands
 
@@ -93,16 +87,9 @@ brand type PositiveInt = number {
 }
 ```
 
-Expands to a **phantom unique-symbol brand** plus a companion that keeps your `.is` body and **generates** `.from` (validate via `.is`) and `.toPrimitive` (identity back to the base type):
+Expands to a **phantom unique-symbol brand** plus a companion that keeps your `.is` body and **generates** `.from` (validate via `.is`) and `.toPrimitive` (identity back to the base type).
 
-```ts
-declare const PositiveIntBrand: unique symbol;
-type PositiveInt = number & { readonly [PositiveIntBrand]: true };
-// companions: .is is a type predicate; .from / cast<> return PositiveInt;
-// .toPrimitive(value) → number
-```
-
-Under stock `tsc`, bare `number` is **not** assignable to `PositiveInt` — enter via `.from` / `cast<PositiveInt>(…)`. Runtime checks still matter at boundaries; the brand alone is not enough. No separate `.d.ts` emit — plain `.ts` only.
+Under stock `tsc`, bare `number` is **not** assignable to `PositiveInt` — enter via `.from` / `cast<PositiveInt>(…)`. Runtime checks still matter at boundaries; the brand alone is not enough. No separate `.d.ts` emit — plain `.ts` only. Expanded output: [playground](https://mishelashala.github.io/sound-ts/playground.html).
 
 ### Brand unions / intersections
 
@@ -123,21 +110,7 @@ import { Admin, Regular } from "./a.js";
 brand type Staff = Admin | Regular;
 ```
 
-Same-file composition still works (`User & Session`, etc.). Pass the directory (or both files) to `sts` so the project brand map sees every declaration; then point `tsc` at the expanded output.
-
-```ts
-// after sts transform — stock TypeScript
-type Account = "admin" | "regular";
-const Account = /* … runtime companion … */;
-
-function greet(role: Account): string {
-  return role === "admin" ? "hello, admin" : "hello";
-}
-
-greet(Account.from("admin")); // ok
-Account.is("guest");          // false
-Account.from("guest");        // throws
-```
+Same-file composition still works (`User & Session`, etc.). Pass the directory (or both files) to `sts` so the project brand map sees every declaration; then point `tsc` at the expanded output. For the expanded TypeScript / JavaScript shape, use the [playground](https://mishelashala.github.io/sound-ts/playground.html).
 
 ### Validate type
 
