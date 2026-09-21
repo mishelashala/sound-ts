@@ -149,7 +149,7 @@ Keep most of the app as normal `.ts` (stock `tsc` / Vite). Add `.sts` only where
 ## Non-goals (this cut)
 
 - **No Microsoft / TypeScript fork** to maintain
-- No custom TypeScript checker or language server fantasy
+- **No custom TypeScript checker or language server** — stock `tsc` runs on expand output only.
 - **No open brands without `is`** (use refined brands; later tip for phantom ID opacity + `.from` — not open-without-`is`)
 - String literal brands are structural under stock `tsc` (not nominal). Number/bigint literal brands not supported yet.
 - Not a full schema / object validation library

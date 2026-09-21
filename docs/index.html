@@ -277,7 +277,7 @@ node packages/cli/dist/cli.js ./example.sts -o ./out/example.ts</code></pre>
       <h2>Non-goals (this cut)</h2>
       <ul>
         <li>No Microsoft / TypeScript fork to maintain</li>
-        <li>No custom checker or LSP fantasy</li>
+        <li><strong>No custom TypeScript checker or language server</strong> — stock <code>tsc</code> runs on expand output only.</li>
         <li><strong>No open brands without <code>is</code></strong> (use refined brands; later tip for phantom ID opacity + <code>.from</code> — not open-without-<code>is</code>)</li>
         <li>String literal brands are structural under stock <code>tsc</code> (not nominal). Number/bigint literal brands not supported yet.</li>
         <li>Not a full schema validation library</li>
