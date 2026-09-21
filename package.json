@@ -2,7 +2,7 @@
   "name": "superset-ts",
   "private": true,
   "version": "0.3.2",
-  "description": "TypeScript dialect + CLI: brand type, validate type, cast<> checked casts expand to plain TS + runtime companions. Not a TypeScript fork.",
+  "description": "Checked entry into brands and validated shapes. brand type, validate type, and cast<> expand to plain TypeScript: nominal types stock tsc enforces, plus runtime companions. Not a TypeScript fork.",
   "license": "MIT",
   "author": "Michell Ayala",
   "repository": {
