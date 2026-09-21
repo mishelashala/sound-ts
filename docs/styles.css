@@ -29,6 +29,24 @@ main, footer {
 
 header { margin-bottom: 1rem; }
 
+.title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0 0 0.5rem;
+}
+
+.title-row h1 {
+  margin: 0;
+}
+
+.seal {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  display: block;
+}
+
 h1 {
   font-size: 1.35rem;
   font-weight: 600;
