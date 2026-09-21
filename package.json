@@ -1,0 +1,56 @@
+{
+  "name": "@mishelashala/superset-ts",
+  "version": "0.1.0",
+  "description": "Closed string literal sets with typed runtime helpers — plain TypeScript for stock tsc (not a TypeScript fork). Not published to npm yet.",
+  "license": "MIT",
+  "author": "Michell Ayala",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mishelashala/superset-ts.git"
+  },
+  "homepage": "https://github.com/mishelashala/superset-ts#readme",
+  "bugs": {
+    "url": "https://github.com/mishelashala/superset-ts/issues"
+  },
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "prepublishOnly": "pnpm run build && pnpm test"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "typescript",
+    "literal",
+    "union",
+    "runtime",
+    "validation",
+    "brand",
+    "superset-ts"
+  ],
+  "devDependencies": {
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.4"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "private": true
+}
