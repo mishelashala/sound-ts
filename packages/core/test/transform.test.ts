@@ -789,3 +789,53 @@ take(User.from({ id: "a", age: 1 }));
     expect(typecheckOk(check)).toEqual([]);
   });
 });
+
+describe("soundness: reject any", () => {
+  it("rejects const x: any", () => {
+    expect(() => transform(`const x: any = 1;\n`)).toThrow(/any/);
+  });
+
+  it("does not rewrite any to unknown (still throws)", () => {
+    expect(() => transform(`const x: any = 1;\n`)).toThrow(
+      /not rewritten to unknown/,
+    );
+  });
+
+  it("allows const x: unknown", () => {
+    const { code, changed } = transform(`const x: unknown = 1;\n`);
+    expect(code).toContain(`const x: unknown = 1`);
+    expect(changed).toBe(false);
+  });
+
+  it("rejects as any, any[], and generic any", () => {
+    expect(() => transform(`const x = 1 as any;\n`)).toThrow(/any/);
+    expect(() => transform(`const x: any[] = [];\n`)).toThrow(/any/);
+    expect(() => transform(`const x: Array<any> = [];\n`)).toThrow(/any/);
+    expect(() => transform(`const x: Promise<any> = Promise.resolve(1);\n`)).toThrow(
+      /any/,
+    );
+  });
+
+  it("ignores any inside comments and strings", () => {
+    const src = `
+// const x: any = 1;
+const s = "any";
+const x: unknown = 1;
+`;
+    expect(() => transform(src)).not.toThrow();
+  });
+
+  it("keeps cast<> and .from from unknown", () => {
+    const src = `
+brand type Account = "admin" | "regular";
+const raw: unknown = "admin";
+const a = cast<Account>(raw);
+const b = Account.from(raw);
+`;
+    const { code } = transform(src);
+    expect(code).toContain(`const raw: unknown = "admin"`);
+    expect(code).toContain(`Account.from(raw)`);
+    expect(code).not.toContain("cast<");
+    expect(code).not.toMatch(/\bany\b/);
+  });
+});
