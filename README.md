@@ -26,7 +26,7 @@ Library: `@mishelashala/superset-ts-core`.
 
 **Prefer `.sts` files.** Stock TypeScript language service will red-squiggle `brand type` inside ordinary `.ts` / `.tsx` (unknown keywords). The VS Code extension’s TextMate grammar covers `.sts`; injection into `.ts` only helps highlighting, not the checker.
 
-### Mode A — string literal unions (phase 1)
+### String literal brands
 
 ```sts
 brand type Account = "admin" | "regular";
@@ -34,7 +34,7 @@ brand type Account = "admin" | "regular";
 
 Expands to a plain `type Account = …` plus a runtime companion with `.values`, `.is`, `.from`.
 
-### Mode B — refined brands with custom `is` (phase 2)
+### Refined brands
 
 ```sts
 brand type PositiveInt = number {
@@ -46,7 +46,7 @@ brand type PositiveInt = number {
 
 Expands to `type PositiveInt = number` plus a companion that keeps your `.is` body and **generates** `.from` (validate via `.is`). Under stock `tsc`, the type alias is still the base (`number`) — the refinement is **runtime-only** (`.is` / `.from`); that is expected, not a fork. No separate `.d.ts` emit — plain `.ts` only.
 
-### Brand-only unions / intersections (phase 2)
+### Brand unions / intersections
 
 Members must be **already-declared brand names** in the same file (no open `string` / arbitrary types):
 
@@ -102,7 +102,7 @@ Binaries after build: `superset-ts` / `sts` → `packages/cli/dist/cli.js`.
 
 ### Parser notes (v0)
 
-`packages/core` parses `brand type` with a lightweight scanner (regex header + brace matching for Mode B). Line/block comments and string/template literals are masked before the scan so fake decls inside them are ignored; live decls after comments still expand. Remaining edges: regex literals; nested `${}` inside templates (the whole template is skipped).
+`packages/core` parses `brand type` with a lightweight scanner (regex header + brace matching for refined brands). Line/block comments and string/template literals are masked before the scan so fake decls inside them are ignored; live decls after comments still expand. Remaining edges: regex literals; nested `${}` inside templates (the whole template is skipped).
 
 ### Same-file brand unions (v0)
 
@@ -122,7 +122,7 @@ Binaries after build: `superset-ts` / `sts` → `packages/cli/dist/cli.js`.
 
 ## What about `defineLiteralSet`?
 
-**Not the product API.** Authors write `brand type`. `defineLiteralSet` is an **internal** emit/runtime helper (optional emit target for Mode A literals). Do not import it in app code — use the dialect + CLI.
+**Not the product API.** Authors write `brand type`. `defineLiteralSet` is an **internal** emit/runtime helper (optional emit target for string literal brands). Do not import it in app code — use the dialect + CLI.
 
 ---
 
@@ -139,7 +139,7 @@ Binaries after build: `superset-ts` / `sts` → `packages/cli/dist/cli.js`.
 - **No Microsoft / TypeScript fork** to maintain
 - No custom TypeScript checker or language server fantasy
 - **Not** open brands (`brand type Email = string` without an `is` block)
-- **Not** nominal Mode A / number-or-bigint literal Mode A
+- **Not** nominal string-literal brands / number-or-bigint literal brands
 - Not a full schema / object validation library
 - VS Code extension not on Marketplace yet (local install only)
 - VS Code extension **not on Marketplace** yet (local install only)

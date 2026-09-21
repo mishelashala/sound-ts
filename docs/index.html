@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>superset-ts — brand type dialect + CLI</title>
-  <meta name="description" content="Write brand type (literal unions, Mode B refined brands, brand-only unions); CLI expands to plain TS + runtime companions. Not a TypeScript fork." />
+  <meta name="description" content="Write brand type (string literal brands, refined brands, brand unions); CLI expands to plain TS + runtime companions. Not a TypeScript fork." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
@@ -44,7 +44,7 @@
 
     <nav aria-label="On this page">
       <a href="#authoring">Authoring</a>
-      <a href="#mode-b">Mode&nbsp;B</a>
+      <a href="#refined">Refined&nbsp;brands</a>
       <a href="#unions">Unions / intersections</a>
       <a href="#cli">CLI</a>
       <a href="#caveats">Caveats</a>
@@ -76,7 +76,7 @@
     </section>
 
     <section id="authoring">
-      <h2>Authoring — Mode A (string literals)</h2>
+      <h2>Authoring — string literal brands</h2>
       <p>
         <strong>Prefer <code>.sts</code> files.</strong>
         Stock TypeScript language service will red-squiggle
@@ -98,8 +98,8 @@ Account.is("guest");   // false
 Account.from("guest"); // throws</code></pre>
     </section>
 
-    <section id="mode-b">
-      <h2>Mode B — refined brands</h2>
+    <section id="refined">
+      <h2>Refined brands</h2>
       <p class="muted">Emit keeps <code>type Name = base</code>; under stock <code>tsc</code> the refinement is runtime-only (<code>.is</code> / <code>.from</code>) — expected.</p>
       <p>
         Custom <code>is</code> body; CLI <strong>generates</strong>
@@ -185,7 +185,7 @@ node packages/cli/dist/cli.js ./example.sts -o ./out/example.ts</code></pre>
       <ul>
         <li>
           <strong>Parser / comments:</strong>
-          lightweight scanner (regex header + brace match for Mode B).
+          lightweight scanner (regex header + brace match for refined brands).
           Line/block comments and string/template literals are masked before
           the scan (fixed) — fake decls inside them are ignored. Remaining
           edges: regex literals; nested <code>${}</code> in templates (whole
@@ -252,7 +252,7 @@ node packages/cli/dist/cli.js ./example.sts -o ./out/example.ts</code></pre>
         <li>No Microsoft / TypeScript fork to maintain</li>
         <li>No custom checker or LSP fantasy in v0</li>
         <li>Not open brands (<code>brand type Email = string</code> without <code>is</code>)</li>
-        <li>Not nominal Mode A / number–bigint literal Mode A</li>
+        <li>Not nominal string-literal brands / number–bigint literal brands</li>
         <li>Not a full schema validation library</li>
         <li>VS Code extension not on Marketplace yet (local install only)</li>
         <li><code>defineLiteralSet</code> is not the authoring surface</li>
@@ -274,7 +274,7 @@ node packages/cli/dist/cli.js ./example.sts -o ./out/example.ts</code></pre>
   <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-bash.min.js"></script>
   <script>
     (function () {
-      // Dialect keywords: brand, type, Mode B is — light up as Prism keywords.
+      // Dialect keywords: brand, type, refined-brand is — light up as Prism keywords.
       if (window.Prism && Prism.languages.typescript) {
         Prism.languages.insertBefore("typescript", "keyword", {
           "dialect-keyword": {
