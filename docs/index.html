@@ -422,7 +422,7 @@ node packages/cli/dist/cli.js ./example.sts -o ./out/example.ts</code></pre>
           fail expand. <code>!==</code> stays. <code>!</code> is not deleted.
         </li>
         <li>
-          <input type="checkbox" disabled />
+          <input type="checkbox" disabled checked />
           <a href="https://github.com/mishelashala/superset-ts/issues/42">Reject <code>Object</code>, <code>{}</code>, <code>Function</code></a>
           — those types in <code>.sts</code> fail expand. An empty object
           literal stays. They are not rewritten to <code>unknown</code>.
