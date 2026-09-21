@@ -15,6 +15,7 @@ import {
   type ValidateTypeDecl,
 } from "./validate.js";
 import { rewriteCheckedCasts } from "./checkedCast.js";
+import { rewriteMethodsAsProperties } from "./emitMethods.js";
 import { runSoundnessChecks } from "./soundness/index.js";
 
 export interface TransformResult {
@@ -86,13 +87,19 @@ function expandFile(
     code = cast.code;
     changed = true;
   }
+  const methods = rewriteMethodsAsProperties(code);
+  if (methods.count > 0) {
+    code = methods.code;
+    changed = true;
+  }
   return { code, changed };
 }
 
 /**
  * Expand `brand type` / `validate type` into plain TS types plus runtime
  * companions (`Name.is` / `Name.from`, and `Name.values` for string-literal
- * brands), and rewrite `cast<…>(…)` checked casts.
+ * brands), rewrite `cast<…>(…)` checked casts, and emit method syntax as
+ * readonly function properties (stock `strictFunctionTypes`).
  * Refined, validate, and string-literal brands emit a phantom unique-symbol
  * arm (nominally opaque under stock `tsc`). String-literal brands also keep
  * the member literals in the union so `"admin"` stays assignable.
@@ -139,18 +146,19 @@ export function transform(
     options.companionNames ?? companionNames(brandMap, validateMap);
 
   if (decls.length === 0 && validateDecls.length === 0) {
-    // Still may have cast<…>(…) casts
+    // Still may have cast<…>(…) casts and/or method syntax to rewrite
     const castOpts: {
       companionNames: ReadonlySet<string>;
       filename?: string;
     } = { companionNames: names };
     if (options.filename !== undefined) castOpts.filename = options.filename;
     const cast = rewriteCheckedCasts(source, castOpts);
+    const methods = rewriteMethodsAsProperties(cast.code);
     return {
-      code: cast.code,
+      code: methods.code,
       decls,
       validateDecls,
-      changed: cast.count > 0,
+      changed: cast.count > 0 || methods.count > 0,
     };
   }
 
