@@ -74,6 +74,50 @@ function setOutputCode(outputEl, codeEl, text, language) {
   highlightInto(codeEl, text, language);
 }
 
+async function copyText(text) {
+  if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(text);
+    return;
+  }
+  const ta = document.createElement("textarea");
+  ta.value = text;
+  ta.setAttribute("readonly", "");
+  ta.style.position = "fixed";
+  ta.style.left = "-9999px";
+  document.body.appendChild(ta);
+  ta.select();
+  document.execCommand("copy");
+  document.body.removeChild(ta);
+}
+
+function wireCopyButton(button, getText) {
+  if (!(button instanceof HTMLButtonElement)) return;
+  let resetTimer = 0;
+  const idleLabel = button.textContent || "Copy";
+
+  button.addEventListener("click", () => {
+    const text = getText();
+    void (async () => {
+      try {
+        await copyText(text);
+        button.textContent = "Copied";
+        button.classList.add("is-copied");
+        window.clearTimeout(resetTimer);
+        resetTimer = window.setTimeout(() => {
+          button.textContent = idleLabel;
+          button.classList.remove("is-copied");
+        }, 1500);
+      } catch {
+        button.textContent = "Copy failed";
+        window.clearTimeout(resetTimer);
+        resetTimer = window.setTimeout(() => {
+          button.textContent = idleLabel;
+        }, 1500);
+      }
+    })();
+  });
+}
+
 function boot() {
   const sourceEl = document.getElementById("sts-source");
   const highlightEl = document.getElementById("sts-highlight");
@@ -82,6 +126,8 @@ function boot() {
   const codeEl = document.getElementById("compiled-code");
   const modeEl = document.getElementById("output-mode");
   const exampleEl = document.getElementById("sts-example");
+  const copySourceBtn = document.getElementById("copy-source");
+  const copyOutputBtn = document.getElementById("copy-output");
 
   // Old cached playground.js expected a textarea#compiled-output. If this
   // markup is missing, show a hard-refresh hint instead of a blank pane.
@@ -179,6 +225,9 @@ function boot() {
   exampleEl.addEventListener("change", () => {
     loadExample(exampleEl.value);
   });
+
+  wireCopyButton(copySourceBtn, () => sourceEl.value);
+  wireCopyButton(copyOutputBtn, () => codeEl.textContent ?? "");
 
   loadExample(exampleEl.value || EXAMPLES[0].id);
 }

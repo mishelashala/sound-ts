@@ -66,6 +66,41 @@ body.playground-body {
   outline-offset: 1px;
 }
 
+.pane-actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+}
+
+.copy-btn {
+  flex-shrink: 0;
+  font: inherit;
+  font-size: 0.8rem;
+  color: var(--fg);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.2rem 0.55rem;
+  cursor: pointer;
+  line-height: 1.3;
+}
+
+.copy-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.copy-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.copy-btn.is-copied {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 .output-mode {
   margin: 0;
   padding: 0.4rem 0.65rem;
@@ -75,6 +110,8 @@ body.playground-body {
   flex-wrap: wrap;
   align-items: center;
   gap: 0.35rem 0.9rem;
+  flex: 1;
+  min-width: 0;
 }
 
 .output-mode legend {

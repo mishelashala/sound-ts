@@ -987,6 +987,128 @@ function rewriteCheckedCasts(source, options) {
   return { code: out, count: sites.length };
 }
 
+// packages/core/src/soundness/rejectAny.ts
+function locPrefix(filename, source, index) {
+  if (filename === void 0) return "";
+  let line = 1;
+  let col = 1;
+  for (let i = 0; i < index && i < source.length; i++) {
+    if (source[i] === "\n") {
+      line++;
+      col = 1;
+    } else {
+      col++;
+    }
+  }
+  return `${filename}:${line}:${col}: `;
+}
+function skipWsBack(scan, i) {
+  while (i >= 0 && /\s/.test(scan[i])) i--;
+  return i;
+}
+function skipWsFwd(scan, i) {
+  while (i < scan.length && /\s/.test(scan[i])) i++;
+  return i;
+}
+function isTypePositionAny(scan, start) {
+  const end = start + 3;
+  const after = skipWsFwd(scan, end);
+  const afterCh = scan[after];
+  if (afterCh === ":" || afterCh === "!" && scan[skipWsFwd(scan, after + 1)] === ":") {
+    return false;
+  }
+  if (afterCh === "[" || afterCh === "<") return true;
+  if (afterCh === "|" || afterCh === "&" || afterCh === ">" || afterCh === ",") {
+    return true;
+  }
+  const before = skipWsBack(scan, start - 1);
+  if (before < 0) return false;
+  const prev = scan[before];
+  if (prev === ":" || prev === "<" || prev === "|" || prev === "&") {
+    return true;
+  }
+  if (prev === ",") {
+    if (afterCh === ">" || afterCh === "," || afterCh === "[" || afterCh === "|" || afterCh === "&") {
+      return true;
+    }
+    return false;
+  }
+  const aheadOfAny = scan.slice(Math.max(0, start - 12), start);
+  if (/(?:^|[^\w$])as\s+$/.test(aheadOfAny)) return true;
+  if (/(?:^|[^\w$])(?:is|satisfies|extends|keyof|infer|readonly)\s+$/.test(aheadOfAny)) {
+    return true;
+  }
+  if (prev === "=") {
+    const head = scan.slice(0, start);
+    if (/(?:^|[^\w$])(?:export\s+)?type\s+[A-Za-z_$][\w$]*\s*(?:<[^<>]*>)?\s*=\s*$/.test(
+      head
+    )) {
+      return true;
+    }
+  }
+  return false;
+}
+function assertNoAny(source, filename) {
+  const scan = maskCommentsAndStrings(source);
+  const re = /\bany\b/g;
+  let m;
+  while ((m = re.exec(scan)) !== null) {
+    const start = m.index;
+    if (!isTypePositionAny(scan, start)) continue;
+    const where = locPrefix(filename, source, start);
+    throw new SyntaxError(
+      `${where}\`any\` is not allowed in .sts type positions (use \`unknown\` for untrusted input, then cast<> / .from). any is not rewritten to unknown.`
+    );
+  }
+}
+
+// packages/core/src/soundness/rejectStructuralAlias.ts
+function skipWs4(source, i) {
+  while (i < source.length && /[\s\n\r\t]/.test(source[i])) i++;
+  return i;
+}
+function isDialectTypeKeyword(scan, typeIdx) {
+  let i = typeIdx;
+  while (i > 0 && /[\s\n\r\t]/.test(scan[i - 1])) i--;
+  const before = scan.slice(Math.max(0, i - 8), i);
+  if (/(?:^|[^A-Za-z0-9_$])brand$/.test(before)) return true;
+  if (/(?:^|[^A-Za-z0-9_$])validate$/.test(before)) return true;
+  return false;
+}
+function formatWhere(filename, offset) {
+  const loc = filename ? `${filename}:` : "offset ";
+  return `${loc}${offset}`;
+}
+function assertNoStructuralAliases(source, filename) {
+  const scan = maskCommentsAndStrings(source);
+  const ifaceRe = /\binterface\s+([A-Za-z_$][\w$]*)\b/g;
+  let m;
+  while ((m = ifaceRe.exec(scan)) !== null) {
+    const name = m[1];
+    throw new SyntaxError(
+      `structural interface '${name}' is not allowed in .sts (${formatWhere(filename, m.index)}); use 'validate type' or 'brand type' instead`
+    );
+  }
+  const typeRe = /\b(?:export\s+)?type\s+([A-Za-z_$][\w$]*)\s*(?:<[^;={}]*>)?\s*=/g;
+  while ((m = typeRe.exec(scan)) !== null) {
+    const typeKw = m[0].search(/\btype\b/);
+    const typeIdx = m.index + (typeKw >= 0 ? typeKw : 0);
+    if (isDialectTypeKeyword(scan, typeIdx)) continue;
+    const name = m[1];
+    let afterEq = skipWs4(scan, m.index + m[0].length);
+    if (scan[afterEq] !== "{") continue;
+    throw new SyntaxError(
+      `structural object alias '${name}' is not allowed in .sts (${formatWhere(filename, m.index)}); use 'validate type' or 'brand type' instead`
+    );
+  }
+}
+
+// packages/core/src/soundness/index.ts
+function runSoundnessChecks(source, filename) {
+  assertNoAny(source, filename);
+  assertNoStructuralAliases(source, filename);
+}
+
 // packages/core/src/transform.ts
 function expandFile(source, brandDecls, validateDecls, options, castCompanions, filename) {
   const allDecls = [...brandDecls, ...validateDecls];
@@ -1006,6 +1128,7 @@ function expandFile(source, brandDecls, validateDecls, options, castCompanions, 
   return { code, changed };
 }
 function transform(source, options = {}) {
+  runSoundnessChecks(source, options.filename);
   const { decls } = parseBrandTypes(source);
   const { decls: validateDecls } = parseValidateTypes(source);
   let brandMap;
@@ -1182,6 +1305,47 @@ function setOutputCode(outputEl, codeEl, text, language) {
   outputEl.removeAttribute("aria-invalid");
   highlightInto(codeEl, text, language);
 }
+async function copyText(text) {
+  if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(text);
+    return;
+  }
+  const ta = document.createElement("textarea");
+  ta.value = text;
+  ta.setAttribute("readonly", "");
+  ta.style.position = "fixed";
+  ta.style.left = "-9999px";
+  document.body.appendChild(ta);
+  ta.select();
+  document.execCommand("copy");
+  document.body.removeChild(ta);
+}
+function wireCopyButton(button, getText) {
+  if (!(button instanceof HTMLButtonElement)) return;
+  let resetTimer = 0;
+  const idleLabel = button.textContent || "Copy";
+  button.addEventListener("click", () => {
+    const text = getText();
+    void (async () => {
+      try {
+        await copyText(text);
+        button.textContent = "Copied";
+        button.classList.add("is-copied");
+        window.clearTimeout(resetTimer);
+        resetTimer = window.setTimeout(() => {
+          button.textContent = idleLabel;
+          button.classList.remove("is-copied");
+        }, 1500);
+      } catch {
+        button.textContent = "Copy failed";
+        window.clearTimeout(resetTimer);
+        resetTimer = window.setTimeout(() => {
+          button.textContent = idleLabel;
+        }, 1500);
+      }
+    })();
+  });
+}
 function boot() {
   const sourceEl = document.getElementById("sts-source");
   const highlightEl = document.getElementById("sts-highlight");
@@ -1190,6 +1354,8 @@ function boot() {
   const codeEl = document.getElementById("compiled-code");
   const modeEl = document.getElementById("output-mode");
   const exampleEl = document.getElementById("sts-example");
+  const copySourceBtn = document.getElementById("copy-source");
+  const copyOutputBtn = document.getElementById("copy-output");
   if (!(sourceEl instanceof HTMLTextAreaElement) || !(highlightEl instanceof HTMLElement) || !(highlightPre instanceof HTMLElement) || !(outputEl instanceof HTMLElement) || !(codeEl instanceof HTMLElement) || !(modeEl instanceof HTMLFieldSetElement) || !(exampleEl instanceof HTMLSelectElement)) {
     const fallback = document.getElementById("compiled-output");
     if (fallback instanceof HTMLElement) {
@@ -1262,6 +1428,8 @@ function boot() {
   exampleEl.addEventListener("change", () => {
     loadExample(exampleEl.value);
   });
+  wireCopyButton(copySourceBtn, () => sourceEl.value);
+  wireCopyButton(copyOutputBtn, () => codeEl.textContent ?? "");
   loadExample(exampleEl.value || EXAMPLES[0].id);
 }
 if (typeof document !== "undefined") {
