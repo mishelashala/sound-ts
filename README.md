@@ -4,7 +4,7 @@
 
 > **Name note:** “superset-ts” can sound like a TypeScript fork. It is **not**. There is no patched `tsc`, no custom language server, and no alternate checker. You import a normal npm library; types and runtime helpers are ordinary TypeScript that the stock toolchain already understands.
 
-Package: `@mishelashala/superset-ts` · repo: [mishelashala/superset-ts](https://github.com/mishelashala/superset-ts) · **not published to npm yet** (install from git / local path).
+Package: `@mishelashala/superset-ts` · repo: [mishelashala/superset-ts](https://github.com/mishelashala/superset-ts) · docs: [mishelashala.github.io/superset-ts](https://mishelashala.github.io/superset-ts/) · **not published to npm yet** (install from git / local path).
 
 ---
 
