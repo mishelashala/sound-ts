@@ -5,10 +5,10 @@
     "moduleResolution": "NodeNext",
     "strict": true,
     "skipLibCheck": true,
-    "rootDir": ".superset",
+    "rootDir": ".sound-ts",
     "outDir": "dist",
     "noEmitOnError": true
   },
-  "include": [".superset/**/*.ts"],
+  "include": [".sound-ts/**/*.ts"],
   "exclude": ["**/*.sts", "src"]
 }

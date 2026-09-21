@@ -32,31 +32,34 @@ function typecheckOk(source: string): string[] {
 }
 
 describe("emit methods as readonly function properties", () => {
-  it("expands type/interface/class methods to readonly property form", () => {
+  it("expands class methods to readonly property form via transform", () => {
+    // Object `type` / `interface` aliases are rejected by soundness (#38).
+    // Class methods still rewrite under transform.
     const src = `
-type Feed = { eat(animal: Animal): void };
-interface Handler { handle(x: number): void }
 class Kennel {
-  eat(dog: Dog) {}
+  eat(dog: string) {}
 }
 `;
     const { code, changed } = transform(src);
     expect(changed).toBe(true);
-    expect(code).toContain("readonly eat: (animal: Animal) => void");
+    expect(code).toMatch(/readonly eat = \(dog: string\) => \{\s*\};/);
+    expect(code).not.toMatch(/^\s*eat\(dog: string\)\s*\{/m);
+  });
+
+  it("rewrites type/interface method signatures (emit helper, pre-soundness)", () => {
+    const src = `
+type Feed = { eat(animal: string): void };
+interface Handler { handle(x: number): void }
+`;
+    const { code, count } = rewriteMethodsAsProperties(src);
+    expect(count).toBeGreaterThan(0);
+    expect(code).toContain("readonly eat: (animal: string) => void");
     expect(code).toContain("readonly handle: (x: number) => void");
-    expect(code).toMatch(/readonly eat = \(dog: Dog\) => \{\s*\};/);
-    expect(code).not.toMatch(/eat\(animal: Animal\): void/);
-    expect(code).not.toMatch(/^\s*eat\(dog: Dog\)\s*\{/m);
   });
 
   it("tsc rejects Dog handler where Animal is required; accepts Animal where Dog is required", () => {
-    const src = `
-type Animal = { kind: "animal" };
-type Dog = Animal & { bark: true };
-
-type AnimalFeeder = { eat(animal: Animal): void };
-type DogFeeder = { eat(dog: Dog): void };
-
+    // Build types in the tsc fixture only. .sts soundness forbids those aliases.
+    const classes = `
 class DogOnly {
   eat(dog: Dog) {}
 }
@@ -64,11 +67,18 @@ class AnimalOk {
   eat(animal: Animal) {}
 }
 `;
-    const { code } = transform(src);
-    expect(code).toContain("readonly eat: (animal: Animal) => void");
-    expect(code).toContain("readonly eat: (dog: Dog) => void");
+    const { code: methods } = rewriteMethodsAsProperties(classes);
+    expect(methods).toMatch(/readonly eat = \(dog: Dog\) =>/);
+    expect(methods).toMatch(/readonly eat = \(animal: Animal\) =>/);
 
-    const check = `${code}
+    const check = `
+type Animal = { kind: "animal" };
+type Dog = Animal & { bark: true };
+
+type AnimalFeeder = { readonly eat: (animal: Animal) => void };
+type DogFeeder = { readonly eat: (dog: Dog) => void };
+
+${methods}
 
 declare let needsAnimal: AnimalFeeder;
 declare let needsDog: DogFeeder;

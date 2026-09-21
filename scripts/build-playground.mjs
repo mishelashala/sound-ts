@@ -1,5 +1,5 @@
 /**
- * Bundle @mishelashala/superset-ts-core `transform` plus the playground UI
+ * Bundle @mishelashala/sound-ts-core `transform` plus the playground UI
  * into docs/playground.js. GitHub Pages only serves docs/ and does not build.
  *
  * esbuild is the copy already installed via vite (pnpm). TypeScript's

@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { mapOutputPath, resolveOutputTarget } from "../src/outputPath.js";
 
 describe("shadow emit output paths", () => {
-  it("maps a directory input into <cwd>/.superset and mirrors the tree", () => {
+  it("maps a directory input into <cwd>/.sound-ts and mirrors the tree", () => {
     const cwd = path.resolve("/proj");
     const input = path.join(cwd, "src");
     const target = resolveOutputTarget({ input, isDirectory: true, cwd });
@@ -11,13 +11,13 @@ describe("shadow emit output paths", () => {
     expect(target.kind).toBe("directory");
     if (target.kind !== "directory") return;
 
-    expect(target.outputRoot).toBe(path.join(cwd, ".superset"));
+    expect(target.outputRoot).toBe(path.join(cwd, ".sound-ts"));
     const out = mapOutputPath(
       path.join(input, "db", "roles.sts"),
       target.inputRoot,
       target.outputRoot,
     );
-    expect(out).toBe(path.join(cwd, ".superset", "db", "roles.ts"));
+    expect(out).toBe(path.join(cwd, ".sound-ts", "db", "roles.ts"));
     expect(out.endsWith(".js")).toBe(false);
   });
 
@@ -29,7 +29,7 @@ describe("shadow emit output paths", () => {
     expect(target.kind).toBe("file");
     if (target.kind !== "file") return;
 
-    expect(target.outputFile).toBe(path.join(cwd, ".superset", "roles.ts"));
+    expect(target.outputFile).toBe(path.join(cwd, ".sound-ts", "roles.ts"));
     expect(target.outputFile).not.toBe(path.join(cwd, "roles.ts"));
     expect(path.dirname(target.outputFile)).not.toBe(path.dirname(input));
   });
@@ -42,13 +42,13 @@ describe("shadow emit output paths", () => {
     expect(target.kind).toBe("directory");
     if (target.kind !== "directory") return;
 
-    expect(target.outputRoot).toBe(path.resolve("/data/app/.superset"));
+    expect(target.outputRoot).toBe(path.resolve("/data/app/.sound-ts"));
     expect(
       mapOutputPath(path.join(input, "roles.sts"), target.inputRoot, target.outputRoot),
-    ).toBe(path.resolve("/data/app/.superset/roles.ts"));
+    ).toBe(path.resolve("/data/app/.sound-ts/roles.ts"));
   });
 
-  it("writes a single file outside the cwd into that file's .superset directory", () => {
+  it("writes a single file outside the cwd into that file's .sound-ts directory", () => {
     const cwd = path.resolve("/work");
     const input = path.resolve("/data/app/roles.sts");
     const target = resolveOutputTarget({ input, isDirectory: false, cwd });
@@ -56,7 +56,7 @@ describe("shadow emit output paths", () => {
     expect(target.kind).toBe("file");
     if (target.kind !== "file") return;
 
-    expect(target.outputFile).toBe(path.resolve("/data/app/.superset/roles.ts"));
+    expect(target.outputFile).toBe(path.resolve("/data/app/.sound-ts/roles.ts"));
     expect(target.outputFile).not.toBe(path.resolve("/data/app/roles.ts"));
   });
 

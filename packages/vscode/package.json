@@ -1,7 +1,7 @@
 {
-  "name": "superset-ts",
-  "displayName": "Superset TS",
-  "description": "Thin language support for the superset-ts brand type dialect. Not a TypeScript fork or custom checker.",
+  "name": "sound-ts",
+  "displayName": "Sound TS",
+  "description": "Thin language support for the sound-ts brand type dialect. Not a TypeScript fork or custom checker.",
   "version": "0.2.0",
   "publisher": "mishelashala",
   "private": true,
@@ -10,42 +10,42 @@
     "vscode": "^1.85.0"
   },
   "categories": ["Programming Languages"],
-  "keywords": ["typescript", "brand type", "superset-ts"],
+  "keywords": ["typescript", "brand type", "sound-ts"],
   "activationEvents": [
-    "onLanguage:superset-ts",
+    "onLanguage:sound-ts",
     "onLanguage:typescript"
   ],
   "main": "./extension.js",
   "contributes": {
     "languages": [
       {
-        "id": "superset-ts",
-        "aliases": ["Superset TS", "superset-ts", "sts"],
+        "id": "sound-ts",
+        "aliases": ["Sound TS", "sound-ts", "sts"],
         "extensions": [".sts"],
         "configuration": "./language-configuration.json"
       }
     ],
     "grammars": [
       {
-        "language": "superset-ts",
-        "scopeName": "source.superset-ts",
-        "path": "./syntaxes/superset-ts.tmLanguage.json"
+        "language": "sound-ts",
+        "scopeName": "source.sound-ts",
+        "path": "./syntaxes/sound-ts.tmLanguage.json"
       },
       {
-        "scopeName": "source.superset-ts.injection",
+        "scopeName": "source.sound-ts.injection",
         "path": "./syntaxes/brand-type.injection.json",
-        "injectTo": ["source.ts", "source.tsx", "source.superset-ts"]
+        "injectTo": ["source.ts", "source.tsx", "source.sound-ts"]
       }
     ],
     "commands": [
       {
-        "command": "superset-ts.transformFile",
-        "title": "Superset TS: Transform brand type (run CLI)"
+        "command": "sound-ts.transformFile",
+        "title": "Sound TS: Transform brand type (run CLI)"
       }
     ]
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/mishelashala/superset-ts.git"
+    "url": "https://github.com/mishelashala/sound-ts.git"
   }
 }

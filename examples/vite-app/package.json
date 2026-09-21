@@ -7,7 +7,7 @@
     "build": "vite build"
   },
   "devDependencies": {
-    "@mishelashala/superset-ts-vite": "workspace:*",
+    "@mishelashala/sound-ts-vite": "workspace:*",
     "vite": "^5.4.21"
   }
 }

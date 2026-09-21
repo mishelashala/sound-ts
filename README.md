@@ -1,14 +1,14 @@
 <p align="center">
-  <img src="docs/assets/seal.svg" width="64" height="64" alt="superset-ts seal" />
+  <img src="docs/assets/seal.svg" width="64" height="64" alt="sound-ts seal" />
 </p>
 
-<h1 align="center">superset-ts</h1>
+<h1 align="center">sound-ts</h1>
 
 **Type soundness for TypeScript, inspired by F# types.**
 
 > **Not a TypeScript fork.** No patched `tsc`, no Microsoft fork to maintain, no custom checker. The CLI rewrites source; bundlers consume **output** only.
 
-Repo: [mishelashala/superset-ts](https://github.com/mishelashala/superset-ts) · docs: [mishelashala.github.io/superset-ts](https://mishelashala.github.io/superset-ts/) · npm: [`@mishelashala/superset-ts-cli`](https://www.npmjs.com/package/@mishelashala/superset-ts-cli) / [`@mishelashala/superset-ts-core`](https://www.npmjs.com/package/@mishelashala/superset-ts-core)
+Repo: [mishelashala/sound-ts](https://github.com/mishelashala/sound-ts) · docs: [mishelashala.github.io/sound-ts](https://mishelashala.github.io/sound-ts/) · npm: [`@mishelashala/sound-ts-cli`](https://www.npmjs.com/package/@mishelashala/sound-ts-cli) / [`@mishelashala/sound-ts-core`](https://www.npmjs.com/package/@mishelashala/sound-ts-core)
 
 ---
 
@@ -16,7 +16,7 @@ Repo: [mishelashala/superset-ts](https://github.com/mishelashala/superset-ts) ·
 
 ## Soundness (project goal)
 
-TypeScript’s contract is **type safety with erased types** — no runtime companions from the type layer. Superset-TS aims for **F#-style soundness**: opaque / branded (phantom) types plus runtime companions so values enter through checked paths.
+TypeScript’s contract is **type safety with erased types** — no runtime companions from the type layer. Sound-TS aims for **F#-style soundness**: opaque / branded (phantom) types plus runtime companions so values enter through checked paths.
 
 **Where we claim soundness today**
 
@@ -25,14 +25,14 @@ TypeScript’s contract is **type safety with erased types** — no runtime comp
 - `validate type` — same phantom + `.is` / `.from`
 - `cast<Target>(expr)` — checked entry path (primitive checks or companion `.from`)
 
-**Where we still lean on stock TS unsoundness** — [roadmap v2](https://github.com/mishelashala/superset-ts/issues?q=roadmap+v2) closes these on the `.sts` surface. Ordinary `.ts` stays stock TypeScript.
+**Where we still lean on stock TS unsoundness** — [roadmap v2](https://github.com/mishelashala/sound-ts/issues?q=roadmap+v2) closes these on the `.sts` surface. Ordinary `.ts` stays stock TypeScript.
 
-- assertions / `as` — [#36](https://github.com/mishelashala/superset-ts/issues/36)
-- `any` / `unknown` misuse — [#37](https://github.com/mishelashala/superset-ts/issues/37)
-- structural widen on non-branded types — [#38](https://github.com/mishelashala/superset-ts/issues/38)
-- method parameter bivariance — [#40](https://github.com/mishelashala/superset-ts/issues/40)
-- non-null `!` — [#41](https://github.com/mishelashala/superset-ts/issues/41)
-- `Object` / `{}` / `Function` — [#42](https://github.com/mishelashala/superset-ts/issues/42)
+- assertions / `as` — [#36](https://github.com/mishelashala/sound-ts/issues/36)
+- `any` / `unknown` misuse — [#37](https://github.com/mishelashala/sound-ts/issues/37)
+- structural widen on non-branded types — [#38](https://github.com/mishelashala/sound-ts/issues/38)
+- method parameter bivariance — [#40](https://github.com/mishelashala/sound-ts/issues/40)
+- non-null `!` — [#41](https://github.com/mishelashala/sound-ts/issues/41)
+- `Object` / `{}` / `Function` — [#42](https://github.com/mishelashala/sound-ts/issues/42)
 
 Gate: new dialect surface should **close a soundness hole**, not paper over one.
 
@@ -41,11 +41,11 @@ Gate: new dialect surface should **close a soundness hole**, not paper over one.
 ## Install
 
 ```bash
-npm i -g @mishelashala/superset-ts-cli
-# bins: sts, superset-ts
+npm i -g @mishelashala/sound-ts-cli
+# bins: sts, sound-ts
 ```
 
-Library: `@mishelashala/superset-ts-core`.
+Library: `@mishelashala/sound-ts-core`.
 
 ## Authoring
 
@@ -151,14 +151,14 @@ Targets: primitives or known companions from the CLI batch. Unknown targets erro
 ## Quickstart (CLI)
 
 ```bash
-git clone https://github.com/mishelashala/superset-ts.git
-cd superset-ts
+git clone https://github.com/mishelashala/sound-ts.git
+cd sound-ts
 pnpm install
 pnpm build
 pnpm test
 
-# expand one file into .superset/ (roles.sts → .superset/roles.ts, not a sibling .ts)
-pnpm --filter @mishelashala/superset-ts-cli exec sts path/to/file.sts
+# expand one file into .sound-ts/ (roles.sts → .sound-ts/roles.ts, not a sibling .ts)
+pnpm --filter @mishelashala/sound-ts-cli exec sts path/to/file.sts
 # or after linking / running dist:
 node packages/cli/dist/cli.js path/to/file.sts -o path/to/out.ts
 
@@ -168,7 +168,7 @@ node packages/cli/dist/cli.js ./src -o ./out
 
 Point `tsc` / Vite at **`./out`** (the transformed files), not the dialect sources.
 
-Binaries after build: `superset-ts` / `sts` → `packages/cli/dist/cli.js`.
+Binaries after build: `sound-ts` / `sts` → `packages/cli/dist/cli.js`.
 
 ### Parser notes
 
@@ -188,7 +188,7 @@ Keep most of the app as normal `.ts` (stock `tsc` / Vite). Add `.sts` only where
 ```
 
 - `sts` never emits `.js`
-- Default output → `<cwd>/.superset/` (gitignored; input outside the cwd caches next to that input) or `-o` you choose
+- Default output → `<cwd>/.sound-ts/` (gitignored; input outside the cwd caches next to that input) or `-o` you choose
 - Stock Nest / `tsc` still owns `dist/`
 - Don’t point `tsc` at raw `.sts`
 - Whole `.sts` batch on each `sts` run for cross-file `|` / `&` and `cast` companions
@@ -211,11 +211,11 @@ Keep most of the app as normal `.ts` (stock `tsc` / Vite). Add `.sts` only where
 `scripts/build.mjs` runs this, and runs `tsc` only when expand exits 0:
 
 ```bash
-node ../../packages/cli/dist/cli.js src -o .superset
+node ../../packages/cli/dist/cli.js src -o .sound-ts
 tsc -p tsconfig.json
 ```
 
-`tsconfig.json` sets `rootDir` to `.superset` and `outDir` to `dist`. `include` is `.superset/**/*.ts`. It does not include `*.sts`.
+`tsconfig.json` sets `rootDir` to `.sound-ts` and `outDir` to `dist`. `include` is `.sound-ts/**/*.ts`. It does not include `*.sts`.
 
 ```bash
 pnpm --dir examples/tsc-app build
@@ -226,7 +226,7 @@ pnpm --dir examples/tsc-app build
 `examples/vite-app` expands `.sts` inside Vite. `dev` and `build` do not call `sts`.
 
 ```ts
-import { supersetTs } from "@mishelashala/superset-ts-vite";
+import { soundTs } from "@mishelashala/sound-ts-vite";
 ```
 
 ```ts
@@ -237,21 +237,21 @@ import { Account } from "./roles.sts";
 pnpm --dir examples/vite-app build
 ```
 
-**Seamless integration** — [roadmap v1](https://github.com/mishelashala/superset-ts/issues?q=roadmap+v1). Check a box in this list only when that issue is delivered.
+**Seamless integration** — [roadmap v1](https://github.com/mishelashala/sound-ts/issues?q=roadmap+v1). Check a box in this list only when that issue is delivered.
 
-- [x] [Shadow emit](https://github.com/mishelashala/superset-ts/issues/27) — `sts` writes a gitignored cache, never a sibling `.ts`. CI fails if that output is committed.
-- [x] [Bidirectional resolve](https://github.com/mishelashala/superset-ts/issues/28) — `.ts` and `.sts` import each other. Import paths stay as the author wrote them.
-- [x] [Drop-in build script](https://github.com/mishelashala/superset-ts/issues/29) — one `package.json` script expands, then runs `tsc`. Expand failure stops the build.
-- [x] [Loader](https://github.com/mishelashala/superset-ts/issues/30) — Vite expands `.sts` on dev and build, so you stop calling `sts` by hand.
+- [x] [Shadow emit](https://github.com/mishelashala/sound-ts/issues/27) — `sts` writes a gitignored cache, never a sibling `.ts`. CI fails if that output is committed.
+- [x] [Bidirectional resolve](https://github.com/mishelashala/sound-ts/issues/28) — `.ts` and `.sts` import each other. Import paths stay as the author wrote them.
+- [x] [Drop-in build script](https://github.com/mishelashala/sound-ts/issues/29) — one `package.json` script expands, then runs `tsc`. Expand failure stops the build.
+- [x] [Loader](https://github.com/mishelashala/sound-ts/issues/30) — Vite expands `.sts` on dev and build, so you stop calling `sts` by hand.
 
-**Soundness on `.sts`** — [roadmap v2](https://github.com/mishelashala/superset-ts/issues?q=roadmap+v2). Same rule: check a box only when that issue is delivered. These do not add a custom checker. A `.ts` file outside the dialect stays stock TypeScript.
+**Soundness on `.sts`** — [roadmap v2](https://github.com/mishelashala/sound-ts/issues?q=roadmap+v2). Same rule: check a box only when that issue is delivered. These do not add a custom checker. A `.ts` file outside the dialect stays stock TypeScript.
 
-- [x] [Reject `as`](https://github.com/mishelashala/superset-ts/issues/36) — a type assertion in `.sts` fails expand. `as const` and `cast<>` stay. `as` is not rewritten into `cast`.
-- [x] [Reject `any`](https://github.com/mishelashala/superset-ts/issues/37) — `any` in `.sts` fails expand. `unknown` stays. `any` is not rewritten to `unknown`.
-- [x] [No structural aliases](https://github.com/mishelashala/superset-ts/issues/38) — a bare object alias in `.sts` fails expand. `validate type` stays nominal. Outbound widen to the naked structure stays a stock `tsc` hole.
-- [x] [Method parameters](https://github.com/mishelashala/superset-ts/issues/40) — a method in `.sts` emits as a readonly function property, so stock `strictFunctionTypes` checks parameters contravariantly.
-- [x] [Reject `!`](https://github.com/mishelashala/superset-ts/issues/41) — `value!` and `prop!: Type` in `.sts` fail expand. `!==` stays. `!` is not deleted.
-- [x] [Reject `Object`, `{}`, `Function`](https://github.com/mishelashala/superset-ts/issues/42) — those types in `.sts` fail expand. An empty object literal stays. They are not rewritten to `unknown`.
+- [x] [Reject `as`](https://github.com/mishelashala/sound-ts/issues/36) — a type assertion in `.sts` fails expand. `as const` and `cast<>` stay. `as` is not rewritten into `cast`.
+- [x] [Reject `any`](https://github.com/mishelashala/sound-ts/issues/37) — `any` in `.sts` fails expand. `unknown` stays. `any` is not rewritten to `unknown`.
+- [x] [No structural aliases](https://github.com/mishelashala/sound-ts/issues/38) — a bare object alias in `.sts` fails expand. `validate type` stays nominal. Outbound widen to the naked structure stays a stock `tsc` hole.
+- [x] [Method parameters](https://github.com/mishelashala/sound-ts/issues/40) — a method in `.sts` emits as a readonly function property, so stock `strictFunctionTypes` checks parameters contravariantly.
+- [x] [Reject `!`](https://github.com/mishelashala/sound-ts/issues/41) — `value!` and `prop!: Type` in `.sts` fail expand. `!==` stays. `!` is not deleted.
+- [x] [Reject `Object`, `{}`, `Function`](https://github.com/mishelashala/sound-ts/issues/42) — those types in `.sts` fail expand. An empty object literal stays. They are not rewritten to `unknown`.
 
 ---
 
@@ -260,8 +260,8 @@ pnpm --dir examples/vite-app build
 | Package | Role |
 | --- | --- |
 | `packages/core` | Parse + transform `brand type` / `validate type` / `cast<>` → plain TS + runtime |
-| `packages/cli` | One-command expand (`sts` / `superset-ts`) |
-| `packages/vite` | Vite plugin `supersetTs()`: expand `.sts` on dev and build |
+| `packages/cli` | One-command expand (`sts` / `sound-ts`) |
+| `packages/vite` | Vite plugin `soundTs()`: expand `.sts` on dev and build |
 | `packages/vscode` | Thin extension: highlight `brand type`, optional CLI command |
 
 ---
@@ -286,14 +286,14 @@ pnpm --dir examples/vite-app build
 
 ## Non-goals (this cut)
 
-See also: [FAQ: Why not TypeScript?](https://mishelashala.github.io/superset-ts/#faq) (why a dialect vs stock TS) · [Soundness](#soundness-project-goal).
+See also: [FAQ: Why not TypeScript?](https://mishelashala.github.io/sound-ts/#faq) (why a dialect vs stock TS) · [Soundness](#soundness-project-goal).
 
 - **No Microsoft / TypeScript fork** to maintain
 - **No custom TypeScript checker or language server** — stock `tsc` runs on expand output only.
 - **No open brands without `is`** (use refined brands with a custom `.is`)
 - Refined brands and `validate type` are **nominally opaque** under stock `tsc` (phantom unique-symbol brands) — not structural aliases of their bases. Enter via `.from` / `cast<>`.
 - String literal brands are the member literals **or** a phantom arm (nominal under stock `tsc`; member literals still assign). They do not flow back to the bare literal union. Number/bigint literal brands not supported yet.
-- [Roadmap v2](https://github.com/mishelashala/superset-ts/issues?q=roadmap+v2) is delivered on the `.sts` surface ([#36](https://github.com/mishelashala/superset-ts/issues/36)–[#38](https://github.com/mishelashala/superset-ts/issues/38), [#40](https://github.com/mishelashala/superset-ts/issues/40)–[#42](https://github.com/mishelashala/superset-ts/issues/42)): reject `as` / `any` / `!` / wide types, no bare structural aliases, methods emit as readonly function properties. Ordinary `.ts` files stay stock TypeScript. Outbound widen from a `validate type` to the naked field structure remains a stock `tsc` hole.
+- [Roadmap v2](https://github.com/mishelashala/sound-ts/issues?q=roadmap+v2) is delivered on the `.sts` surface ([#36](https://github.com/mishelashala/sound-ts/issues/36)–[#38](https://github.com/mishelashala/sound-ts/issues/38), [#40](https://github.com/mishelashala/sound-ts/issues/40)–[#42](https://github.com/mishelashala/sound-ts/issues/42)): reject `as` / `any` / `!` / wide types, no bare structural aliases, methods emit as readonly function properties. Ordinary `.ts` files stay stock TypeScript. Outbound widen from a `validate type` to the naked field structure remains a stock `tsc` hole.
 - Not a full schema library — `validate type` covers simple object shapes only (no nested objects, generics, `Date`, …)
 - VS Code extension **not on Marketplace** yet (local install only)
 - `defineLiteralSet` is **not** the public authoring API

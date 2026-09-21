@@ -1,91 +1,91 @@
 {
-  "scopeName": "source.superset-ts.injection",
+  "scopeName": "source.sound-ts.injection",
   "injectionSelector": "L:source.ts -comment -string, L:source.tsx -comment -string",
   "patterns": [
     {
-      "name": "meta.brand-type.superset-ts",
+      "name": "meta.brand-type.sound-ts",
       "begin": "\\b(brand)\\s+(type)\\b",
       "beginCaptures": {
         "1": {
-          "name": "keyword.other.brand.superset-ts"
+          "name": "keyword.other.brand.sound-ts"
         },
         "2": {
-          "name": "keyword.declaration.type.superset-ts"
+          "name": "keyword.declaration.type.sound-ts"
         }
       },
       "end": "(?<=\\})\\s*;?|(?=;|$)",
       "patterns": [
         {
-          "name": "entity.name.type.superset-ts",
+          "name": "entity.name.type.sound-ts",
           "match": "[A-Za-z_$][\\w$]*"
         },
         {
-          "name": "keyword.other.is.superset-ts",
+          "name": "keyword.other.is.sound-ts",
           "match": "\\bis\\b"
         },
         {
-          "name": "keyword.operator.assignment.superset-ts",
+          "name": "keyword.operator.assignment.sound-ts",
           "match": "="
         },
         {
-          "name": "keyword.operator.union.superset-ts",
+          "name": "keyword.operator.union.sound-ts",
           "match": "\\|"
         },
         {
-          "name": "keyword.operator.intersection.superset-ts",
+          "name": "keyword.operator.intersection.sound-ts",
           "match": "&"
         },
         {
-          "name": "string.quoted.double.superset-ts",
+          "name": "string.quoted.double.sound-ts",
           "match": "\"(?:[^\"\\\\]|\\\\.)*\""
         },
         {
-          "name": "string.quoted.single.superset-ts",
+          "name": "string.quoted.single.sound-ts",
           "match": "'(?:[^'\\\\]|\\\\.)*'"
         },
         {
-          "name": "punctuation.section.block.superset-ts",
+          "name": "punctuation.section.block.sound-ts",
           "match": "[{}]"
         }
       ]
     },
     {
-      "name": "meta.validate-type.superset-ts",
+      "name": "meta.validate-type.sound-ts",
       "begin": "\\b(validate)\\s+(type)\\b",
       "beginCaptures": {
         "1": {
-          "name": "keyword.other.validate.superset-ts"
+          "name": "keyword.other.validate.sound-ts"
         },
         "2": {
-          "name": "keyword.declaration.type.superset-ts"
+          "name": "keyword.declaration.type.sound-ts"
         }
       },
       "end": "(?<=\\})\\s*;?|(?=;|$)",
       "patterns": [
         {
-          "name": "entity.name.type.superset-ts",
+          "name": "entity.name.type.sound-ts",
           "match": "[A-Za-z_$][\\w$]*"
         },
         {
-          "name": "keyword.operator.assignment.superset-ts",
+          "name": "keyword.operator.assignment.sound-ts",
           "match": "="
         },
         {
-          "name": "keyword.operator.union.superset-ts",
+          "name": "keyword.operator.union.sound-ts",
           "match": "\\|"
         },
         {
-          "name": "storage.type.primitive.superset-ts",
+          "name": "storage.type.primitive.sound-ts",
           "match": "\\b(?:string|number|boolean)\\b"
         },
         {
-          "name": "punctuation.section.block.superset-ts",
+          "name": "punctuation.section.block.sound-ts",
           "match": "[{}\\[\\]?:;,]"
         }
       ]
     },
     {
-      "name": "keyword.operator.checked-cast.superset-ts",
+      "name": "keyword.operator.checked-cast.sound-ts",
       "match": "\\bcast\b"
     }
   ]

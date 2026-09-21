@@ -20,7 +20,7 @@ importers:
 
   examples/vite-app:
     devDependencies:
-      '@mishelashala/superset-ts-vite':
+      '@mishelashala/sound-ts-vite':
         specifier: workspace:*
         version: link:../../packages/vite
       vite:
@@ -29,7 +29,7 @@ importers:
 
   packages/cli:
     dependencies:
-      '@mishelashala/superset-ts-core':
+      '@mishelashala/sound-ts-core':
         specifier: workspace:*
         version: link:../core
 
@@ -41,7 +41,7 @@ importers:
 
   packages/vite:
     dependencies:
-      '@mishelashala/superset-ts-core':
+      '@mishelashala/sound-ts-core':
         specifier: workspace:*
         version: link:../core
     devDependencies:

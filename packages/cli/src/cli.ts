@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * superset-ts / sts — expand brand type / validate type / cast<> into plain TypeScript
+ * sound-ts / sts — expand brand type / validate type / cast<> into plain TypeScript
  * that stock tsc / Vite consume. Not a TypeScript fork.
  */
 import {
@@ -12,13 +12,13 @@ import {
   writeFile,
 } from "node:fs/promises";
 import path from "node:path";
-import { transformProject } from "@mishelashala/superset-ts-core";
-import { mapOutputPath, resolveOutputTarget, SUPERSET_CACHE_DIR } from "./outputPath.js";
+import { transformProject } from "@mishelashala/sound-ts-core";
+import { mapOutputPath, resolveOutputTarget, SOUND_TS_CACHE_DIR } from "./outputPath.js";
 
 const VERSION = "0.3.2";
 
 function usage(): string {
-  return `superset-ts / sts — brand type / validate type / cast<> → plain TS + runtime companions
+  return `sound-ts / sts — brand type / validate type / cast<> → plain TS + runtime companions
 
 Usage:
   sts <input> [-o <output>]
@@ -29,15 +29,15 @@ Usage:
 Input may be a .ts / .tsx / .sts file or a directory (recurses *.ts, *.tsx, *.sts).
 sts never emits .js. Re-running sts overwrites files in the output.
 
-Default output is a gitignored .superset/ cache:
-  - Input inside the cwd (or the cwd itself) → <cwd>/.superset/
-  - Input outside the cwd → <dirname(input)>/.superset/
+Default output is a gitignored .sound-ts/ cache:
+  - Input inside the cwd (or the cwd itself) → <cwd>/.sound-ts/
+  - Input outside the cwd → <dirname(input)>/.sound-ts/
     (a directory is cached next to that directory; a file is cached in
-    <file-dir>/.superset/<name>.ts)
+    <file-dir>/.sound-ts/<name>.ts)
 Directory inputs are mirrored under the cache: .sts files expand to .ts, and
 unchanged .ts / .tsx files are copied beside that output. Import specifiers
 are not rewritten.
-A single file roles.sts becomes .superset/roles.ts, not a sibling roles.ts.
+A single file roles.sts becomes .sound-ts/roles.ts, not a sibling roles.ts.
 Explicit -o overrides the cache (output file for one input, directory for a directory).
 
 When multiple files are transformed together, brand and validate names are
@@ -103,7 +103,7 @@ async function collectFiles(input: string): Promise<string[]> {
           ent.name === "node_modules" ||
           ent.name === "dist" ||
           ent.name === ".git" ||
-          ent.name === SUPERSET_CACHE_DIR
+          ent.name === SOUND_TS_CACHE_DIR
         ) {
           continue;
         }

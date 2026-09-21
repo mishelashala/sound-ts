@@ -1,18 +1,18 @@
 import { describe, expect, it } from "vitest";
-import { supersetTs } from "../src/index.js";
+import { soundTs } from "../src/index.js";
 
 async function runTransform(code: string, id: string): Promise<string> {
-  const plugin = supersetTs();
+  const plugin = soundTs();
   const hook = plugin.transform;
   if (typeof hook !== "function") {
-    throw new Error("supersetTs transform hook must be a function");
+    throw new Error("soundTs transform hook must be a function");
   }
   const result = await hook.call({} as never, code, id);
   if (typeof result === "string") return result;
   return result?.code ?? "";
 }
 
-describe("supersetTs", () => {
+describe("soundTs", () => {
   it("expands brand type to plain TypeScript", async () => {
     const code = await runTransform(
       `brand type Account = "admin" | "regular";`,

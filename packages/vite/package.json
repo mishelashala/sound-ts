@@ -1,5 +1,5 @@
 {
-  "name": "@mishelashala/superset-ts-vite",
+  "name": "@mishelashala/sound-ts-vite",
   "version": "0.3.2",
   "private": false,
   "description": "Vite plugin: expand .sts (brand type / validate type / cast<>) during dev and build",
@@ -22,7 +22,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@mishelashala/superset-ts-core": "workspace:*"
+    "@mishelashala/sound-ts-core": "workspace:*"
   },
   "devDependencies": {
     "vite": "^5.4.21"

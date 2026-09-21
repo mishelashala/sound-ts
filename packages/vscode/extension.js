@@ -9,7 +9,7 @@ const path = require("node:path");
  */
 function activate(context) {
   const cmd = vscode.commands.registerCommand(
-    "superset-ts.transformFile",
+    "sound-ts.transformFile",
     async () => {
       const editor = vscode.window.activeTextEditor;
       if (!editor) {
@@ -20,7 +20,7 @@ function activate(context) {
       const cliCandidates = [
         path.join(__dirname, "..", "cli", "dist", "cli.js"),
         "sts",
-        "superset-ts",
+        "sound-ts",
       ];
 
       const out = await vscode.window.showInputBox({
@@ -60,7 +60,7 @@ function activate(context) {
         result = await run("sts", args);
       }
       if (result.code !== 0) {
-        result = await run("superset-ts", args);
+        result = await run("sound-ts", args);
       }
 
       if (result.code === 0) {

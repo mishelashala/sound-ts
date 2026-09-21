@@ -8,11 +8,11 @@
 import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import { transform as transformSts } from "@mishelashala/superset-ts-core";
+import { transform as transformSts } from "@mishelashala/sound-ts-core";
 import type { Plugin } from "vite";
 
 /** Query flag so the module id ends in `.ts` (Vite's TS compile) without colliding with real files. */
-const MARK = "superset-ts";
+const MARK = "sound-ts";
 
 function splitQuery(id: string): { file: string; query: string } {
   const q = id.indexOf("?");
@@ -35,7 +35,7 @@ function markedModuleId(stsFile: string, query: string): string {
   return `${stsFile}.ts?${parts.join("&")}`;
 }
 
-/** Real `.sts` path for an id this plugin minted (`file.sts.ts?superset-ts`). */
+/** Real `.sts` path for an id this plugin minted (`file.sts.ts?sound-ts`). */
 function sourceStsFromMarked(id: string): string | null {
   const { file, query } = splitQuery(id);
   if (!hasMark(query) || !file.endsWith(".sts.ts")) return null;
@@ -50,9 +50,9 @@ function expand(code: string, filename: string): string {
   return transformSts(code, { filename }).code;
 }
 
-export function supersetTs(): Plugin {
+export function soundTs(): Plugin {
   return {
-    name: "superset-ts",
+    name: "sound-ts",
     enforce: "pre",
     async resolveId(source, importer, options) {
       if (!isRawSts(source) || source.includes("node_modules")) return null;

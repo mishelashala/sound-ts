@@ -1,4 +1,4 @@
-name: superset-cache
+name: sound-ts-cache
 
 on:
   push:
@@ -9,5 +9,5 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Fail if .superset is tracked
-        run: bash scripts/check-superset-untracked.sh
+      - name: Fail if .sound-ts is tracked
+        run: bash scripts/check-sound-ts-untracked.sh

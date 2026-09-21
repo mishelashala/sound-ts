@@ -45,8 +45,8 @@ test("broken .sts fails the build before tsc emits js", async () => {
       cwd: dir,
       env: {
         ...process.env,
-        SUPERSET_TS_CLI: path.join(repoRoot, "packages/cli/dist/cli.js"),
-        SUPERSET_TS_TSC: path.join(repoRoot, "node_modules/typescript/lib/tsc.js"),
+        SOUND_TS_CLI: path.join(repoRoot, "packages/cli/dist/cli.js"),
+        SOUND_TS_TSC: path.join(repoRoot, "node_modules/typescript/lib/tsc.js"),
       },
     });
 
@@ -54,7 +54,7 @@ test("broken .sts fails the build before tsc emits js", async () => {
     assert.match(result.stderr, /duplicate/);
     await assert.rejects(access(path.join(dir, "dist", "app.js")));
     await assert.rejects(access(path.join(dir, "dist", "roles.js")));
-    await assert.rejects(access(path.join(dir, ".superset", "roles.ts")));
+    await assert.rejects(access(path.join(dir, ".sound-ts", "roles.ts")));
   } finally {
     await rm(dir, { recursive: true, force: true });
   }

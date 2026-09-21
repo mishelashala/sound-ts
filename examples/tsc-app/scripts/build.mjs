@@ -11,11 +11,11 @@ function resolveBin(envValue, relativePath) {
 }
 
 const cli = resolveBin(
-  process.env.SUPERSET_TS_CLI,
+  process.env.SOUND_TS_CLI,
   "../../packages/cli/dist/cli.js",
 );
 const tsc = resolveBin(
-  process.env.SUPERSET_TS_TSC,
+  process.env.SOUND_TS_TSC,
   "../../node_modules/typescript/lib/tsc.js",
 );
 
@@ -39,7 +39,7 @@ function run(bin, args) {
 const expandStatus = run(cli, [
   path.join(appRoot, "src"),
   "-o",
-  path.join(appRoot, ".superset"),
+  path.join(appRoot, ".sound-ts"),
 ]);
 if (expandStatus !== 0) {
   process.exit(expandStatus);

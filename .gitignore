@@ -1,5 +1,5 @@
 node_modules/
-.superset/
+.sound-ts/
 dist/
 coverage/
 *.log

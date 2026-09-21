@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>superset-ts — brand type / validate type dialect + CLI</title>
+  <title>sound-ts — brand type / validate type dialect + CLI</title>
   <meta name="description" content="F#-style soundness via brand type / validate type / cast&lt;&gt; — phantom brands + runtime companions. Not a TypeScript fork." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -31,7 +31,7 @@
     <header>
       <div class="title-row">
         <img class="seal" src="assets/seal.svg" width="32" height="32" alt="" />
-        <h1>superset-ts</h1>
+        <h1>sound-ts</h1>
         <button type="button" class="theme-toggle" id="theme-toggle" aria-label="Toggle color theme">Theme</button>
       </div>
       <p class="one-liner">
@@ -84,7 +84,7 @@
       <h2>Soundness (project goal)</h2>
       <p>
         TypeScript’s contract is <strong>type safety with erased types</strong> —
-        no runtime companions from the type layer. Superset-TS aims for
+        no runtime companions from the type layer. Sound-TS aims for
         <strong>F#-style soundness</strong>: opaque / branded (phantom) types plus
         runtime companions so values enter through checked paths.
       </p>
@@ -112,17 +112,17 @@
       </ul>
       <p>
         <strong>Where we still lean on stock TS unsoundness</strong> —
-        <a href="https://github.com/mishelashala/superset-ts/issues?q=roadmap+v2">roadmap v2</a>
+        <a href="https://github.com/mishelashala/sound-ts/issues?q=roadmap+v2">roadmap v2</a>
         closes these on the <code>.sts</code> surface. Ordinary
         <code>.ts</code> stays stock TypeScript.
       </p>
       <ul>
-        <li>assertions / <code>as</code> — <a href="https://github.com/mishelashala/superset-ts/issues/36">#36</a></li>
-        <li><code>any</code> / <code>unknown</code> misuse — <a href="https://github.com/mishelashala/superset-ts/issues/37">#37</a></li>
-        <li>structural widen on non-branded types — <a href="https://github.com/mishelashala/superset-ts/issues/38">#38</a></li>
-        <li>method parameter bivariance — <a href="https://github.com/mishelashala/superset-ts/issues/40">#40</a></li>
-        <li>non-null <code>!</code> — <a href="https://github.com/mishelashala/superset-ts/issues/41">#41</a></li>
-        <li><code>Object</code> / <code>{}</code> / <code>Function</code> — <a href="https://github.com/mishelashala/superset-ts/issues/42">#42</a></li>
+        <li>assertions / <code>as</code> — <a href="https://github.com/mishelashala/sound-ts/issues/36">#36</a></li>
+        <li><code>any</code> / <code>unknown</code> misuse — <a href="https://github.com/mishelashala/sound-ts/issues/37">#37</a></li>
+        <li>structural widen on non-branded types — <a href="https://github.com/mishelashala/sound-ts/issues/38">#38</a></li>
+        <li>method parameter bivariance — <a href="https://github.com/mishelashala/sound-ts/issues/40">#40</a></li>
+        <li>non-null <code>!</code> — <a href="https://github.com/mishelashala/sound-ts/issues/41">#41</a></li>
+        <li><code>Object</code> / <code>{}</code> / <code>Function</code> — <a href="https://github.com/mishelashala/sound-ts/issues/42">#42</a></li>
       </ul>
       <p class="muted">
         Gate: new dialect surface should <strong>close a soundness hole</strong>,
@@ -300,20 +300,20 @@ const u = cast&lt;User&gt;(raw);
     <section id="cli">
       <h2>CLI quickstart</h2>
       <p><strong>Install from npm</strong> (scoped packages under <code>@mishelashala</code>):</p>
-      <pre><code class="language-bash">npm i -g @mishelashala/superset-ts-cli
+      <pre><code class="language-bash">npm i -g @mishelashala/sound-ts-cli
 # or
-pnpm add -g @mishelashala/superset-ts-cli
+pnpm add -g @mishelashala/sound-ts-cli
 
 sts ./example.sts -o ./out/example.ts
-# same binary: superset-ts</code></pre>
+# same binary: sound-ts</code></pre>
       <p>
-        Library: <code>@mishelashala/superset-ts-core</code>.
-        Bins: <code>sts</code> / <code>superset-ts</code>.
+        Library: <code>@mishelashala/sound-ts-core</code>.
+        Bins: <code>sts</code> / <code>sound-ts</code>.
         Point bundlers at the <strong>transformed</strong> output.
       </p>
       <p class="muted">From source (contributors):</p>
-      <pre><code class="language-bash">git clone https://github.com/mishelashala/superset-ts.git
-cd superset-ts
+      <pre><code class="language-bash">git clone https://github.com/mishelashala/sound-ts.git
+cd sound-ts
 pnpm install &amp;&amp; pnpm build &amp;&amp; pnpm test
 node packages/cli/dist/cli.js ./example.sts -o ./out/example.ts</code></pre>
     </section>
@@ -333,7 +333,7 @@ node packages/cli/dist/cli.js ./example.sts -o ./out/example.ts</code></pre>
       <ul>
         <li><code>sts</code> never emits <code>.js</code></li>
         <li>
-          Default output → <code>&lt;cwd&gt;/.superset/</code> (gitignored; input
+          Default output → <code>&lt;cwd&gt;/.sound-ts/</code> (gitignored; input
           outside the cwd caches next to that input) or <code>-o</code> you choose
         </li>
         <li>Stock Nest / <code>tsc</code> still owns <code>dist/</code></li>
@@ -350,38 +350,38 @@ node packages/cli/dist/cli.js ./example.sts -o ./out/example.ts</code></pre>
       </ul>
       <p>
         <strong>Seamless integration</strong> —
-        <a href="https://github.com/mishelashala/superset-ts/issues?q=roadmap+v1">roadmap v1</a>.
+        <a href="https://github.com/mishelashala/sound-ts/issues?q=roadmap+v1">roadmap v1</a>.
         Check a box here only when that issue is delivered.
       </p>
       <ul class="checklist">
         <li>
           <input type="checkbox" disabled checked />
-          <a href="https://github.com/mishelashala/superset-ts/issues/27">Shadow emit</a>
+          <a href="https://github.com/mishelashala/sound-ts/issues/27">Shadow emit</a>
           — <code>sts</code> writes a gitignored cache, never a sibling
           <code>.ts</code>. CI fails if that output is committed.
         </li>
         <li>
           <input type="checkbox" disabled checked />
-          <a href="https://github.com/mishelashala/superset-ts/issues/28">Bidirectional resolve</a>
+          <a href="https://github.com/mishelashala/sound-ts/issues/28">Bidirectional resolve</a>
           — <code>.ts</code> and <code>.sts</code> import each other. Import
           paths stay as the author wrote them.
         </li>
         <li>
           <input type="checkbox" disabled checked />
-          <a href="https://github.com/mishelashala/superset-ts/issues/29">Drop-in build script</a>
+          <a href="https://github.com/mishelashala/sound-ts/issues/29">Drop-in build script</a>
           — one <code>package.json</code> script expands, then runs
           <code>tsc</code>. Expand failure stops the build.
         </li>
         <li>
           <input type="checkbox" disabled checked />
-          <a href="https://github.com/mishelashala/superset-ts/issues/30">Loader</a>
+          <a href="https://github.com/mishelashala/sound-ts/issues/30">Loader</a>
           — Vite expands <code>.sts</code> on dev and build, so you stop
           calling <code>sts</code> by hand.
         </li>
       </ul>
       <p>
         <strong>Soundness on <code>.sts</code></strong> —
-        <a href="https://github.com/mishelashala/superset-ts/issues?q=roadmap+v2">roadmap v2</a>.
+        <a href="https://github.com/mishelashala/sound-ts/issues?q=roadmap+v2">roadmap v2</a>.
         Check a box here only when that issue is delivered.
         These do not add a custom checker. A <code>.ts</code> file outside the
         dialect stays stock TypeScript.
@@ -389,21 +389,21 @@ node packages/cli/dist/cli.js ./example.sts -o ./out/example.ts</code></pre>
       <ul class="checklist">
         <li>
           <input type="checkbox" disabled checked />
-          <a href="https://github.com/mishelashala/superset-ts/issues/36">Reject <code>as</code></a>
+          <a href="https://github.com/mishelashala/sound-ts/issues/36">Reject <code>as</code></a>
           — a type assertion in <code>.sts</code> fails expand.
           <code>as const</code> and <code>cast&lt;&gt;</code> stay.
           <code>as</code> is not rewritten into <code>cast</code>.
         </li>
         <li>
           <input type="checkbox" disabled checked />
-          <a href="https://github.com/mishelashala/superset-ts/issues/37">Reject <code>any</code></a>
+          <a href="https://github.com/mishelashala/sound-ts/issues/37">Reject <code>any</code></a>
           — <code>any</code> in <code>.sts</code> fails expand.
           <code>unknown</code> stays.
           <code>any</code> is not rewritten to <code>unknown</code>.
         </li>
         <li>
           <input type="checkbox" disabled checked />
-          <a href="https://github.com/mishelashala/superset-ts/issues/38">No structural aliases</a>
+          <a href="https://github.com/mishelashala/sound-ts/issues/38">No structural aliases</a>
           — a bare object alias in <code>.sts</code> fails expand.
           <code>validate type</code> stays nominal.
           Outbound widen to the naked structure stays a stock
@@ -411,19 +411,19 @@ node packages/cli/dist/cli.js ./example.sts -o ./out/example.ts</code></pre>
         </li>
         <li>
           <input type="checkbox" disabled checked />
-          <a href="https://github.com/mishelashala/superset-ts/issues/40">Method parameters</a>
+          <a href="https://github.com/mishelashala/sound-ts/issues/40">Method parameters</a>
           — a method in <code>.sts</code> emits as a readonly function property,
           so stock <code>strictFunctionTypes</code> checks parameters contravariantly.
         </li>
         <li>
           <input type="checkbox" disabled checked />
-          <a href="https://github.com/mishelashala/superset-ts/issues/41">Reject <code>!</code></a>
+          <a href="https://github.com/mishelashala/sound-ts/issues/41">Reject <code>!</code></a>
           — <code>value!</code> and <code>prop!: Type</code> in <code>.sts</code>
           fail expand. <code>!==</code> stays. <code>!</code> is not deleted.
         </li>
         <li>
           <input type="checkbox" disabled checked />
-          <a href="https://github.com/mishelashala/superset-ts/issues/42">Reject <code>Object</code>, <code>{}</code>, <code>Function</code></a>
+          <a href="https://github.com/mishelashala/sound-ts/issues/42">Reject <code>Object</code>, <code>{}</code>, <code>Function</code></a>
           — those types in <code>.sts</code> fail expand. An empty object
           literal stays. They are not rewritten to <code>unknown</code>.
         </li>
@@ -463,7 +463,7 @@ node packages/cli/dist/cli.js ./example.sts -o ./out/example.ts</code></pre>
         <strong>Local (Cursor / VS&nbsp;Code):</strong>
       </p>
       <ol>
-        <li>Clone <code>mishelashala/superset-ts</code></li>
+        <li>Clone <code>mishelashala/sound-ts</code></li>
         <li>
           Extensions → <strong>…</strong> → <strong>Install from Location…</strong>
           → pick <code>packages/vscode</code>
@@ -499,7 +499,7 @@ node packages/cli/dist/cli.js ./example.sts -o ./out/example.ts</code></pre>
         <li><strong>No open brands without <code>is</code></strong> (use refined brands with a custom <code>.is</code>)</li>
         <li>Refined brands and <code>validate type</code> are <strong>nominally opaque</strong> under stock <code>tsc</code> (phantom unique-symbol brands) — not structural aliases of their bases. Enter via <code>.from</code> / <code>cast&lt;&gt;</code>.</li>
         <li>String literal brands are the member literals <strong>or</strong> a phantom arm (nominal under stock <code>tsc</code>; member literals still assign). They do not flow back to the bare literal union. Number/bigint literal brands not supported yet.</li>
-        <li><a href="https://github.com/mishelashala/superset-ts/issues?q=roadmap+v2">Roadmap v2</a> is delivered on the <code>.sts</code> surface (<a href="https://github.com/mishelashala/superset-ts/issues/36">#36</a>–<a href="https://github.com/mishelashala/superset-ts/issues/38">#38</a>, <a href="https://github.com/mishelashala/superset-ts/issues/40">#40</a>–<a href="https://github.com/mishelashala/superset-ts/issues/42">#42</a>): reject <code>as</code> / <code>any</code> / <code>!</code> / wide types, no bare structural aliases, methods emit as readonly function properties. Ordinary <code>.ts</code> files stay stock TypeScript. Outbound widen from a <code>validate type</code> to the naked field structure remains a stock <code>tsc</code> hole.</li>
+        <li><a href="https://github.com/mishelashala/sound-ts/issues?q=roadmap+v2">Roadmap v2</a> is delivered on the <code>.sts</code> surface (<a href="https://github.com/mishelashala/sound-ts/issues/36">#36</a>–<a href="https://github.com/mishelashala/sound-ts/issues/38">#38</a>, <a href="https://github.com/mishelashala/sound-ts/issues/40">#40</a>–<a href="https://github.com/mishelashala/sound-ts/issues/42">#42</a>): reject <code>as</code> / <code>any</code> / <code>!</code> / wide types, no bare structural aliases, methods emit as readonly function properties. Ordinary <code>.ts</code> files stay stock TypeScript. Outbound widen from a <code>validate type</code> to the naked field structure remains a stock <code>tsc</code> hole.</li>
         <li>Not a full schema library — <code>validate type</code> covers simple object shapes only (no nested objects, generics, <code>Date</code>, …)</li>
         <li>VS Code extension not on Marketplace yet (local install only)</li>
         <li><code>defineLiteralSet</code> is not the authoring surface</li>
@@ -559,9 +559,9 @@ const u = cast&lt;User&gt;(raw);   // ✅ User.from when companion is in the bat
 
   <footer>
     <p>
-      <a href="https://github.com/mishelashala/superset-ts">GitHub repo</a>
+      <a href="https://github.com/mishelashala/sound-ts">GitHub repo</a>
       · docs from <code>docs/</code> on <code>main</code>
-      · <a href="https://www.npmjs.com/package/@mishelashala/superset-ts-cli">npm</a>
+      · <a href="https://www.npmjs.com/package/@mishelashala/sound-ts-cli">npm</a>
       · extension <strong>local-only</strong> until Marketplace publish
     </p>
   </footer>

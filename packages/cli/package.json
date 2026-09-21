@@ -1,12 +1,12 @@
 {
-  "name": "@mishelashala/superset-ts-cli",
+  "name": "@mishelashala/sound-ts-cli",
   "version": "0.3.2",
   "private": false,
   "description": "CLI: expand brand type \u2192 plain TS + runtime companions",
   "license": "MIT",
   "type": "module",
   "bin": {
-    "superset-ts": "./dist/cli.js",
+    "sound-ts": "./dist/cli.js",
     "sts": "./dist/cli.js"
   },
   "main": "./dist/cli.js",
@@ -19,7 +19,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@mishelashala/superset-ts-core": "workspace:*"
+    "@mishelashala/sound-ts-core": "workspace:*"
   },
   "engines": {
     "node": ">=18"

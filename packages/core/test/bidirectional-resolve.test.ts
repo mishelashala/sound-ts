@@ -41,7 +41,7 @@ let outDir: string;
 beforeAll(() => {
   execFileSync(
     "pnpm",
-    ["--filter", "@mishelashala/superset-ts-cli...", "run", "build"],
+    ["--filter", "@mishelashala/sound-ts-cli...", "run", "build"],
     { cwd: repoRoot, stdio: "pipe", timeout: 120_000 },
   );
 }, 120_000);
@@ -52,8 +52,8 @@ afterAll(async () => {
 });
 
 it("mirrors plain scripts so stock tsc resolves .ts ↔ .sts imports", async () => {
-  expect(appTs).not.toMatch(/\.sts|\.superset/);
-  expect(rolesSts).not.toMatch(/\.sts|\.superset/);
+  expect(appTs).not.toMatch(/\.sts|\.sound-ts/);
+  expect(rolesSts).not.toMatch(/\.sts|\.sound-ts/);
 
   srcDir = await mkdtemp(path.join(tmpdir(), "sts-bidi-src-"));
   outDir = await mkdtemp(path.join(tmpdir(), "sts-bidi-out-"));

@@ -1,6 +1,6 @@
 import { defineConfig } from "vite";
-import { supersetTs } from "@mishelashala/superset-ts-vite";
+import { soundTs } from "@mishelashala/sound-ts-vite";
 
 export default defineConfig({
-  plugins: [supersetTs()],
+  plugins: [soundTs()],
 });

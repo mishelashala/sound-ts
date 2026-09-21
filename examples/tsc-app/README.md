@@ -17,7 +17,7 @@ Plain `tsc` app. One command expands `.sts`, then runs `tsc`. If expand fails, `
 `scripts/build.mjs` runs the CLI, then `tsc` only when that process exits 0:
 
 ```bash
-node ../../packages/cli/dist/cli.js src -o .superset
+node ../../packages/cli/dist/cli.js src -o .sound-ts
 tsc -p tsconfig.json
 ```
 
@@ -27,15 +27,15 @@ From this repo, after `pnpm build` at the root:
 pnpm --dir examples/tsc-app build
 ```
 
-`node ../../packages/cli/dist/cli.js` is `packages/cli/dist/cli.js` (the `sts` / `superset-ts` bin). Output is `examples/tsc-app/.superset`. There is no default shadow cache yet, so the script passes `-o .superset`.
+`node ../../packages/cli/dist/cli.js` is `packages/cli/dist/cli.js` (the `sts` / `sound-ts` bin). Output is `examples/tsc-app/.sound-ts`. There is no default shadow cache yet, so the script passes `-o .sound-ts`.
 
 ## tsc
 
 `tsconfig.json` does not include `*.sts`.
 
-- `rootDir`: `.superset` (expanded `.ts` only)
+- `rootDir`: `.sound-ts` (expanded `.ts` only)
 - `outDir`: `dist`
-- `include`: `.superset/**/*.ts`
+- `include`: `.sound-ts/**/*.ts`
 - `exclude`: `**/*.sts`, `src`
 
 ## Sources
@@ -46,7 +46,7 @@ pnpm --dir examples/tsc-app build
 brand type Account = "admin" | "regular";
 ```
 
-`src/app.ts` imports `Account` from `./roles.js`. Stock `tsc` sees that import only after expand, as `.superset/roles.ts`.
+`src/app.ts` imports `Account` from `./roles.js`. Stock `tsc` sees that import only after expand, as `.sound-ts/roles.ts`.
 
 ## Fail closed
 

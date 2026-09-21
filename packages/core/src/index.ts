@@ -1,5 +1,5 @@
 /**
- * @mishelashala/superset-ts-core
+ * @mishelashala/sound-ts-core
  *
  * Product: `brand type` / `validate type` dialect + `cast<…>(…)` checked casts →
  * plain TS + runtime companions. Not a TypeScript fork. Stock tooling
