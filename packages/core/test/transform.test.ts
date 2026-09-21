@@ -442,6 +442,7 @@ describe("transform", () => {
     const block = emitBrandType({
       kind: "literal",
       name: "Tag",
+      primitive: "string",
       values: ["ok", "not-ok"],
       raw: "",
       start: 0,
@@ -456,6 +457,7 @@ describe("transform", () => {
     const block = emitBrandType({
       kind: "literal",
       name: "Color",
+      primitive: "string",
       values: ["red", "blue"],
       raw: "",
       start: 0,
@@ -836,6 +838,36 @@ declare function takesString(x: string): void;
 takesString(a);
 // @ts-expect-error brand does not flow back to the bare literal union
 const members: "admin" | "regular" = a;
+`;
+    expect(typecheckOk(check)).toEqual([]);
+  });
+
+  it("number-literal brands accept member literals and stay nominal (tsc)", () => {
+    const src = `brand type Days = 7 | 30 | 90;\nbrand type Other = 7 | 30 | 90;\n`;
+    const { code } = transform(src);
+    expect(code).toContain(
+      `type Days = 7 | 30 | 90 | (number & { readonly [DaysBrand]: true });`,
+    );
+    expect(code).toContain("7: 7 as Days");
+    expect(code).toContain('typeof value === "number"');
+    const check = `${code}
+declare function setDays(days: Days): void;
+declare const raw: number;
+declare let a: Days;
+declare let b: Other;
+setDays(7);
+setDays(a);
+setDays(Days.Values[30]);
+// @ts-expect-error widened number
+setDays(raw);
+// @ts-expect-error non-member
+setDays(8);
+// @ts-expect-error different brand
+setDays(b);
+declare function takesNumber(x: number): void;
+takesNumber(a);
+// @ts-expect-error brand does not flow back to the bare literal union
+const members: 7 | 30 | 90 = a;
 `;
     expect(typecheckOk(check)).toEqual([]);
   });

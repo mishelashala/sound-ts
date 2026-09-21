@@ -24,11 +24,13 @@ interface BrandTypeDeclBase {
   exported: boolean;
 }
 
-/** Phase 1: closed string literal union */
+/** Closed string or number literal union (Mode A). */
 export interface LiteralBrandDecl extends BrandTypeDeclBase {
   kind: "literal";
-  /** Ordered unique string literals */
-  values: string[];
+  /** All members are this primitive. Mixed string|number unions are rejected. */
+  primitive: "string" | "number";
+  /** Ordered unique literals */
+  values: (string | number)[];
 }
 
 /** Phase 2 Mode B: base type + custom `is`, generated `from` */

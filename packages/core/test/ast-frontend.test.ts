@@ -56,4 +56,23 @@ export brand type Env =
     }
     expect(brand.exported).toBe(true);
   });
+
+  it("parses number literal unions including negatives", () => {
+    const src = `
+export brand type Days = 7 | 30 | 90;
+brand type Offset = | -1 | 0 | 1;
+`;
+    const program = parseSts(src);
+    const days = program.brands[0]!;
+    const offset = program.brands[1]!;
+    expect(days.kind).toBe("literal");
+    expect(offset.kind).toBe("literal");
+    if (days.kind === "literal") {
+      expect(days.primitive).toBe("number");
+      expect(days.values).toEqual([7, 30, 90]);
+    }
+    if (offset.kind === "literal") {
+      expect(offset.values).toEqual([-1, 0, 1]);
+    }
+  });
 });

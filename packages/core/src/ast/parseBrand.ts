@@ -24,14 +24,48 @@ function unquoteStringLiteral(node: ts.StringLiteral): string {
   return node.text;
 }
 
+function numericLiteralValue(expr: ts.Expression, name: string): number {
+  if (ts.isNumericLiteral(expr)) {
+    return Number(expr.text);
+  }
+  if (
+    ts.isPrefixUnaryExpression(expr) &&
+    expr.operator === ts.SyntaxKind.MinusToken &&
+    ts.isNumericLiteral(expr.operand)
+  ) {
+    return -Number(expr.operand.text);
+  }
+  throw new SyntaxError(
+    `brand type ${name}: expected number literal in union`,
+  );
+}
+
 function literalValuesFromType(
   type: ts.TypeNode,
   name: string,
-): string[] {
-  const values: string[] = [];
+): { primitive: "string" | "number"; values: (string | number)[] } {
+  const values: (string | number)[] = [];
+  let primitive: "string" | "number" | undefined;
   const collect = (t: ts.TypeNode): void => {
     if (ts.isLiteralTypeNode(t) && ts.isStringLiteral(t.literal)) {
+      if (primitive === "number") {
+        throw new SyntaxError(
+          `brand type ${name}: cannot mix string and number literals`,
+        );
+      }
+      primitive = "string";
       values.push(unquoteStringLiteral(t.literal));
+      return;
+    }
+    if (ts.isLiteralTypeNode(t)) {
+      const n = numericLiteralValue(t.literal, name);
+      if (primitive === "string") {
+        throw new SyntaxError(
+          `brand type ${name}: cannot mix string and number literals`,
+        );
+      }
+      primitive = "number";
+      values.push(n);
       return;
     }
     if (ts.isUnionTypeNode(t)) {
@@ -39,20 +73,20 @@ function literalValuesFromType(
       return;
     }
     throw new SyntaxError(
-      `brand type ${name}: expected string literal in union`,
+      `brand type ${name}: expected string or number literal in union`,
     );
   };
   collect(type);
+  if (primitive === undefined || values.length === 0) {
+    throw new SyntaxError(`brand type ${name}: empty literal union`);
+  }
   const unique = new Set(values);
   if (unique.size !== values.length) {
     throw new SyntaxError(
-      `brand type ${name}: duplicate string literals are not allowed`,
+      `brand type ${name}: duplicate literals are not allowed`,
     );
   }
-  if (values.length === 0) {
-    throw new SyntaxError(`brand type ${name}: empty literal union`);
-  }
-  return values;
+  return { primitive, values };
 }
 
 function brandMembersFromType(
@@ -116,7 +150,7 @@ function sliceBrandRhs(
   source: string,
   rhsStart: number,
   name: string,
-): { text: string; end: number; isLiteral: boolean } {
+): { text: string; end: number; literal: "string" | "number" | null } {
   const scanner = createTriviaSkippingScanner(source);
   scanner.setTextPos(rhsStart);
   let token = scanner.scan();
@@ -136,22 +170,50 @@ function sliceBrandRhs(
     }
   }
 
-  const isLiteral = token === ts.SyntaxKind.StringLiteral;
+  const literal: "string" | "number" | null =
+    token === ts.SyntaxKind.StringLiteral
+      ? "string"
+      : token === ts.SyntaxKind.NumericLiteral ||
+          token === ts.SyntaxKind.MinusToken
+        ? "number"
+        : null;
   let lastEnd = scanner.getTextPos();
   let sawOp = false;
 
-  if (isLiteral) {
+  const expectLiteralMember = (kind: "string" | "number"): void => {
+    if (kind === "string") {
+      if (token !== ts.SyntaxKind.StringLiteral) {
+        throw new SyntaxError(
+          `brand type ${name}: expected string literal in union`,
+        );
+      }
+      return;
+    }
+    if (token === ts.SyntaxKind.MinusToken) {
+      token = scanner.scan();
+      if (token !== ts.SyntaxKind.NumericLiteral) {
+        throw new SyntaxError(
+          `brand type ${name}: expected number literal in union`,
+        );
+      }
+      return;
+    }
+    if (token !== ts.SyntaxKind.NumericLiteral) {
+      throw new SyntaxError(
+        `brand type ${name}: expected number literal in union`,
+      );
+    }
+  };
+
+  if (literal) {
+    expectLiteralMember(literal);
     for (;;) {
       lastEnd = scanner.getTextPos();
       token = scanner.scan();
       if (token === ts.SyntaxKind.BarToken) {
         sawOp = true;
         token = scanner.scan();
-        if (token !== ts.SyntaxKind.StringLiteral) {
-          throw new SyntaxError(
-            `brand type ${name}: expected string literal in union`,
-          );
-        }
+        expectLiteralMember(literal);
         lastEnd = scanner.getTextPos();
         continue;
       }
@@ -231,7 +293,7 @@ function sliceBrandRhs(
   return {
     text,
     end,
-    isLiteral,
+    literal,
   };
 }
 
@@ -438,11 +500,12 @@ export function parseBrandAt(
   const sliced = sliceBrandRhs(source, rhsStart, name);
   const typeNode = parseTypeSnippet(sliced.text, `brand type ${name}`);
 
-  if (sliced.isLiteral) {
-    const values = literalValuesFromType(typeNode, name);
+  if (sliced.literal) {
+    const { primitive, values } = literalValuesFromType(typeNode, name);
     const decl: LiteralBrandDecl = {
       kind: "literal",
       name,
+      primitive,
       values,
       raw: source.slice(declStart, sliced.end),
       start: declStart,
