@@ -270,6 +270,10 @@ pnpm --dir examples/vite-app build
 
 **Not the product API.** Authors write `brand type`. `defineLiteralSet` is an **internal** emit/runtime helper (optional emit target for string literal brands). Do not import it in app code — use the dialect + CLI.
 
+## Method emit
+
+`.sts` methods still use `method()` syntax. Expand rewrites them to **readonly function properties** so stock `strictFunctionTypes` applies. Class methods become readonly instance properties (not on the prototype); `this` inside is lexical.
+
 ---
 
 ## VS Code

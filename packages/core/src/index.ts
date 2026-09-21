@@ -52,6 +52,10 @@ export {
   type EmitDecl,
 } from "./emit.js";
 export {
+  rewriteMethodsAsProperties,
+  type RewriteMethodsResult,
+} from "./emitMethods.js";
+export {
   buildBrandMap,
   buildValidateMap,
   assertNoCompanionNameCollisions,
