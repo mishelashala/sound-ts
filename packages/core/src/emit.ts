@@ -58,11 +58,22 @@ function emitLiteralWithHelper(decl: LiteralBrandDecl): string {
 }
 
 /**
- * Mode B: type alias to base + companion with user `.is` body and generated `.from`.
+ * Phantom brand marker so stock `tsc` treats the refined type as nominally opaque
+ * (bare `number` / base is not assignable). Runtime entry remains `.is` / `.from`.
+ */
+export function emitPhantomBrandAlias(name: string, baseType: string): string {
+  const brand = `${name}Brand`;
+  return [
+    `declare const ${brand}: unique symbol;`,
+    `type ${name} = ${baseType} & { readonly [${brand}]: true };`,
+  ].join("\n");
+}
+
+/**
+ * Mode B: phantom-branded type + companion with user `.is` body and generated `.from`.
  */
 function emitRefined(decl: RefinedBrandDecl): string {
   const { name, baseType, isParamName, isParamType, isBody } = decl;
-  // Indent user body one level if it has content
   // Dedent user body, then indent to companion scope
   const rawLines = isBody.split("\n");
   const nonEmpty = rawLines.filter((l) => l.trim().length > 0);
@@ -77,7 +88,7 @@ function emitRefined(decl: RefinedBrandDecl): string {
     .join("\n");
 
   return [
-    `type ${name} = ${baseType};`,
+    emitPhantomBrandAlias(name, baseType),
     `const ${name} = /*#__PURE__*/ (() => {`,
     `  function is(${isParamName}: ${isParamType}): ${isParamName} is ${name} {`,
     indentedBody,

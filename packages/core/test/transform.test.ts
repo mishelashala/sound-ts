@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import * as ts from "typescript";
 import {
   transform,
   transformProject,
@@ -10,6 +11,35 @@ import {
   buildBrandMap,
   resolveBrandRefs,
 } from "../src/index.js";
+
+/** Compile a snippet with stock tsc; return formatted diagnostic messages. */
+function typecheckOk(source: string): string[] {
+  const file = "snippet.ts";
+  const options: ts.CompilerOptions = {
+    target: ts.ScriptTarget.ES2020,
+    module: ts.ModuleKind.ESNext,
+    strict: true,
+    noEmit: true,
+    skipLibCheck: true,
+  };
+  const host = ts.createCompilerHost(options);
+  const orig = host.getSourceFile.bind(host);
+  host.getSourceFile = (name, languageVersion, onError) => {
+    if (name === file) {
+      return ts.createSourceFile(file, source, languageVersion, true);
+    }
+    return orig(name, languageVersion, onError);
+  };
+  host.writeFile = () => {};
+  const program = ts.createProgram([file], options, host);
+  const diags = [
+    ...program.getSemanticDiagnostics(),
+    ...program.getSyntacticDiagnostics(),
+  ];
+  return diags.map((d) =>
+    ts.flattenDiagnosticMessageText(d.messageText, "\n"),
+  );
+}
 
 describe("parseBrandTypes (Mode A literals)", () => {
   it("parses a single brand type", () => {
@@ -389,7 +419,7 @@ describe("transform", () => {
     expect(block).toContain("Object.freeze");
   });
 
-  it("Mode B emits type alias + user is + generated from", () => {
+  it("Mode B emits phantom unique-symbol brand + user is + generated from", () => {
     const src = `
 brand type PositiveInt = number {
   is(n: number): n is PositiveInt {
@@ -399,7 +429,10 @@ brand type PositiveInt = number {
 `;
     const { code, changed } = transform(src);
     expect(changed).toBe(true);
-    expect(code).toContain(`type PositiveInt = number;`);
+    expect(code).toContain(`declare const PositiveIntBrand: unique symbol;`);
+    expect(code).toContain(
+      `type PositiveInt = number & { readonly [PositiveIntBrand]: true };`,
+    );
     expect(code).toContain(`function is(n: number): n is PositiveInt`);
     expect(code).toContain(`Number.isInteger(n) && n > 0`);
     expect(code).toContain(`function from(value: unknown): PositiveInt`);
@@ -488,7 +521,7 @@ describe("defineLiteralSet (internal)", () => {
   });
 });
 
-describe("validate type (MVP)", () => {
+describe("validate type", () => {
   it("parses object type with primitive fields", () => {
     const src = `validate type User = { id: string; age: number };`;
     const { decls } = parseValidateTypes(src);
@@ -533,17 +566,20 @@ validate type Flags = {
     ]);
   });
 
-  it("emits type alias + is/from companion", () => {
+  it("emits phantom unique-symbol brand + is/from companion", () => {
     const src = `validate type User = { id: string; age: number };\n`;
     const result = transform(src);
     expect(result.changed).toBe(true);
     expect(result.validateDecls).toHaveLength(1);
+    expect(result.code).toContain(`declare const UserBrand: unique symbol;`);
     expect(result.code).toContain(`type User = {`);
     expect(result.code).toContain(`id: string;`);
     expect(result.code).toContain(`age: number;`);
+    expect(result.code).toContain(`} & { readonly [UserBrand]: true };`);
     expect(result.code).toContain(`const User =`);
     expect(result.code).toContain(`function is(value: unknown): value is User`);
     expect(result.code).toContain(`function from(value: unknown): User`);
+    expect(result.code).toContain(`if (is(value)) return value as User;`);
     expect(result.code).toContain(`typeof v.id === "string"`);
     expect(result.code).toContain(`typeof v.age === "number"`);
     expect(result.code).not.toContain("validate type");
@@ -566,7 +602,7 @@ validate type Flags = {
   it("rejects non-object top-level types", () => {
     expect(() =>
       parseValidateTypes(`validate type Bad = string;`),
-    ).toThrow(/MVP requires an object type/);
+    ).toThrow(/requires an object type/);
   });
 
   it("rejects generics on field types", () => {
@@ -657,5 +693,64 @@ const n = cast<number>(raw);
     expect(code).toContain(`// const x = cast<number>(raw);`);
     expect(code).toContain(`"cast<number>(raw)"`);
     expect(code.match(/Checked cast to number failed/g)?.length).toBe(1);
+  });
+});
+
+describe("phantom brands under stock tsc", () => {
+  it("string-literal brands still emit closed unions (no unique symbol)", () => {
+    const src = `brand type Account = "admin" | "regular";\n`;
+    const { code } = transform(src);
+    expect(code).toContain(`type Account = "admin" | "regular";`);
+    expect(code).not.toContain("AccountBrand");
+    expect(code).not.toContain("unique symbol");
+  });
+
+  it("refined .from / cast return the branded type", () => {
+    const src = `
+brand type PositiveInt = number {
+  is(n: number): n is PositiveInt {
+    return Number.isInteger(n) && n > 0;
+  }
+}
+const n = cast<PositiveInt>(raw);
+`;
+    const { code } = transform(src);
+    expect(code).toContain(`function from(value: unknown): PositiveInt`);
+    expect(code).toContain(`PositiveInt.from(raw)`);
+    expect(code).toContain(
+      `type PositiveInt = number & { readonly [PositiveIntBrand]: true };`,
+    );
+  });
+
+  it("bare number is not assignable to refined brand (tsc)", () => {
+    const src = `
+brand type PositiveInt = number {
+  is(n: number): n is PositiveInt {
+    return Number.isInteger(n) && n > 0;
+  }
+}
+`;
+    const { code } = transform(src);
+    const check = `${code}
+
+declare function take(n: PositiveInt): void;
+// @ts-expect-error bare number must not assign to PositiveInt
+take(1);
+take(PositiveInt.from(1));
+`;
+    expect(typecheckOk(check)).toEqual([]);
+  });
+
+  it("bare object is not assignable to validate brand (tsc)", () => {
+    const src = `validate type User = { id: string; age: number };\n`;
+    const { code } = transform(src);
+    const check = `${code}
+
+declare function take(u: User): void;
+// @ts-expect-error bare object must not assign to User
+take({ id: "a", age: 1 });
+take(User.from({ id: "a", age: 1 }));
+`;
+    expect(typecheckOk(check)).toEqual([]);
   });
 });

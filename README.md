@@ -32,7 +32,7 @@ Library: `@mishelashala/superset-ts-core`.
 brand type Account = "admin" | "regular";
 ```
 
-Expands to a plain `type Account = …` plus a runtime companion with `.values`, `.is`, `.from`.
+Expands to a plain closed string union (`type Account = "admin" | "regular"`) plus a runtime companion with `.values`, `.is`, `.from`. Not phantom-nominalized — string literal brands stay unions under stock `tsc`.
 
 ### Refined brands
 
@@ -44,7 +44,15 @@ brand type PositiveInt = number {
 }
 ```
 
-Expands to `type PositiveInt = number` plus a companion that keeps your `.is` body and **generates** `.from` (validate via `.is`). Under stock `tsc`, the type alias is still the base (`number`) — the refinement is **runtime-only** (`.is` / `.from`); that is expected, not a fork. No separate `.d.ts` emit — plain `.ts` only.
+Expands to a **phantom unique-symbol brand** plus a companion that keeps your `.is` body and **generates** `.from` (validate via `.is`):
+
+```ts
+declare const PositiveIntBrand: unique symbol;
+type PositiveInt = number & { readonly [PositiveIntBrand]: true };
+// companions: .is is a type predicate; .from / cast<> return PositiveInt
+```
+
+Under stock `tsc`, bare `number` is **not** assignable to `PositiveInt` — enter via `.from` / `cast<PositiveInt>(…)`. Runtime checks still matter at boundaries; the brand alone is not enough. No separate `.d.ts` emit — plain `.ts` only.
 
 ### Brand unions / intersections
 
@@ -83,13 +91,13 @@ Account.from("guest");        // throws
 
 ### Validate type
 
-Object types with primitive fields → same `.is` / `.from` companions:
+Object types with primitive fields → phantom-branded type + same `.is` / `.from` companions (bare object literals are not assignable under stock `tsc` — use `.from` / `cast<>`):
 
 ```sts
 validate type User = { id: string; age: number };
 
 User.is(data);
-User.from(data); // throws on mismatch
+User.from(data); // throws on mismatch; returns User
 ```
 
 **Supported field shapes:** `string` | `number` | `boolean`, optional `?`, arrays of those (`string[]`), and unions of those. Nested objects, generics, `Date`, imported aliases as field types, etc. error clearly at transform time.
@@ -150,6 +158,7 @@ Keep most of the app as normal `.ts` (stock `tsc` / Vite). Add `.sts` only where
 - Don’t point `tsc` at raw `.sts`
 - Whole `.sts` batch on each `sts` run for cross-file `|` / `&` and `cast` companions
 - Start with one leaf brand file (ids / roles) → grow file by file
+- Enter refined / validate types via `.from` or `cast<>` — bare bases are not assignable under stock `tsc`
 
 ---
 
@@ -183,8 +192,9 @@ See also: [FAQ: Why not TypeScript?](https://mishelashala.github.io/superset-ts/
 
 - **No Microsoft / TypeScript fork** to maintain
 - **No custom TypeScript checker or language server** — stock `tsc` runs on expand output only.
-- **No open brands without `is`** (use refined brands; later tip for phantom ID opacity + `.from` — not open-without-`is`)
-- String literal brands are structural under stock `tsc` (not nominal). Number/bigint literal brands not supported yet.
+- **No open brands without `is`** (use refined brands with a custom `.is`)
+- Refined brands and `validate type` are **nominally opaque** under stock `tsc` (phantom unique-symbol brands) — not structural aliases of their bases. Enter via `.from` / `cast<>`.
+- String literal brands stay **closed string unions** (structural under stock `tsc`, not phantom-nominalized). Number/bigint literal brands not supported yet.
 - Not a full schema library — `validate type` covers simple object shapes only (no nested objects, generics, `Date`, …)
 - VS Code extension **not on Marketplace** yet (local install only)
 - `defineLiteralSet` is **not** the public authoring API

@@ -90,6 +90,11 @@
         <code>.sts</code>; injection into <code>.ts</code> only helps
         highlighting, not the checker.
       </p>
+      <p>
+        String literal brands emit as <strong>closed string unions</strong>
+        (<code>"admin" | "regular"</code>) — not phantom-nominalized.
+        Runtime companion still provides <code>.values</code> / <code>.is</code> / <code>.from</code>.
+      </p>
       <pre><code class="language-typescript">// file: roles.sts
 brand type Account = "admin" | "regular";
 
@@ -101,15 +106,18 @@ function greet(role: Account): string {
 greet(Account.from("admin"));
 Account.is("guest");   // false
 Account.from("guest"); // throws</code></pre>
+      <p class="muted">Emit: <code>type Account = "admin" | "regular";</code> plus companion — no <code>unique symbol</code>.</p>
     </section>
 
     <section id="refined">
       <h2>Refined brands</h2>
-      <p class="muted">Emit keeps <code>type Name = base</code>; under stock <code>tsc</code> the refinement is runtime-only (<code>.is</code> / <code>.from</code>) — expected.</p>
       <p>
         Custom <code>is</code> body; CLI <strong>generates</strong>
         <code>from</code> that validates via <code>is</code>.
-        Emit is plain <code>.ts</code> (type alias + companion) — expand, then stock <code>tsc</code>.
+        Emit is plain <code>.ts</code> — a <strong>phantom unique-symbol brand</strong>
+        plus companion — so stock <code>tsc</code> blocks bare <code>number</code>
+        (or other base) from assigning. Enter via <code>.from</code> /
+        <code>cast&lt;PositiveInt&gt;(…)</code>; runtime checks still matter at boundaries.
       </p>
       <pre><code class="language-typescript">// file: positive.sts
 brand type PositiveInt = number {
@@ -118,7 +126,8 @@ brand type PositiveInt = number {
   }
 }</code></pre>
       <p>Emit shape (plain TS after transform):</p>
-      <pre><code class="language-typescript">type PositiveInt = number;
+      <pre><code class="language-typescript">declare const PositiveIntBrand: unique symbol;
+type PositiveInt = number &amp; { readonly [PositiveIntBrand]: true };
 const PositiveInt = /*#__PURE__*/ (() =&gt; {
   function is(n: number): n is PositiveInt {
     return Number.isInteger(n) &amp;&amp; n &gt; 0;
@@ -181,15 +190,24 @@ brand type Authed = User &amp; Session;
     <section id="validate">
       <h2><code>validate type</code></h2>
       <p>
-        Object types with primitive fields expand to the same
-        <code>.is</code> / <code>.from</code> companion shape as brands.
-        Stock <code>tsc</code> sees a plain type alias + runtime object.
+        Object types with primitive fields expand to a
+        <strong>phantom unique-symbol brand</strong> plus the same
+        <code>.is</code> / <code>.from</code> companion shape as refined brands.
+        Stock <code>tsc</code> blocks bare object literals — enter via
+        <code>.from</code> / <code>cast&lt;User&gt;(…)</code>.
       </p>
       <pre><code class="language-typescript">// file: user.sts
 validate type User = { id: string; age: number };
 
 User.is(data);   // boolean
-User.from(data); // throws on mismatch</code></pre>
+User.from(data); // throws on mismatch; returns User</code></pre>
+      <p>Emit shape (plain TS after transform):</p>
+      <pre><code class="language-typescript">declare const UserBrand: unique symbol;
+type User = {
+  id: string;
+  age: number;
+} &amp; { readonly [UserBrand]: true };
+const User = /*#__PURE__*/ (() =&gt; { /* .is / .from */ })();</code></pre>
       <p><strong>Supported field shapes:</strong></p>
       <ul>
         <li><code>string</code> | <code>number</code> | <code>boolean</code></li>
@@ -271,6 +289,11 @@ node packages/cli/dist/cli.js ./example.sts -o ./out/example.ts</code></pre>
         <li>
           Start with one leaf brand file (ids / roles) → grow file by file
         </li>
+        <li>
+          Enter refined / <code>validate type</code> values via
+          <code>.from</code> or <code>cast&lt;&gt;</code> — bare bases are not
+          assignable under stock <code>tsc</code>
+        </li>
       </ul>
     </section>
 
@@ -336,8 +359,9 @@ node packages/cli/dist/cli.js ./example.sts -o ./out/example.ts</code></pre>
       <ul>
         <li>No Microsoft / TypeScript fork to maintain</li>
         <li><strong>No custom TypeScript checker or language server</strong> — stock <code>tsc</code> runs on expand output only.</li>
-        <li><strong>No open brands without <code>is</code></strong> (use refined brands; later tip for phantom ID opacity + <code>.from</code> — not open-without-<code>is</code>)</li>
-        <li>String literal brands are structural under stock <code>tsc</code> (not nominal). Number/bigint literal brands not supported yet.</li>
+        <li><strong>No open brands without <code>is</code></strong> (use refined brands with a custom <code>.is</code>)</li>
+        <li>Refined brands and <code>validate type</code> are <strong>nominally opaque</strong> under stock <code>tsc</code> (phantom unique-symbol brands) — not structural aliases of their bases. Enter via <code>.from</code> / <code>cast&lt;&gt;</code>.</li>
+        <li>String literal brands stay <strong>closed string unions</strong> (structural under stock <code>tsc</code>, not phantom-nominalized). Number/bigint literal brands not supported yet.</li>
         <li>Not a full schema library — <code>validate type</code> covers simple object shapes only (no nested objects, generics, <code>Date</code>, …)</li>
         <li>VS Code extension not on Marketplace yet (local install only)</li>
         <li><code>defineLiteralSet</code> is not the authoring surface</li>
@@ -366,7 +390,7 @@ User.from(data); // throws on mismatch</code></pre>
         <li>
           Nominal / opaque / brand types with runtime companions
           <br />
-          <span class="muted">That’s what <code>brand type</code> + companions cover here — see <a href="#cli">CLI quickstart</a> / <a href="#authoring">String literal brands</a>.</span>
+          <span class="muted">That’s what <code>brand type</code> + companions cover here — refined / validate are phantom-opaque under stock <code>tsc</code>; enter via <code>.from</code> / <code>cast&lt;&gt;</code>. See <a href="#refined">Refined brands</a> / <a href="#authoring">String literal brands</a> (still unions).</span>
         </li>
         <li>
           Reified generics
