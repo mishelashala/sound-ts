@@ -191,12 +191,12 @@ Keep most of the app as normal `.ts` (stock `tsc` / Vite). Add `.sts` only where
 - Whole `.sts` batch on each `sts` run for cross-file `|` / `&` and `cast` companions
 - Enter refined / validate types via `.from` or `cast<>` — bare bases are not assignable under stock `tsc`
 
-**Seamless integration** (ordered):
+**Seamless integration** — [roadmap v1](https://github.com/mishelashala/superset-ts/issues?q=roadmap+v1). Check a box in this list only when that issue is delivered.
 
-1. **Shadow emit** — expand `.sts` → gitignored cache / `outDir` (not sibling `.ts`); CI fails if expanded `.ts` is committed
-2. **Bidirectional resolve** — `.ts` ↔ `.sts` imports with no path rewrites
-3. **Drop-in scripts** — swap `package.json` build only (`prebuild: sts` → Nest / `tsc`); fail-closed
-4. **Loader later** — Vite / Nest unplugin after 1–3 feel like early TypeScript
+- [ ] [Shadow emit](https://github.com/mishelashala/superset-ts/issues/27) — `sts` writes a gitignored cache, never a sibling `.ts`. CI fails if that output is committed.
+- [ ] [Bidirectional resolve](https://github.com/mishelashala/superset-ts/issues/28) — `.ts` and `.sts` import each other. Import paths stay as the author wrote them.
+- [ ] [Drop-in build script](https://github.com/mishelashala/superset-ts/issues/29) — one `package.json` script expands, then runs `tsc`. Expand failure stops the build.
+- [ ] [Loader](https://github.com/mishelashala/superset-ts/issues/30) — Vite expands `.sts` on dev and build, so you stop calling `sts` by hand.
 
 ---
 

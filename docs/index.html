@@ -345,26 +345,37 @@ node packages/cli/dist/cli.js ./example.sts -o ./out/example.ts</code></pre>
           assignable under stock <code>tsc</code>
         </li>
       </ul>
-      <p><strong>Seamless integration</strong> (ordered):</p>
-      <ol>
+      <p>
+        <strong>Seamless integration</strong> —
+        <a href="https://github.com/mishelashala/superset-ts/issues?q=roadmap+v1">roadmap v1</a>.
+        Check a box here only when that issue is delivered.
+      </p>
+      <ul class="checklist">
         <li>
-          <strong>Shadow emit</strong> — expand <code>.sts</code> → gitignored
-          cache / <code>outDir</code> (not sibling <code>.ts</code>); CI fails if
-          expanded <code>.ts</code> is committed
+          <input type="checkbox" disabled />
+          <a href="https://github.com/mishelashala/superset-ts/issues/27">Shadow emit</a>
+          — <code>sts</code> writes a gitignored cache, never a sibling
+          <code>.ts</code>. CI fails if that output is committed.
         </li>
         <li>
-          <strong>Bidirectional resolve</strong> — <code>.ts</code> ↔
-          <code>.sts</code> imports with no path rewrites
+          <input type="checkbox" disabled />
+          <a href="https://github.com/mishelashala/superset-ts/issues/28">Bidirectional resolve</a>
+          — <code>.ts</code> and <code>.sts</code> import each other. Import
+          paths stay as the author wrote them.
         </li>
         <li>
-          <strong>Drop-in scripts</strong> — swap <code>package.json</code> build
-          only (<code>prebuild: sts</code> → Nest / <code>tsc</code>); fail-closed
+          <input type="checkbox" disabled />
+          <a href="https://github.com/mishelashala/superset-ts/issues/29">Drop-in build script</a>
+          — one <code>package.json</code> script expands, then runs
+          <code>tsc</code>. Expand failure stops the build.
         </li>
         <li>
-          <strong>Loader later</strong> — Vite / Nest unplugin after 1–3 feel
-          like early TypeScript
+          <input type="checkbox" disabled />
+          <a href="https://github.com/mishelashala/superset-ts/issues/30">Loader</a>
+          — Vite expands <code>.sts</code> on dev and build, so you stop
+          calling <code>sts</code> by hand.
         </li>
-      </ol>
+      </ul>
     </section>
 
     <section id="caveats">
