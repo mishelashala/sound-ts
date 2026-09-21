@@ -102,8 +102,14 @@ export {
 export { LiteralSetError } from "./errors.js";
 export {
   runSoundnessChecks,
+  runSoundness1Checks,
   assertNoAny,
   assertNoStructuralAliases,
   assertNoWideTypes,
+  assertNoBrandTypePredicates,
+  assertHonestRefinedPredicates,
+  assertNoBrandMutation,
+  assertBrandGenericSubset,
   type SoundnessCheckOptions,
+  type Soundness1CheckOptions,
 } from "./soundness/index.js";
