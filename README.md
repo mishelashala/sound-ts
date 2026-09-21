@@ -96,9 +96,9 @@ Point `tsc` / Vite at **`./out`** (the transformed files), not the dialect sourc
 
 Binaries after build: `superset-ts` / `sts` → `packages/cli/dist/cli.js`.
 
-### Parser caveat (v0)
+### Parser notes (v0)
 
-`packages/core` parses `brand type` with a lightweight scanner (regex header + brace matching for Mode B). **Comment-skipping is incomplete** — a `brand type …` appearing inside a line or block comment can still match and be rewritten. Don’t put live-looking decls in comments for now; a proper skip will come later.
+`packages/core` parses `brand type` with a lightweight scanner (regex header + brace matching for Mode B). Line/block comments and string/template literals are masked before the scan so fake decls inside them are ignored; live decls after comments still expand. Remaining edges: regex literals; nested `${}` inside templates (the whole template is skipped).
 
 ### Same-file brand unions (v0)
 

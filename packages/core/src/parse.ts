@@ -7,8 +7,9 @@
  * - Brand unions / intersections: `brand type Staff = Admin | Regular`
  *   (members must be already-declared brand names in this file)
  *
- * Caveat (v0): comment-skipping is incomplete — the scanner can still match
- * inside line/block comments. Documented in README / Pages; fix later.
+ * Before scanning for `brand type`, line/block comments and string/template
+ * literals are masked in-place with spaces (offsets stay aligned for emit).
+ * Remaining edges: regex literals; nested `${}` inside templates (masked whole).
  */
 
 export type BrandKind = "literal" | "refined" | "union" | "intersection";
@@ -372,15 +373,115 @@ function parseCombined(
 }
 
 /**
+ * Mask line comments (`//`), block comments, and `"…"`, `'…'`, `` `…` ``
+ * literals with spaces (same length) so a subsequent `brand type` scan cannot
+ * match inside them while decl offsets still point into the original source.
+ *
+ * Template literals are masked as a single span (including any `${…}`); we do
+ * not re-enter expression mode inside `${}` — good enough for v0.
+ */
+function maskCommentsAndStrings(source: string): string {
+  const out = source.split("");
+  let i = 0;
+  while (i < source.length) {
+    const c = source[i]!;
+
+    // Line comment: // … to EOL (newline kept)
+    if (c === "/" && source[i + 1] === "/") {
+      out[i] = " ";
+      out[i + 1] = " ";
+      i += 2;
+      while (i < source.length && source[i] !== "\n" && source[i] !== "\r") {
+        out[i] = " ";
+        i++;
+      }
+      continue;
+    }
+
+    // Block comment: /* … */
+    if (c === "/" && source[i + 1] === "*") {
+      out[i] = " ";
+      out[i + 1] = " ";
+      i += 2;
+      while (i < source.length) {
+        if (source[i] === "*" && source[i + 1] === "/") {
+          out[i] = " ";
+          out[i + 1] = " ";
+          i += 2;
+          break;
+        }
+        if (source[i] !== "\n" && source[i] !== "\r") {
+          out[i] = " ";
+        }
+        i++;
+      }
+      continue;
+    }
+
+    // Single- or double-quoted string
+    if (c === '"' || c === "'") {
+      const quote = c;
+      out[i] = " ";
+      i++;
+      while (i < source.length) {
+        const ch = source[i]!;
+        if (ch === "\\") {
+          out[i] = " ";
+          if (i + 1 < source.length) {
+            out[i + 1] = " ";
+            i += 2;
+            continue;
+          }
+          i++;
+          break;
+        }
+        out[i] = " ";
+        i++;
+        if (ch === quote) break;
+      }
+      continue;
+    }
+
+    // Template literal (plain span through closing backtick)
+    if (c === "`") {
+      out[i] = " ";
+      i++;
+      while (i < source.length) {
+        const ch = source[i]!;
+        if (ch === "\\") {
+          out[i] = " ";
+          if (i + 1 < source.length) {
+            out[i + 1] = " ";
+            i += 2;
+            continue;
+          }
+          i++;
+          break;
+        }
+        out[i] = " ";
+        i++;
+        if (ch === "`") break;
+      }
+      continue;
+    }
+
+    i++;
+  }
+  return out.join("");
+}
+
+/**
  * Find all `brand type` declarations in source text.
+ * Scans a comment/string-masked copy; parses spans from the original source.
  */
 export function parseBrandTypes(source: string): ParseResult {
   const decls: BrandTypeDecl[] = [];
   const knownBrands = new Set<string>();
+  const scan = maskCommentsAndStrings(source);
   const headerRe = /\bbrand\s+type\s+([A-Za-z_$][\w$]*)\s*=/g;
   let m: RegExpExecArray | null;
 
-  while ((m = headerRe.exec(source)) !== null) {
+  while ((m = headerRe.exec(scan)) !== null) {
     const name = m[1]!;
     const declStart = m.index;
     const afterEq = m.index + m[0].length;
