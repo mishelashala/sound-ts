@@ -136,7 +136,7 @@ body.playground-body {
 .editor-stack,
 .compiled-output {
   --editor-font-size: 13.6px;
-  --editor-line-height: 20px;
+  --editor-line-height: 2;
   --editor-pad-y: 14px;
   --editor-pad-x: 16px;
   width: 100%;
@@ -149,7 +149,7 @@ body.playground-body {
   background: var(--code-panel);
   color: var(--code-fg);
   font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: var(--editor-font-size);
+  font-size: var(--editor-font-size) !important;
   font-weight: 400;
   font-style: normal;
   line-height: var(--editor-line-height);
@@ -232,7 +232,7 @@ body.playground-body {
 }
 
 .editor-stack textarea::selection {
-  background: rgba(45, 212, 191, 0.35);
+  background: rgba(0, 217, 251, 0.35); /* --color-signal */
   color: transparent;
 }
 
@@ -251,17 +251,27 @@ body.playground-body {
   cursor: text;
 }
 
-.compiled-output code {
-  display: block;
-  font: inherit;
-  font-size: inherit;
-  line-height: inherit;
+.compiled-output code,
+.compiled-output .token {
+  display: inline;
+  font-family: inherit !important;
+  font-size: var(--editor-font-size) !important;
+  font-weight: 400 !important;
+  font-style: normal !important;
+  line-height: var(--editor-line-height) !important;
+  letter-spacing: inherit;
   white-space: inherit;
   tab-size: inherit;
-  background: none;
-  padding: 0;
-  border: none;
-  border-radius: 0;
+  background: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  border-radius: 0 !important;
+  vertical-align: baseline;
+}
+
+.compiled-output code {
+  display: block;
   color: inherit;
 }
 
@@ -271,8 +281,8 @@ body.playground-body {
 }
 
 .compiled-output.is-error {
-  border-left-color: #f43f5e;
-  color: #fda4af;
+  border-left-color: var(--color-error);
+  color: #F97066; /* soft surface matching --color-error #F04438 */
 }
 
 .compiled-output.is-error code {

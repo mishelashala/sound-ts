@@ -9,7 +9,10 @@ import {
   type BrandMap,
   type ValidateMap,
 } from "./brandMap.js";
-import type { ValidateTypeDecl } from "./validate.js";
+import {
+  assertValidateFieldRefs,
+  type ValidateTypeDecl,
+} from "./validate.js";
 import { rewriteCheckedCasts } from "./checkedCast.js";
 import { rewriteMethodsAsProperties } from "./emitMethods.js";
 import {
@@ -20,6 +23,7 @@ import {
   buildProjectSymbols,
   brandMapFromSymbols,
   companionNamesFromSymbols,
+  lookupSymbol,
   orderBrandSymbolsDependenciesFirst,
   resolveBrandMemberSymbols,
   validateMapFromSymbols,
@@ -88,6 +92,19 @@ export function isDialectSurface(filename?: string): boolean {
 
 function emptyDialect(source: string): DialectProgram {
   return { source, brands: [], validates: [], casts: [] };
+}
+
+function assertFileValidateRefs(
+  decls: readonly ValidateTypeDecl[],
+  symbols: DialectProjectSymbols,
+  filename: string,
+): void {
+  for (const decl of decls) {
+    assertValidateFieldRefs(
+      decl,
+      (name) => lookupSymbol(symbols, filename, name) !== undefined,
+    );
+  }
 }
 
 function expandFile(
@@ -220,6 +237,14 @@ export function transform(
     runSoundness1Checks(source, checkOpts);
   }
 
+  if (symbolsForChecks) {
+    assertFileValidateRefs(
+      validateDecls,
+      symbolsForChecks,
+      options.filename ?? "<stdin>",
+    );
+  }
+
   if (decls.length === 0 && validateDecls.length === 0) {
     // Still may have cast<…>(…) casts and/or method syntax to rewrite
     const castOpts: {
@@ -323,6 +348,7 @@ export function transformProject(
         changed: false,
       };
     }
+    assertFileValidateRefs(f.validateDecls, symbols, f.filename);
     const { code, changed } = expandFile(
       f.source,
       f.decls,

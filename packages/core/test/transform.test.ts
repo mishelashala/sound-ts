@@ -12,6 +12,56 @@ import {
   resolveBrandRefs,
 } from "../src/index.js";
 
+/** Run an expanded companion (types erased) and return its runtime object. */
+function loadCompanion(
+  code: string,
+  name: string,
+): { is: (value: unknown) => boolean; from: (value: unknown) => unknown } {
+  const js = ts.transpileModule(code, {
+    compilerOptions: {
+      target: ts.ScriptTarget.ES2020,
+      module: ts.ModuleKind.None,
+    },
+  }).outputText;
+  const factory = new Function(`${js}\nreturn ${name};`) as () => {
+    is: (value: unknown) => boolean;
+    from: (value: unknown) => unknown;
+  };
+  return factory();
+}
+
+/** Public companion keys. Refined brands omit `values` / `Values`. */
+const LITERAL_COMPANION_KEYS = [
+  "Values",
+  "from",
+  "is",
+  "name",
+  "toPrimitive",
+  "values",
+] as const;
+
+const REFINED_COMPANION_KEYS = ["from", "is", "name", "toPrimitive"] as const;
+
+type EmittedCompanion = {
+  is: (value: unknown) => boolean;
+  from: (value: unknown) => unknown;
+};
+
+/** Run default emit and return the frozen companion. */
+function loadEmittedCompanion(source: string, name: string): EmittedCompanion {
+  const { code } = transform(source);
+  if (/\bfromTrusted\b|\bfromPersisted\b/.test(code)) {
+    throw new Error(`${name} emit includes an unchecked constructor`);
+  }
+  const js = ts.transpileModule(code, {
+    compilerOptions: {
+      target: ts.ScriptTarget.ES2022,
+      module: ts.ModuleKind.None,
+    },
+  }).outputText;
+  return new Function(`${js}\nreturn ${name};`)() as EmittedCompanion;
+}
+
 /** Compile a snippet with stock tsc; return formatted diagnostic messages. */
 function typecheckOk(source: string): string[] {
   const file = "snippet.ts";
@@ -438,6 +488,45 @@ describe("transform", () => {
     expect(Account.toPrimitive("admin")).toBe("admin");
   });
 
+  it("emitted literal and refined companion keys are only the public set", () => {
+    const Account = loadEmittedCompanion(
+      `brand type Account = "admin" | "regular";`,
+      "Account",
+    );
+    expect(Object.getOwnPropertyNames(Account).sort()).toEqual([
+      ...LITERAL_COMPANION_KEYS,
+    ]);
+    expect("fromTrusted" in Account).toBe(false);
+    expect("fromPersisted" in Account).toBe(false);
+    expect(Account.is("guest")).toBe(false);
+    expect(() => Account.from("guest")).toThrow(/Invalid Account/);
+    expect(Account.from("admin")).toBe("admin");
+
+    const PositiveInt = loadEmittedCompanion(
+      `
+brand type PositiveInt = number {
+  is(n: number): n is PositiveInt {
+    return Number.isInteger(n) && n > 0;
+  }
+}
+`,
+      "PositiveInt",
+    );
+    expect(Object.getOwnPropertyNames(PositiveInt).sort()).toEqual([
+      ...REFINED_COMPANION_KEYS,
+    ]);
+    expect("fromTrusted" in PositiveInt).toBe(false);
+    expect("fromPersisted" in PositiveInt).toBe(false);
+    expect(PositiveInt.is(0)).toBe(false);
+    expect(() => PositiveInt.from(0)).toThrow(/Invalid PositiveInt/);
+    expect(PositiveInt.from(2)).toBe(2);
+
+    const helper = defineLiteralSet("Account", ["admin", "regular"] as const);
+    expect(Object.getOwnPropertyNames(helper).sort()).toEqual([
+      ...LITERAL_COMPANION_KEYS,
+    ]);
+  });
+
   it("Values quotes non-identifier literals", () => {
     const block = emitBrandType({
       kind: "literal",
@@ -699,18 +788,203 @@ validate type Label = {
     expect(result.code).not.toContain("validate type");
   });
 
-  it("rejects nested object field types", () => {
-    expect(() =>
-      parseValidateTypes(
-        `validate type Bad = { nested: { x: string } };`,
-      ),
-    ).toThrow(/unsupported field type/);
+  it("fixture: nested object field", () => {
+    const src = `
+validate type Order = {
+  id: string;
+  ship: {
+    city: string;
+    zip?: string | null;
+    tags: string[];
+    place: {
+      lat: number;
+      lng: number;
+    };
+  };
+};
+`;
+    const { decls } = parseValidateTypes(src);
+    const ship = decls[0]!.fields[1]!;
+    expect(ship.name).toBe("ship");
+    expect(ship.type.members[0]!.kind).toBe("object");
+    if (ship.type.members[0]!.kind === "object") {
+      const place = ship.type.members[0]!.fields.find((f) => f.name === "place");
+      expect(place?.type.members[0]!.kind).toBe("object");
+    }
+
+    const { code } = transform(src);
+    expect(code).toContain(`city: string;`);
+    expect(code).toContain(`zip?: string | null;`);
+    expect(code).toContain(`lat: number;`);
+    expect(code).toContain(`readonly [OrderBrand]: true`);
+    expect(code).not.toContain("validate type");
+
+    const raw = {
+      id: "o1",
+      ship: {
+        city: "Austin",
+        zip: null,
+        tags: ["ground"],
+        place: { lat: 30, lng: -97 },
+      },
+    };
+    const Order = loadCompanion(code, "Order");
+    expect(Order.from(raw)).toBe(raw);
+    expect(Order.is({ ...raw, ship: { ...raw.ship, city: 1 } })).toBe(false);
+    expect(() => Order.from({ ...raw, ship: "Austin" })).toThrow(/Invalid Order/);
+
+    const check = `${code}
+declare function take(o: Order): void;
+// @ts-expect-error structural object literal is not Order
+take({ id: "o1", ship: { city: "Austin", tags: [], place: { lat: 1, lng: 2 } } });
+const o = Order.from({ id: "o1", ship: { city: "Austin", tags: [], place: { lat: 1, lng: 2 } } });
+const city: string = o.ship.city;
+void city;
+take(o);
+`;
+    expect(typecheckOk(check)).toEqual([]);
   });
 
-  it("rejects Date and other non-primitive idents", () => {
-    expect(() =>
-      parseValidateTypes(`validate type Bad = { when: Date };`),
-    ).toThrow(/unsupported field type 'Date'/);
+  it("fixture: Date field", () => {
+    const src = `validate type Meeting = { when: Date; title: string };\n`;
+    const { decls } = parseValidateTypes(src);
+    expect(decls[0]!.fields[0]).toEqual({
+      name: "when",
+      optional: false,
+      type: { members: [{ kind: "date" }] },
+    });
+
+    const { code } = transform(src);
+    expect(code).toContain(`when: Date;`);
+    expect(code).toContain(`v["when"] instanceof Date`);
+
+    const when = new Date("2020-01-01T00:00:00.000Z");
+    const raw = { when, title: "kickoff" };
+    const Meeting = loadCompanion(code, "Meeting");
+    expect(Meeting.from(raw)).toBe(raw);
+    expect(Meeting.is(raw)).toBe(true);
+    expect(Meeting.is({ when: "2020-01-01", title: "kickoff" })).toBe(false);
+    expect(() => Meeting.from({ when: "2020-01-01", title: "kickoff" })).toThrow(
+      /Invalid Meeting/,
+    );
+
+    const check = `${code}
+declare function take(e: Meeting): void;
+// @ts-expect-error structural object literal is not Meeting
+take({ when: new Date(), title: "kickoff" });
+const e = Meeting.from({ when: new Date(), title: "kickoff" });
+const d: Date = e.when;
+void d;
+take(e);
+`;
+    expect(typecheckOk(check)).toEqual([]);
+  });
+
+  it("fixture: imported brand as a field type", () => {
+    const result = transformProject([
+      {
+        filename: "email.sts",
+        source: `
+export brand type Email = string {
+  is(s: string): s is Email {
+    return s.includes("@");
+  }
+}
+`,
+      },
+      {
+        filename: "user.sts",
+        source: `
+import { Email as Mail } from "./email.js";
+validate type User = { email: Mail };
+`,
+      },
+    ]);
+
+    const user = result.files.find((f) => f.filename === "user.sts")!;
+    expect(user.code).toContain(`import { Email as Mail } from "./email.js";`);
+    expect(user.code).toContain(`email: Mail;`);
+    expect(user.code).toContain(`Mail.is(`);
+    expect(user.code).not.toContain("validate type");
+
+    const email = result.files.find((f) => f.filename === "email.sts")!;
+    const jsEmail = email.code;
+    const jsUser = user.code.replace(
+      /import\s+\{[^}]+\}\s+from\s+["'][^"']+["'];\s*/,
+      "type Mail = Email;\nconst Mail = Email;\n",
+    );
+    const runtimeSrc = `${jsEmail}\n${jsUser}`.replace(/^export /gm, "");
+    const loaded = new Function(
+      `${ts.transpileModule(runtimeSrc, {
+        compilerOptions: {
+          target: ts.ScriptTarget.ES2020,
+          module: ts.ModuleKind.None,
+        },
+      }).outputText}\nreturn { Email, User };`,
+    )() as {
+      Email: { is: (v: unknown) => boolean; from: (v: unknown) => string };
+      User: { is: (v: unknown) => boolean; from: (v: unknown) => { email: string } };
+    };
+
+    const branded = loaded.Email.from("a@b.co");
+    const raw = { email: branded };
+    expect(loaded.User.from(raw)).toBe(raw);
+    expect(loaded.User.is({ email: branded })).toBe(true);
+    expect(loaded.User.is({ email: "a@b.co" })).toBe(true);
+    expect(loaded.User.is({ email: "nope" })).toBe(false);
+    expect(() => loaded.User.from({ email: "nope" })).toThrow(/Invalid User/);
+
+    const check = `${jsEmail}\n${jsUser}
+declare function take(u: User): void;
+const branded = Email.from("a@b.co");
+// @ts-expect-error structural object literal is not User
+take({ email: branded });
+const u = User.from({ email: branded });
+u.email = Email.from("c@d.co");
+// @ts-expect-error raw string is not Email
+u.email = "c@d.co";
+take(u);
+`;
+    expect(typecheckOk(check)).toEqual([]);
+  });
+
+  it("same-file validate type field accepts an inner brand", () => {
+    const src = `
+validate type User = { id: string };
+validate type Order = { buyer: User };
+`;
+    const { code } = transform(src);
+    expect(code).toContain(`buyer: User;`);
+    expect(code).toContain(`User.is(`);
+    const loaded = new Function(
+      `${ts.transpileModule(code, {
+        compilerOptions: {
+          target: ts.ScriptTarget.ES2020,
+          module: ts.ModuleKind.None,
+        },
+      }).outputText}\nreturn { User, Order };`,
+    )() as {
+      User: { from: (v: unknown) => { id: string } };
+      Order: { is: (v: unknown) => boolean; from: (v: unknown) => unknown };
+    };
+    const buyer = loaded.User.from({ id: "a" });
+    const raw = { buyer };
+    expect(loaded.Order.from(raw)).toBe(raw);
+    expect(loaded.Order.is({ buyer: { id: "a" } })).toBe(true);
+    expect(loaded.Order.is({ buyer: { id: 1 } })).toBe(false);
+
+    const check = `${code}
+const buyer = User.from({ id: "a" });
+const order = Order.from({ buyer });
+order.buyer = buyer;
+// @ts-expect-error raw object is not User
+order.buyer = { id: "b" };
+// @ts-expect-error structural object literal is not Order
+const no: Order = { buyer };
+void order;
+void no;
+`;
+    expect(typecheckOk(check)).toEqual([]);
   });
 
   it("rejects non-object top-level types", () => {
@@ -722,7 +996,26 @@ validate type Label = {
   it("rejects generics on field types", () => {
     expect(() =>
       parseValidateTypes(`validate type Bad = { xs: Array<string> };`),
-    ).toThrow(/unsupported field type/);
+    ).toThrow(/unsupported field type 'Array<string>'/);
+  });
+
+  it("fixture: unsupported field names the gap", () => {
+    expect(() =>
+      parseValidateTypes(`validate type Bad = { fn: () => void };`),
+    ).toThrow(/unsupported field type '\(\) => void'/);
+    expect(() =>
+      transform(
+        `validate type User = { id: string };\nvalidate type Bag = { user: Partial<User> };\n`,
+      ),
+    ).toThrow(/unsupported field type 'Partial<User>'/);
+    expect(() =>
+      transform(
+        `validate type User = { id: string };\nvalidate type Bag = { user: Required<User> };\n`,
+      ),
+    ).toThrow(/unsupported field type 'Required<User>'/);
+    expect(() =>
+      transform(`validate type Bad = { item: Widget };\n`),
+    ).toThrow(/unsupported field type 'Widget'/);
   });
 });
 
@@ -953,9 +1246,24 @@ declare let a: Account;
 u = a;
 // @ts-expect-error different phantom brands — not structural aliases
 a = u;
-// Note: outbound widen to naked { id: string } remains a stock tsc hole
-// (excess-property checks only apply to fresh object literals). Not asserted here.
+// Naked-object widen is a stock tsc hole. assertNoOutboundWiden is the gate
+// (see "stock tsc still allows a validate type value to widen…").
 `;
+    expect(typecheckOk(check)).toEqual([]);
+  });
+
+  it("stock tsc still allows a validate type value to widen to its naked fields", () => {
+    const src = `validate type User = { id: string };\n`;
+    const { code } = transform(src);
+    const check = `${code}
+declare const u: User;
+const plain: { id: string } = u;
+const id: string = u.id;
+void plain;
+void id;
+`;
+    // Phantom intersection keeps field reads and does not block this
+    // assignment. assertNoOutboundWiden is the gate on .sts sources.
     expect(typecheckOk(check)).toEqual([]);
   });
 });

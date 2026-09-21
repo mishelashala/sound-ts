@@ -53,6 +53,14 @@ Library: `@mishelashala/sound-ts-core`.
 
 **Prefer `.sts` files.** Stock TypeScript language service will red-squiggle dialect keywords (`brand type`, `validate type`, `cast`) inside ordinary `.ts` / `.tsx`. The VS Code extension’s TextMate grammar covers `.sts`; injection into `.ts` only helps highlighting, not the checker.
 
+### Entry contract
+
+Unknown input enters with `.from`. `.from` always runs the check and throws on failure. A known string member is `Brand.Values.member`. A known number member is `Brand.Values[n]`. There is no `fromTrusted`, `fromPersisted`, or other companion method that skips `is`.
+
+The brand does not format. `toFixed`, slugify, and similar stay in a normal function that calls `.from`. A label stays a normal function over `.toPrimitive`, not a method on the companion.
+
+Invalid data at a source is fixed at that source. The brand still rejects it. Vacuous Mode B `is` bodies (empty, ignores the argument, or `return true`) stay rejected. That check does not prove the body is logically correct.
+
 ### String literal brands
 
 ```sts
@@ -65,15 +73,9 @@ Expands to the member literals **plus** a phantom arm, plus a runtime companion 
 - `Account.Values.admin` — known member constant (no string typo)
 - `Account.values` — readonly array (Joi / iteration)
 
-```ts
-declare const AccountBrand: unique symbol;
-type Account =
-  | "admin"
-  | "regular"
-  | (string & { readonly [AccountBrand]: true });
-```
-
 Under stock `tsc`, `setRole("admin")` is OK, widened `string` is not, and a second brand with the same members is not assignable to `Account`. A value of type `Account` is assignable to `string`, not back to `"admin" | "regular"`.
+
+See the [playground](https://mishelashala.github.io/sound-ts/playground.html) for expanded TypeScript / JavaScript.
 
 ### Refined brands
 
@@ -85,16 +87,9 @@ brand type PositiveInt = number {
 }
 ```
 
-Expands to a **phantom unique-symbol brand** plus a companion that keeps your `.is` body and **generates** `.from` (validate via `.is`) and `.toPrimitive` (identity back to the base type):
+Expands to a **phantom unique-symbol brand** plus a companion that keeps your `.is` body and **generates** `.from` (validate via `.is`) and `.toPrimitive` (identity back to the base type).
 
-```ts
-declare const PositiveIntBrand: unique symbol;
-type PositiveInt = number & { readonly [PositiveIntBrand]: true };
-// companions: .is is a type predicate; .from / cast<> return PositiveInt;
-// .toPrimitive(value) → number
-```
-
-Under stock `tsc`, bare `number` is **not** assignable to `PositiveInt` — enter via `.from` / `cast<PositiveInt>(…)`. Runtime checks still matter at boundaries; the brand alone is not enough. No separate `.d.ts` emit — plain `.ts` only.
+Under stock `tsc`, bare `number` is **not** assignable to `PositiveInt` — enter via `.from` / `cast<PositiveInt>(…)`. Runtime checks still matter at boundaries; the brand alone is not enough. No separate `.d.ts` emit — plain `.ts` only. Expanded output: [playground](https://mishelashala.github.io/sound-ts/playground.html).
 
 ### Brand unions / intersections
 
@@ -115,21 +110,7 @@ import { Admin, Regular } from "./a.js";
 brand type Staff = Admin | Regular;
 ```
 
-Same-file composition still works (`User & Session`, etc.). Pass the directory (or both files) to `sts` so the project brand map sees every declaration; then point `tsc` at the expanded output.
-
-```ts
-// after sts transform — stock TypeScript
-type Account = "admin" | "regular";
-const Account = /* … runtime companion … */;
-
-function greet(role: Account): string {
-  return role === "admin" ? "hello, admin" : "hello";
-}
-
-greet(Account.from("admin")); // ok
-Account.is("guest");          // false
-Account.from("guest");        // throws
-```
+Same-file composition still works (`User & Session`, etc.). Pass the directory (or both files) to `sts` so the project brand map sees every declaration; then point `tsc` at the expanded output. For the expanded TypeScript / JavaScript shape, use the [playground](https://mishelashala.github.io/sound-ts/playground.html).
 
 ### Validate type
 
@@ -142,7 +123,7 @@ User.is(data);
 User.from(data); // throws on mismatch; returns User
 ```
 
-**Supported field shapes:** `string` | `number` | `boolean` | `null`, optional `?`, arrays of primitives (`string[]`), and unions of those (e.g. `string | null`). Nested objects, generics, `Date`, imported aliases as field types, etc. error clearly at transform time.
+**Supported field shapes:** `string` | `number` | `boolean` | `null`, optional `?`, arrays of those primitives (`string[]`), unions of those (e.g. `string | null`), nested objects of those leaves, `Date`, and a `brand type` or `validate type` name from the same file, an import, or the `sts` batch. A brand field is still that nominal type: put a value in it with the inner `.from`, or store a value that is already that brand. `.from` checks the shape at runtime and does not format the value. Generics (`Partial`, `Required`, `Array<…>`), function types, and other shapes error at expand and name the unsupported type.
 
 ### Checked casts (`cast<>`)
 
@@ -269,6 +250,7 @@ pnpm --dir examples/vite-app build
 - [x] [AST soundness visitors](https://github.com/mishelashala/sound-ts/issues/52) — move 0.x bans off masked-string scans onto AST visitors.
 - [x] [Scopes and symbols](https://github.com/mishelashala/sound-ts/issues/53) — cross-file Sound-TS symbols for brands / companions / cast targets.
 - [x] [Complete soundness rules](https://github.com/mishelashala/sound-ts/issues/54) — 1.0 reject/accept matrix (boundaries, predicates, mutation, generics subset) on the AST + symbol layer.
+- [x] [`.from` is the only door](https://github.com/mishelashala/sound-ts/issues/75) — unknown input enters with `.from` (always checks). Known members are `Brand.Values.member` or `Brand.Values[n]`. No unchecked constructor. Formatting and labels stay normal functions. See [Entry contract](#entry-contract).
 
 ---
 
@@ -312,7 +294,7 @@ See also: [FAQ: Why not TypeScript?](https://mishelashala.github.io/sound-ts/#fa
 - String and number literal brands are the member literals **or** a phantom arm (nominal under stock `tsc`; member literals still assign). They do not flow back to the bare literal union. Bigint literal brands are not supported yet.
 - **0.x delivered** surface bans and tooling ([roadmap v1](https://github.com/mishelashala/sound-ts/issues?q=roadmap+v1) / [v2](https://github.com/mishelashala/sound-ts/issues?q=roadmap+v2)). Outbound widen from a `validate type` to the naked structure remains a stock `tsc` hole until a later design closes it.
 - **1.0 roadmap issues #50–#54 delivered** (AST + symbols + initial rule slice). Deferred items: [`SOUNDNESS_1_0.md`](packages/core/src/soundness/SOUNDNESS_1_0.md). Package version may still be `0.x` until a `1.0.0` release cut.
-- Not a full schema library — `validate type` covers simple object shapes only (no nested objects, generics, `Date`, …)
+- Not a full schema library — `validate type` accepts nested objects, `Date`, and brand / validate field names. Generics (`Partial`, `Required`), function fields, and formatting inside `.from` stay out.
 - VS Code extension **not on Marketplace** yet (local install only)
 - `defineLiteralSet` is **not** the public authoring API
 

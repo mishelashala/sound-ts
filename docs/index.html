@@ -8,12 +8,12 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <!-- Prism (CDN) first; brand/signal token colors win from styles.css (same order as playground). -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css" />
   <link rel="stylesheet" href="styles.css" />
   <link rel="icon" href="favicon.ico" sizes="any" />
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
   <link rel="icon" href="favicon-32.png" type="image/png" sizes="32x32" />
-  <!-- Prism (CDN): highlight .sts / TS / shell samples. Theme colors overridden in styles.css. -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css" />
   <script>
     (function () {
       try {
@@ -171,24 +171,43 @@
       <p>
         String literal brands emit as the member literals
         <strong>or</strong> a phantom arm, plus a runtime companion
-        (<code>.values</code> / <code>.is</code> / <code>.from</code> /
-        <code>.toPrimitive</code>).
+        (<code>.values</code> / <code>.Values</code> / <code>.is</code> /
+        <code>.from</code> / <code>.toPrimitive</code>).
         <code>setRole("admin")</code> stays OK. A second brand with the same
         members is not assignable. A value of the brand assigns to
         <code>string</code>, not back to the bare literal union.
       </p>
+      <p>
+        Unknown input enters with <code>.from</code>. <code>.from</code> always
+        runs the check and throws on failure. A known string member is
+        <code>Brand.Values.member</code>; a known number member is
+        <code>Brand.Values[n]</code>. The companion does not format and has no
+        method that skips <code>is</code>. <code>toFixed</code> and slugify stay
+        in a normal function that calls <code>.from</code>. A label stays a
+        normal function over <code>.toPrimitive</code>.
+      </p>
       <pre><code class="language-typescript">// file: roles.sts
 brand type Account = "admin" | "regular";
+
+const admin = Account.Values.admin;
 
 function greet(role: Account): string {
   return role === "admin" ? "hello, admin" : "hello";
 }
 
-// After CLI transform, Account is also a runtime companion:
 greet(Account.from("admin"));
-Account.is("guest");   // false
-Account.from("guest"); // throws</code></pre>
-      <p class="muted">Emit: <code>type Account = "admin" | "regular" | (string &amp; { readonly [AccountBrand]: true });</code></p>
+Account.from("guest"); // throws
+
+brand type CurrencyNumber = string {
+  is(value: string): value is CurrencyNumber {
+    return /^\d+\.\d{2}$/.test(value);
+  }
+}
+
+function currencyFromAmount(amount: number): CurrencyNumber {
+  return CurrencyNumber.from(amount.toFixed(2));
+}</code></pre>
+      <p class="muted">For plain TS / JS after expand, use the <a href="playground.html">playground</a>.</p>
     </section>
 
     <section id="refined">
@@ -207,19 +226,7 @@ brand type PositiveInt = number {
     return Number.isInteger(n) &amp;&amp; n &gt; 0;
   }
 }</code></pre>
-      <p>Emit shape (plain TS after transform):</p>
-      <pre><code class="language-typescript">declare const PositiveIntBrand: unique symbol;
-type PositiveInt = number &amp; { readonly [PositiveIntBrand]: true };
-const PositiveInt = /*#__PURE__*/ (() =&gt; {
-  function is(n: number): n is PositiveInt {
-    return Number.isInteger(n) &amp;&amp; n &gt; 0;
-  }
-  function from(value: unknown): PositiveInt {
-    if (is(value as number)) return value as PositiveInt;
-    throw new Error(/* … */);
-  }
-  return Object.freeze({ name: "PositiveInt" as const, is, from });
-})();</code></pre>
+      <p class="muted">See the <a href="playground.html">playground</a> for the expanded TypeScript / JavaScript.</p>
     </section>
 
     <section id="unions">
@@ -246,21 +253,10 @@ brand type Staff = Admin | Regular;</code></pre>
         brand map sees every declaration, then point stock <code>tsc</code> at
         the expanded output.
       </p>
-      <p>Union emit delegates <code>.is</code> to members:</p>
-      <pre><code class="language-typescript">type Staff = Admin | Regular;
-const Staff = /*#__PURE__*/ (() =&gt; {
-  function is(value: unknown): value is Staff {
-    return Admin.is(value) || Regular.is(value);
-  }
-  function from(value: unknown): Staff {
-    if (is(value)) return value;
-    throw new Error(/* … */);
-  }
-  return Object.freeze({ name: "Staff" as const, is, from });
-})();</code></pre>
       <p>Call-site usage of the runtime companions:</p>
       <pre><code class="language-typescript">Staff.is("admin");     // true (Admin member)
 Staff.from(raw);       // throws if neither brand matches</code></pre>
+      <p class="muted">Expanded TS / JS lives in the <a href="playground.html">playground</a>.</p>
       <p>Same-file intersections still work:</p>
       <pre><code class="language-typescript">brand type User = "u";
 brand type Session = "s";
@@ -283,24 +279,22 @@ validate type User = { id: string; age: number };
 
 User.is(data);   // boolean
 User.from(data); // throws on mismatch; returns User</code></pre>
-      <p>Emit shape (plain TS after transform):</p>
-      <pre><code class="language-typescript">declare const UserBrand: unique symbol;
-type User = {
-  id: string;
-  age: number;
-} &amp; { readonly [UserBrand]: true };
-const User = /*#__PURE__*/ (() =&gt; { /* .is / .from */ })();</code></pre>
+      <p class="muted">See the <a href="playground.html">playground</a> for the expanded TypeScript / JavaScript.</p>
       <p><strong>Supported field shapes:</strong></p>
       <ul>
         <li><code>string</code> | <code>number</code> | <code>boolean</code> | <code>null</code></li>
         <li>optional <code>?</code></li>
         <li>arrays of primitives (<code>string[]</code>) — not <code>null[]</code></li>
         <li>unions of those (e.g. <code>string | null</code>, <code>string | number</code>, <code>string[] | number</code>)</li>
+        <li>nested objects whose leaves are those shapes</li>
+        <li><code>Date</code></li>
+        <li>a <code>brand type</code> or <code>validate type</code> name from the same file, an import, or the batch — enter a raw value with that companion's <code>.from</code>; an existing brand value may be stored as-is</li>
       </ul>
       <p class="muted">
-        Unsupported shapes (nested objects, generics, <code>Date</code>, imported
-        aliases as field types, …) error clearly at transform time — not a full
-        schema library. <code>null[]</code> stays rejected.
+        Generics (<code>Partial</code>, <code>Required</code>, <code>Array&lt;…&gt;</code>),
+        function types, and other shapes error at expand and name the gap.
+        <code>.from</code> checks the value and does not format it.
+        <code>null[]</code> stays rejected. Not a full schema library.
       </p>
       <pre><code class="language-typescript">validate type Flags = {
   active?: boolean;
@@ -496,6 +490,14 @@ node packages/cli/dist/cli.js ./example.sts -o ./out/example.ts</code></pre>
           — 1.0 reject/accept matrix (boundaries, predicates, mutation, generics
           subset) on the AST + symbol layer.
         </li>
+        <li>
+          <input type="checkbox" disabled checked />
+          <a href="https://github.com/mishelashala/sound-ts/issues/75"><code>.from</code> is the only door</a>
+          — unknown input enters with <code>.from</code> (always checks).
+          Known members are <code>Brand.Values.member</code> or
+          <code>Brand.Values[n]</code>. No unchecked constructor.
+          Formatting and labels stay normal functions.
+        </li>
       </ul>
     </section>
 
@@ -570,7 +572,7 @@ node packages/cli/dist/cli.js ./example.sts -o ./out/example.ts</code></pre>
         <li>String literal brands are the member literals <strong>or</strong> a phantom arm (nominal under stock <code>tsc</code>; member literals still assign). They do not flow back to the bare literal union. Number/bigint literal brands not supported yet.</li>
         <li><strong>0.x delivered</strong> surface bans and tooling (<a href="https://github.com/mishelashala/sound-ts/issues?q=roadmap+v1">roadmap v1</a> / <a href="https://github.com/mishelashala/sound-ts/issues?q=roadmap+v2">v2</a>). Outbound widen from a <code>validate type</code> to the naked structure remains a stock <code>tsc</code> hole until a later design closes it.</li>
         <li><strong>1.0 roadmap issues #50–#54 delivered</strong> (AST + symbols + initial rule slice). Deferred items: <a href="https://github.com/mishelashala/sound-ts/blob/main/packages/core/src/soundness/SOUNDNESS_1_0.md">SOUNDNESS_1_0.md</a>. Package version may still be <code>0.x</code> until a <code>1.0.0</code> release cut.</li>
-        <li>Not a full schema library — <code>validate type</code> covers simple object shapes only (no nested objects, generics, <code>Date</code>, …)</li>
+        <li>Not a full schema library — <code>validate type</code> accepts nested objects, <code>Date</code>, and brand / validate field names. Generics (<code>Partial</code>, <code>Required</code>), function fields, and formatting inside <code>.from</code> stay out.</li>
         <li>VS Code extension not on Marketplace yet (local install only)</li>
         <li><code>defineLiteralSet</code> is not the authoring surface</li>
       </ul>
