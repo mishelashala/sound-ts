@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Flat brace-S">
+  <rect width="128" height="128" rx="22" fill="#0f172a"/>
+  <path d="M60 12 L18 38 L18 52 L42 64 L18 76 L18 90 L60 116 L60 100 L34 84 L34 76 L54 64 L34 52 L34 44 L60 28 Z" fill="#0d9488"/>
+  <path d="M68 12 L110 38 L110 52 L86 64 L110 76 L110 90 L68 116 L68 100 L94 84 L94 76 L74 64 L94 52 L94 44 L68 28 Z" fill="#0d9488"/>
+  <path d="M86 36 H50 C44 36 42 52 64 58 C86 64 86 78 50 88" fill="none" stroke="#f8fafc" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+
+</svg>

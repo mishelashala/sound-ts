@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Closed badge">
+  <rect width="128" height="128" rx="22" fill="#0f172a"/>
+  <path fill-rule="evenodd" d="M64 10 L112 38 L112 90 L64 118 L16 90 L16 38 ZM64 26 L96 44 L96 84 L64 102 L32 84 L32 44 Z" fill="#0d9488"/>
+  <path d="M32 54 L52 64 L32 74 Z" fill="#0d9488"/>
+  <path d="M96 54 L76 64 L96 74 Z" fill="#0d9488"/>
+  <path d="M86 36 H50 C44 36 42 52 64 58 C86 64 86 78 50 88" fill="none" stroke="#f8fafc" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+
+</svg>

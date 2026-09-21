@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Heavy line">
+  <rect width="128" height="128" rx="22" fill="#0f172a"/>
+  <path d="M56 18 L24 40 L24 52 L46 64 L24 76 L24 88 L56 110" fill="none" stroke="#f8fafc" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M72 18 L104 40 L104 52 L82 64 L104 76 L104 88 L72 110" fill="none" stroke="#f8fafc" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M86 36 H50 C44 36 42 52 64 58 C86 64 86 78 50 88" fill="none" stroke="#f8fafc" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
+
+</svg>
