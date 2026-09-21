@@ -4,7 +4,7 @@
 
 <h1 align="center">superset-ts</h1>
 
-**Dialect + CLI:** write `brand type`, `validate type`, and `as!` checked casts; expand to plain TypeScript types + runtime companions (`Account.is` / `Account.from`) that stock `tsc` / Vite / VS Code already understand.
+**Dialect + CLI:** write `brand type`, `validate type`, and `cast<>` checked casts; expand to plain TypeScript types + runtime companions (`Account.is` / `Account.from`) that stock `tsc` / Vite / VS Code already understand.
 
 > **Not a TypeScript fork.** No patched `tsc`, no Microsoft fork to maintain, no custom checker. The CLI rewrites source; bundlers consume **output** only.
 
@@ -24,7 +24,7 @@ Library: `@mishelashala/superset-ts-core`.
 
 ## Authoring
 
-**Prefer `.sts` files.** Stock TypeScript language service will red-squiggle dialect keywords (`brand type`, `validate type`, `as!`) inside ordinary `.ts` / `.tsx`. The VS Code extension’s TextMate grammar covers `.sts`; injection into `.ts` only helps highlighting, not the checker.
+**Prefer `.sts` files.** Stock TypeScript language service will red-squiggle dialect keywords (`brand type`, `validate type`, `cast`) inside ordinary `.ts` / `.tsx`. The VS Code extension’s TextMate grammar covers `.sts`; injection into `.ts` only helps highlighting, not the checker.
 
 ### String literal brands
 
@@ -94,11 +94,11 @@ User.from(data); // throws on mismatch
 
 **Supported field shapes:** `string` | `number` | `boolean`, optional `?`, arrays of those (`string[]`), and unions of those. Nested objects, generics, `Date`, imported aliases as field types, etc. error clearly at transform time.
 
-### Checked casts (`as!`)
+### Checked casts (`cast<>`)
 
 ```sts
-const n = raw as! number;  // inline typeof check; throws on mismatch
-const u = raw as! User;    // User.from(raw) when User is a brand/validate companion in the batch
+const n = cast<number>(raw);  // inline typeof check; throws on mismatch
+const u = cast<User>(raw);    // User.from(raw) when User is a brand/validate companion in the batch
 ```
 
 Targets: primitives or known companions from the CLI batch. Unknown targets error at transform time.
@@ -136,7 +136,7 @@ Remaining scanner edges: regex literals; nested `${}` inside templates (the whol
 
 ## Adoption recipe (not all-or-nothing)
 
-Keep most of the app as normal `.ts` (stock `tsc` / Vite). Add `.sts` only where you want `brand type`, `validate type`, or `as!`.
+Keep most of the app as normal `.ts` (stock `tsc` / Vite). Add `.sts` only where you want `brand type`, `validate type`, or `cast`.
 
 **Two-step compilation** (expand, then stock build):
 
@@ -148,7 +148,7 @@ Keep most of the app as normal `.ts` (stock `tsc` / Vite). Add `.sts` only where
 - Default dir → `dir.out/` or `-o` you choose (e.g. `src/brands.generated/`)
 - Stock Nest / `tsc` still owns `dist/`
 - Don’t point `tsc` at raw `.sts`
-- Whole `.sts` batch on each `sts` run for cross-file `|` / `&` and `as!` companions
+- Whole `.sts` batch on each `sts` run for cross-file `|` / `&` and `cast` companions
 - Start with one leaf brand file (ids / roles) → grow file by file
 
 ---
@@ -157,7 +157,7 @@ Keep most of the app as normal `.ts` (stock `tsc` / Vite). Add `.sts` only where
 
 | Package | Role |
 | --- | --- |
-| `packages/core` | Parse + transform `brand type` / `validate type` / `as!` → plain TS + runtime |
+| `packages/core` | Parse + transform `brand type` / `validate type` / `cast<>` → plain TS + runtime |
 | `packages/cli` | One-command expand (`sts` / `superset-ts`) |
 | `packages/vscode` | Thin extension: highlight `brand type`, optional CLI command |
 

@@ -576,56 +576,56 @@ validate type Flags = {
   });
 });
 
-describe("checked casts (as!)", () => {
-  it("rewrites as! number to inline typeof check", () => {
-    const src = `const n = raw as! number;\n`;
+describe("checked casts (cast<>)", () => {
+  it("rewrites cast<number> to inline typeof check", () => {
+    const src = `const n = cast<number>(raw);\n`;
     const result = transform(src);
     expect(result.changed).toBe(true);
-    expect(result.code).not.toContain("as!");
+    expect(result.code).not.toContain("cast<");
     expect(result.code).toContain(`typeof __v === "number"`);
     expect(result.code).toContain(`Checked cast to number failed`);
     expect(result.code).toContain("(raw)");
   });
 
-  it("rewrites as! string and as! boolean", () => {
+  it("rewrites cast<string> and cast<boolean>", () => {
     const src = `
-const s = raw as! string;
-const b = flag as! boolean;
+const s = cast<string>(raw);
+const b = cast<boolean>(flag);
 `;
     const { code } = transform(src);
     expect(code).toContain(`typeof __v === "string"`);
     expect(code).toContain(`typeof __v === "boolean"`);
-    expect(code).not.toContain("as!");
+    expect(code).not.toContain("cast<");
   });
 
-  it("delegates as! User to User.from when validate companion exists", () => {
+  it("delegates cast<User> to User.from when validate companion exists", () => {
     const src = `
 validate type User = { id: string; age: number };
-const u = raw as! User;
+const u = cast<User>(raw);
 `;
     const { code } = transform(src);
     expect(code).toContain(`User.from(raw)`);
-    expect(code).not.toContain("as!");
+    expect(code).not.toContain("cast<");
     expect(code).toContain(`const User =`);
   });
 
-  it("delegates as! Account to brand companion .from", () => {
+  it("delegates cast<Account> to brand companion .from", () => {
     const src = `
 brand type Account = "admin" | "regular";
-const a = raw as! Account;
+const a = cast<Account>(raw);
 `;
     const { code } = transform(src);
     expect(code).toContain(`Account.from(raw)`);
-    expect(code).not.toContain("as!");
+    expect(code).not.toContain("cast<");
   });
 
-  it("errors on unknown as! target", () => {
-    expect(() => transform(`const x = raw as! Ghost;\n`)).toThrow(
+  it("errors on unknown cast target", () => {
+    expect(() => transform(`const x = cast<Ghost>(raw);\n`)).toThrow(
       /not a primitive or known companion/,
     );
   });
 
-  it("resolves as! User across multi-file batch", () => {
+  it("resolves cast<User> across multi-file batch", () => {
     const result = transformProject([
       {
         filename: "user.sts",
@@ -635,27 +635,27 @@ const a = raw as! Account;
         filename: "main.sts",
         source: `
 import { User } from "./user.js";
-const u = raw as! User;
+const u = cast<User>(raw);
 `,
       },
     ]);
     const main = result.files.find((f) => f.filename === "main.sts")!;
     expect(main.changed).toBe(true);
     expect(main.code).toContain(`User.from(raw)`);
-    expect(main.code).not.toContain("as!");
+    expect(main.code).not.toContain("cast<");
     expect(result.companionNames.has("User")).toBe(true);
   });
 
-  it("ignores as! inside comments and strings", () => {
+  it("ignores cast inside comments and strings", () => {
     const src = `
-// const x = raw as! number;
-const s = "raw as! number";
-const n = raw as! number;
+// const x = cast<number>(raw);
+const s = "cast<number>(raw)";
+const n = cast<number>(raw);
 `;
     const { code, changed } = transform(src);
     expect(changed).toBe(true);
-    expect(code).toContain(`// const x = raw as! number;`);
-    expect(code).toContain(`"raw as! number"`);
+    expect(code).toContain(`// const x = cast<number>(raw);`);
+    expect(code).toContain(`"cast<number>(raw)"`);
     expect(code.match(/Checked cast to number failed/g)?.length).toBe(1);
   });
 });

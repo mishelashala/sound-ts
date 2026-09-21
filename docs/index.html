@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>superset-ts — brand type / validate type dialect + CLI</title>
-  <meta name="description" content="Write brand type and validate type; as! checked casts; CLI expands to plain TS + runtime companions. Not a TypeScript fork." />
+  <meta name="description" content="Write brand type and validate type; cast&lt;&gt; checked casts; CLI expands to plain TS + runtime companions. Not a TypeScript fork." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
@@ -36,7 +36,7 @@
       </div>
       <p class="one-liner">
         Dialect + CLI: <code>brand type</code>, <code>validate type</code>,
-        <code>as!</code> → plain types +
+        <code>cast&lt;&gt;</code> → plain types +
         <code>Account.is</code> / <code>Account.from</code>.
         Stock <code>tsc</code> / Vite consume <strong>output</strong> only —
         <strong>not</strong> a Microsoft/TypeScript fork.
@@ -65,7 +65,7 @@
         </thead>
         <tbody>
           <tr>
-            <td>A small dialect: <code>brand type</code>, <code>validate type</code>, and <code>as!</code> checked casts</td>
+            <td>A small dialect: <code>brand type</code>, <code>validate type</code>, and <code>cast&lt;&gt;</code> checked casts</td>
             <td>A fork of TypeScript or <code>tsc</code></td>
           </tr>
           <tr>
@@ -210,19 +210,19 @@ User.from(data); // throws on mismatch</code></pre>
     </section>
 
     <section id="casts">
-      <h2>Checked casts — <code>as!</code></h2>
+      <h2>Checked casts — <code>cast&lt;Target&gt;(expr)</code></h2>
       <p>
         Throw-on-mismatch cast. Targets are primitives or known companions
         (<code>brand type</code> / <code>validate type</code>) from the CLI batch.
       </p>
-      <pre><code class="language-typescript">const n = raw as! number;
+      <pre><code class="language-typescript">const n = cast&lt;number&gt;(raw);
 // → inline typeof check; throws if not a number
 
-const u = raw as! User;
+const u = cast&lt;User&gt;(raw);
 // → User.from(raw) when User is in the project companion map</code></pre>
       <p class="muted">
         Unknown targets error at transform time. Pass the whole
-        <code>.sts</code> batch so cross-file <code>as! User</code> resolves.
+        <code>.sts</code> batch so cross-file <code>cast&lt;User&gt;(…)</code> resolves.
       </p>
     </section>
 
@@ -252,7 +252,7 @@ node packages/cli/dist/cli.js ./example.sts -o ./out/example.ts</code></pre>
       <h2>Adoption recipe (not all-or-nothing)</h2>
       <p>
         Keep most of the app as normal <code>.ts</code> (stock <code>tsc</code> / Vite).
-        Add <code>.sts</code> only where you want <code>brand type</code>, <code>validate type</code>, or <code>as!</code>.
+        Add <code>.sts</code> only where you want <code>brand type</code>, <code>validate type</code>, or <code>cast</code>.
       </p>
       <p><strong>Two-step compilation</strong> (expand, then stock build):</p>
       <pre><code>.sts  --sts -o …-->  plain .ts  --tsc/nest-->  .js in normal build out</code></pre>
@@ -266,7 +266,7 @@ node packages/cli/dist/cli.js ./example.sts -o ./out/example.ts</code></pre>
         <li>Don’t point <code>tsc</code> at raw <code>.sts</code></li>
         <li>
           Whole <code>.sts</code> batch on each <code>sts</code> run for
-          cross-file <code>|</code> / <code>&amp;</code> and <code>as!</code> companions
+          cross-file <code>|</code> / <code>&amp;</code> and <code>cast</code> companions
         </li>
         <li>
           Start with one leaf brand file (ids / roles) → grow file by file
@@ -289,7 +289,7 @@ node packages/cli/dist/cli.js ./example.sts -o ./out/example.ts</code></pre>
         <li>
           <strong>Cross-file companions:</strong>
           pass every <code>.sts</code> on the CLI batch (e.g. a directory) so
-          <code>|</code> / <code>&amp;</code> members and <code>as!</code> targets
+          <code>|</code> / <code>&amp;</code> members and <code>cast</code> targets
           resolve against the project companion map. After expand, stock
           <code>tsc</code> sees normal imports of the emitted <code>type</code> + companion.
         </li>
@@ -388,9 +388,9 @@ show(42); // ❌ no runtime method table from the trait</code></pre>
         <li>
           Contracts / checked casts
           <br />
-          <span class="muted">This dialect covers it via <code>as!</code> — see <a href="#casts">Checked casts</a>.</span>
-          <pre><code class="language-typescript">const n = raw as! number; // ✅ throws on mismatch
-const u = raw as! User;   // ✅ User.from when companion is in the batch</code></pre>
+          <span class="muted">This dialect covers it via <code>cast&lt;&gt;</code> — see <a href="#casts">Checked casts</a>.</span>
+          <pre><code class="language-typescript">const n = cast&lt;number&gt;(raw); // ✅ throws on mismatch
+const u = cast&lt;User&gt;(raw);   // ✅ User.from when companion is in the batch</code></pre>
         </li>
         <li>
           Serialization codecs from types
@@ -438,7 +438,7 @@ PositiveInt.from(-1); // ❌ TS won’t generate the check for you</code></pre>
             alias: "keyword"
           },
           "dialect-cast": {
-            pattern: /\bas!/,
+            pattern: /\bcast\b/,
             alias: "operator"
           }
         });

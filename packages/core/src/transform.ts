@@ -37,7 +37,7 @@ export interface TransformFileOptions extends EmitOptions {
   brandMap?: BrandMap;
   /** Optional pre-built validate map (same batch as brandMap). */
   validateMap?: ValidateMap;
-  /** Optional pre-computed companion names for `as!` (brands + validate). */
+  /** Optional pre-computed companion names for `cast` (brands + validate). */
   companionNames?: ReadonlySet<string>;
 }
 
@@ -91,10 +91,10 @@ function expandFile(
 /**
  * Expand `brand type` / `validate type` into plain type aliases plus runtime
  * companions (`Name.is` / `Name.from`, and `Name.values` for string-literal
- * brands), and rewrite `as!` checked casts.
+ * brands), and rewrite `cast<…>(…)` checked casts.
  *
  * Combined brand members resolve against the project brand map (this file
- * alone, or a map from `transformProject`). `as!` targets resolve against
+ * alone, or a map from `transformProject`). `cast` targets resolve against
  * primitives plus known companions in the batch.
  *
  * Stock `tsc` / Vite / bundlers consume the **output** only.
@@ -133,7 +133,7 @@ export function transform(
     options.companionNames ?? companionNames(brandMap, validateMap);
 
   if (decls.length === 0 && validateDecls.length === 0) {
-    // Still may have as! casts
+    // Still may have cast<…>(…) casts
     const castOpts: {
       companionNames: ReadonlySet<string>;
       filename?: string;
@@ -162,7 +162,7 @@ export function transform(
 /**
  * Whole-program transform over the CLI input graph: collect brand + validate
  * decls from every file, build project maps, resolve `|` / `&` members +
- * cycles, then emit each file and rewrite `as!`. No import/module resolver —
+ * cycles, then emit each file and rewrite `cast`. No import/module resolver —
  * every path on the batch shares the maps.
  */
 export function transformProject(

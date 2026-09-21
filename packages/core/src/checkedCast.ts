@@ -1,5 +1,5 @@
 /**
- * Checked casts: `expr as! Target`
+ * Checked casts: `cast<Target>(expr)`
  *
  * Target may be a primitive (`string` | `number` | `boolean`) or a known
  * companion name from the project map (`brand type` / `validate type`).
@@ -11,9 +11,9 @@ import { maskCommentsAndStrings } from "./parse.js";
 const PRIMITIVES = new Set(["string", "number", "boolean"]);
 
 export interface CheckedCastSite {
-  /** Start of the full `expr as! Target` span */
+  /** Start of the full `cast<Target>(expr)` span */
   start: number;
-  /** End of the span */
+  /** End of the span (after closing `)`) */
   end: number;
   /** Operand expression text */
   expr: string;
@@ -28,88 +28,88 @@ export interface RewriteCheckedCastsOptions {
   filename?: string;
 }
 
-function skipWsBack(source: string, i: number): number {
-  while (i > 0 && /[\s\n\r\t]/.test(source[i - 1]!)) i--;
+function skipWs(source: string, i: number): number {
+  while (i < source.length && /[\s\n\r\t]/.test(source[i]!)) i++;
   return i;
 }
 
 /**
- * Find the start index of a checked-cast operand ending at `asIndex`
- * (`asIndex` points at the `a` of `as`). Uses a masked scan string so
- * strings/comments do not confuse paren balancing.
- */
-function findOperandStart(masked: string, asIndex: number): number {
-  const end = skipWsBack(masked, asIndex);
-  if (end === 0) {
-    throw new SyntaxError("as!: expected expression before checked cast");
-  }
-
-  if (masked[end - 1] === ")") {
-    let depth = 0;
-    for (let j = end - 1; j >= 0; j--) {
-      const c = masked[j]!;
-      if (c === ")") depth++;
-      else if (c === "(") {
-        depth--;
-        if (depth === 0) {
-          const before = masked.slice(0, j);
-          const callee = before.match(
-            /[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*\s*$/,
-          );
-          if (callee && callee.index !== undefined) {
-            return callee.index;
-          }
-          return j;
-        }
-      }
-    }
-    throw new SyntaxError("as!: unbalanced '(' in checked cast operand");
-  }
-
-  const before = masked.slice(0, end);
-  const m = before.match(/[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*\s*$/);
-  if (!m || m.index === undefined) {
-    throw new SyntaxError(
-      "as!: checked cast operand must be an identifier, member access, call, or parenthesized expression",
-    );
-  }
-  return m.index;
-}
-
-/**
- * Collect `as!` sites from source (comment/string safe).
+ * Collect `cast<Target>(expr)` sites from source (comment/string safe).
  * Does not validate targets — that happens at rewrite time against the map.
  */
 export function findCheckedCasts(source: string): CheckedCastSite[] {
   const masked = maskCommentsAndStrings(source);
   const sites: CheckedCastSite[] = [];
-  const re = /\bas\s*!/g;
+  const re = /\bcast\s*</g;
   let m: RegExpExecArray | null;
 
   while ((m = re.exec(masked)) !== null) {
-    const asStart = m.index;
-    let i = skipWsBack(masked, asStart); // unused; operand ends before as
-    void i;
-    const afterBang = m.index + m[0].length;
-    let pos = afterBang;
-    while (pos < masked.length && /[\s\n\r\t]/.test(masked[pos]!)) pos++;
+    const castStart = m.index;
+    let pos = skipWs(masked, m.index + m[0].length);
+
     const targetTok = source.slice(pos).match(/^[A-Za-z_$][\w$]*/);
     if (!targetTok) {
       throw new SyntaxError(
-        `as!: expected type name after checked cast (offset ${asStart})`,
+        `cast: expected type name after 'cast<' (offset ${castStart})`,
       );
     }
     const target = targetTok[0]!;
-    const targetEnd = pos + target.length;
-    const exprStart = findOperandStart(masked, asStart);
-    const exprEnd = skipWsBack(masked, asStart);
+    pos += target.length;
+    pos = skipWs(masked, pos);
+
+    if (masked[pos] !== ">") {
+      throw new SyntaxError(
+        `cast: expected '>' after type name (offset ${castStart})`,
+      );
+    }
+    pos = skipWs(masked, pos + 1);
+
+    if (masked[pos] !== "(") {
+      throw new SyntaxError(
+        `cast: expected '(' after cast<Target> (offset ${castStart})`,
+      );
+    }
+    const openParen = pos;
+    let depth = 0;
+    let closeParen = -1;
+    for (let j = openParen; j < masked.length; j++) {
+      const c = masked[j]!;
+      if (c === "(") depth++;
+      else if (c === ")") {
+        depth--;
+        if (depth === 0) {
+          closeParen = j;
+          break;
+        }
+      }
+    }
+    if (closeParen < 0) {
+      throw new SyntaxError(
+        `cast: unbalanced '(' in cast operand (offset ${castStart})`,
+      );
+    }
+
+    let exprStart = openParen + 1;
+    let exprEnd = closeParen;
+    while (exprStart < exprEnd && /[\s\n\r\t]/.test(source[exprStart]!)) {
+      exprStart++;
+    }
+    while (exprEnd > exprStart && /[\s\n\r\t]/.test(source[exprEnd - 1]!)) {
+      exprEnd--;
+    }
+    if (exprStart >= exprEnd) {
+      throw new SyntaxError(
+        `cast: expected expression inside cast<…>(…) (offset ${castStart})`,
+      );
+    }
+
     sites.push({
-      start: exprStart,
-      end: targetEnd,
+      start: castStart,
+      end: closeParen + 1,
       expr: source.slice(exprStart, exprEnd),
       target,
     });
-    re.lastIndex = targetEnd;
+    re.lastIndex = closeParen + 1;
   }
 
   return sites;
@@ -130,8 +130,8 @@ function emitCompanionCast(expr: string, target: string): string {
 }
 
 /**
- * Rewrite every `as!` in `source`. Throws if a target is neither a primitive
- * nor a known companion name in the batch.
+ * Rewrite every `cast<…>(…)` in `source`. Throws if a target is neither a
+ * primitive nor a known companion name in the batch.
  */
 export function rewriteCheckedCasts(
   source: string,
@@ -147,7 +147,7 @@ export function rewriteCheckedCasts(
     if (PRIMITIVES.has(site.target)) continue;
     if (options.companionNames.has(site.target)) continue;
     throw new SyntaxError(
-      `as! ${site.target}: '${site.target}' is not a primitive or known companion` +
+      `cast<${site.target}>: '${site.target}' is not a primitive or known companion` +
         `${where} (checked casts may target string | number | boolean, or a ` +
         `brand type / validate type declared in the transform input)`,
     );
