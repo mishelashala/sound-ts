@@ -4,7 +4,7 @@
 
 <h1 align="center">superset-ts</h1>
 
-**Dialect + CLI:** write `brand type`, expand to plain TypeScript types + runtime companions (`Account.is` / `Account.from`) that stock `tsc` / Vite / VS Code already understand.
+**Dialect + CLI:** write `brand type`, `validate type`, and `as!` checked casts; expand to plain TypeScript types + runtime companions (`Account.is` / `Account.from`) that stock `tsc` / Vite / VS Code already understand.
 
 > **Not a TypeScript fork.** No patched `tsc`, no Microsoft fork to maintain, no custom checker. The CLI rewrites source; bundlers consume **output** only.
 
@@ -24,7 +24,7 @@ Library: `@mishelashala/superset-ts-core`.
 
 ## Authoring
 
-**Prefer `.sts` files.** Stock TypeScript language service will red-squiggle `brand type` inside ordinary `.ts` / `.tsx` (unknown keywords). The VS Code extension’s TextMate grammar covers `.sts`; injection into `.ts` only helps highlighting, not the checker.
+**Prefer `.sts` files.** Stock TypeScript language service will red-squiggle dialect keywords (`brand type`, `validate type`, `as!`) inside ordinary `.ts` / `.tsx`. The VS Code extension’s TextMate grammar covers `.sts`; injection into `.ts` only helps highlighting, not the checker.
 
 ### String literal brands
 
@@ -81,6 +81,28 @@ Account.is("guest");          // false
 Account.from("guest");        // throws
 ```
 
+### Validate type (MVP)
+
+Object types with primitive fields → same `.is` / `.from` companions:
+
+```sts
+validate type User = { id: string; age: number };
+
+User.is(data);
+User.from(data); // throws on mismatch
+```
+
+**MVP field shapes:** `string` | `number` | `boolean`, optional `?`, arrays of those (`string[]`), and unions of those. Nested objects, generics, `Date`, imported aliases as field types, etc. error clearly at transform time.
+
+### Checked casts (`as!`)
+
+```sts
+const n = raw as! number;  // inline typeof check; throws on mismatch
+const u = raw as! User;    // User.from(raw) when User is a brand/validate companion in the batch
+```
+
+Targets: primitives or known companions from the CLI batch. Unknown targets error at transform time.
+
 ---
 
 ## Quickstart (CLI)
@@ -114,7 +136,7 @@ Remaining scanner edges: regex literals; nested `${}` inside templates (the whol
 
 ## Adoption recipe (not all-or-nothing)
 
-Keep most of the app as normal `.ts` (stock `tsc` / Vite). Add `.sts` only where you want `brand type`.
+Keep most of the app as normal `.ts` (stock `tsc` / Vite). Add `.sts` only where you want `brand type`, `validate type`, or `as!`.
 
 **Two-step compilation** (expand, then stock build):
 
@@ -126,7 +148,7 @@ Keep most of the app as normal `.ts` (stock `tsc` / Vite). Add `.sts` only where
 - Default dir → `dir.out/` or `-o` you choose (e.g. `src/brands.generated/`)
 - Stock Nest / `tsc` still owns `dist/`
 - Don’t point `tsc` at raw `.sts`
-- Whole `.sts` batch on each `sts` run for cross-file `|` / `&`
+- Whole `.sts` batch on each `sts` run for cross-file `|` / `&` and `as!` companions
 - Start with one leaf brand file (ids / roles) → grow file by file
 
 ---
@@ -135,7 +157,7 @@ Keep most of the app as normal `.ts` (stock `tsc` / Vite). Add `.sts` only where
 
 | Package | Role |
 | --- | --- |
-| `packages/core` | Parse + transform `brand type` → plain TS + runtime |
+| `packages/core` | Parse + transform `brand type` / `validate type` / `as!` → plain TS + runtime |
 | `packages/cli` | One-command expand (`sts` / `superset-ts`) |
 | `packages/vscode` | Thin extension: highlight `brand type`, optional CLI command |
 
@@ -163,7 +185,7 @@ See also: [FAQ: Why not TypeScript?](https://mishelashala.github.io/superset-ts/
 - **No custom TypeScript checker or language server** — stock `tsc` runs on expand output only.
 - **No open brands without `is`** (use refined brands; later tip for phantom ID opacity + `.from` — not open-without-`is`)
 - String literal brands are structural under stock `tsc` (not nominal). Number/bigint literal brands not supported yet.
-- Not a full schema / object validation library
+- Not a full schema library — `validate type` MVP covers simple object shapes only
 - VS Code extension **not on Marketplace** yet (local install only)
 - `defineLiteralSet` is **not** the public authoring API
 

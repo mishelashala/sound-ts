@@ -48,6 +48,45 @@
           "match": "[{}]"
         }
       ]
+    },
+    {
+      "name": "meta.validate-type.superset-ts",
+      "begin": "\\b(validate)\\s+(type)\\b",
+      "beginCaptures": {
+        "1": {
+          "name": "keyword.other.validate.superset-ts"
+        },
+        "2": {
+          "name": "keyword.declaration.type.superset-ts"
+        }
+      },
+      "end": "(?<=\\})\\s*;?|(?=;|$)",
+      "patterns": [
+        {
+          "name": "entity.name.type.superset-ts",
+          "match": "[A-Za-z_$][\\w$]*"
+        },
+        {
+          "name": "keyword.operator.assignment.superset-ts",
+          "match": "="
+        },
+        {
+          "name": "keyword.operator.union.superset-ts",
+          "match": "\\|"
+        },
+        {
+          "name": "storage.type.primitive.superset-ts",
+          "match": "\\b(?:string|number|boolean)\\b"
+        },
+        {
+          "name": "punctuation.section.block.superset-ts",
+          "match": "[{}\\[\\]?:;,]"
+        }
+      ]
+    },
+    {
+      "name": "keyword.operator.checked-cast.superset-ts",
+      "match": "\\bas!"
     }
   ]
 }

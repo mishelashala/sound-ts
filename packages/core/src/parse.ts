@@ -380,7 +380,7 @@ function parseCombined(
  * Template literals are masked as a single span (including any `${…}`); we do
  * not re-enter expression mode inside `${}` — good enough for v0.
  */
-function maskCommentsAndStrings(source: string): string {
+export function maskCommentsAndStrings(source: string): string {
   const out = source.split("");
   let i = 0;
   while (i < source.length) {

@@ -4,6 +4,10 @@ import type {
   LiteralBrandDecl,
   RefinedBrandDecl,
 } from "./parse.js";
+import {
+  emitValidateType,
+  type ValidateTypeDecl,
+} from "./validate.js";
 
 export interface EmitOptions {
   /**
@@ -147,13 +151,15 @@ export function emitBrandType(
   }
 }
 
+export type EmitDecl = BrandTypeDecl | ValidateTypeDecl;
+
 /**
- * Replace every `brand type` decl in `source` with emitted plain TS.
- * Declarations are replaced from last to first so offsets stay valid.
+ * Replace every `brand type` / `validate type` decl in `source` with emitted
+ * plain TS. Declarations are replaced from last to first so offsets stay valid.
  */
 export function transformSource(
   source: string,
-  decls: BrandTypeDecl[],
+  decls: EmitDecl[],
   options: EmitOptions = {},
 ): string {
   if (decls.length === 0) {
@@ -162,7 +168,10 @@ export function transformSource(
   const ordered = [...decls].sort((a, b) => b.start - a.start);
   let out = source;
   for (const decl of ordered) {
-    const replacement = emitBrandType(decl, options);
+    const replacement =
+      decl.kind === "validate"
+        ? emitValidateType(decl)
+        : emitBrandType(decl, options);
     out = out.slice(0, decl.start) + replacement + out.slice(decl.end);
   }
   return out;

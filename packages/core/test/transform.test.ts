@@ -3,6 +3,7 @@ import {
   transform,
   transformProject,
   parseBrandTypes,
+  parseValidateTypes,
   defineLiteralSet,
   LiteralSetError,
   emitBrandType,
@@ -484,5 +485,177 @@ describe("defineLiteralSet (internal)", () => {
     expect(Account.from("admin")).toBe("admin");
     expect(Account.is("guest")).toBe(false);
     expect(() => Account.from("x")).toThrow(LiteralSetError);
+  });
+});
+
+describe("validate type (MVP)", () => {
+  it("parses object type with primitive fields", () => {
+    const src = `validate type User = { id: string; age: number };`;
+    const { decls } = parseValidateTypes(src);
+    expect(decls).toHaveLength(1);
+    expect(decls[0]!.name).toBe("User");
+    expect(decls[0]!.fields).toEqual([
+      {
+        name: "id",
+        optional: false,
+        type: { members: [{ kind: "primitive", name: "string" }] },
+      },
+      {
+        name: "age",
+        optional: false,
+        type: { members: [{ kind: "primitive", name: "number" }] },
+      },
+    ]);
+  });
+
+  it("parses optional, arrays, and unions", () => {
+    const src = `
+validate type Flags = {
+  active?: boolean;
+  tags: string[];
+  id: string | number;
+};
+`;
+    const { decls } = parseValidateTypes(src);
+    expect(decls[0]!.fields.map((f) => f.name)).toEqual([
+      "active",
+      "tags",
+      "id",
+    ]);
+    expect(decls[0]!.fields[0]!.optional).toBe(true);
+    expect(decls[0]!.fields[1]!.type.members[0]).toEqual({
+      kind: "array",
+      element: "string",
+    });
+    expect(decls[0]!.fields[2]!.type.members).toEqual([
+      { kind: "primitive", name: "string" },
+      { kind: "primitive", name: "number" },
+    ]);
+  });
+
+  it("emits type alias + is/from companion", () => {
+    const src = `validate type User = { id: string; age: number };\n`;
+    const result = transform(src);
+    expect(result.changed).toBe(true);
+    expect(result.validateDecls).toHaveLength(1);
+    expect(result.code).toContain(`type User = {`);
+    expect(result.code).toContain(`id: string;`);
+    expect(result.code).toContain(`age: number;`);
+    expect(result.code).toContain(`const User =`);
+    expect(result.code).toContain(`function is(value: unknown): value is User`);
+    expect(result.code).toContain(`function from(value: unknown): User`);
+    expect(result.code).toContain(`typeof v.id === "string"`);
+    expect(result.code).toContain(`typeof v.age === "number"`);
+    expect(result.code).not.toContain("validate type");
+  });
+
+  it("rejects nested object field types", () => {
+    expect(() =>
+      parseValidateTypes(
+        `validate type Bad = { nested: { x: string } };`,
+      ),
+    ).toThrow(/unsupported field type/);
+  });
+
+  it("rejects Date and other non-primitive idents", () => {
+    expect(() =>
+      parseValidateTypes(`validate type Bad = { when: Date };`),
+    ).toThrow(/unsupported field type 'Date'/);
+  });
+
+  it("rejects non-object top-level types", () => {
+    expect(() =>
+      parseValidateTypes(`validate type Bad = string;`),
+    ).toThrow(/MVP requires an object type/);
+  });
+
+  it("rejects generics on field types", () => {
+    expect(() =>
+      parseValidateTypes(`validate type Bad = { xs: Array<string> };`),
+    ).toThrow(/unsupported field type/);
+  });
+});
+
+describe("checked casts (as!)", () => {
+  it("rewrites as! number to inline typeof check", () => {
+    const src = `const n = raw as! number;\n`;
+    const result = transform(src);
+    expect(result.changed).toBe(true);
+    expect(result.code).not.toContain("as!");
+    expect(result.code).toContain(`typeof __v === "number"`);
+    expect(result.code).toContain(`Checked cast to number failed`);
+    expect(result.code).toContain("(raw)");
+  });
+
+  it("rewrites as! string and as! boolean", () => {
+    const src = `
+const s = raw as! string;
+const b = flag as! boolean;
+`;
+    const { code } = transform(src);
+    expect(code).toContain(`typeof __v === "string"`);
+    expect(code).toContain(`typeof __v === "boolean"`);
+    expect(code).not.toContain("as!");
+  });
+
+  it("delegates as! User to User.from when validate companion exists", () => {
+    const src = `
+validate type User = { id: string; age: number };
+const u = raw as! User;
+`;
+    const { code } = transform(src);
+    expect(code).toContain(`User.from(raw)`);
+    expect(code).not.toContain("as!");
+    expect(code).toContain(`const User =`);
+  });
+
+  it("delegates as! Account to brand companion .from", () => {
+    const src = `
+brand type Account = "admin" | "regular";
+const a = raw as! Account;
+`;
+    const { code } = transform(src);
+    expect(code).toContain(`Account.from(raw)`);
+    expect(code).not.toContain("as!");
+  });
+
+  it("errors on unknown as! target", () => {
+    expect(() => transform(`const x = raw as! Ghost;\n`)).toThrow(
+      /not a primitive or known companion/,
+    );
+  });
+
+  it("resolves as! User across multi-file batch", () => {
+    const result = transformProject([
+      {
+        filename: "user.sts",
+        source: `validate type User = { id: string; age: number };\nexport { User };\n`,
+      },
+      {
+        filename: "main.sts",
+        source: `
+import { User } from "./user.js";
+const u = raw as! User;
+`,
+      },
+    ]);
+    const main = result.files.find((f) => f.filename === "main.sts")!;
+    expect(main.changed).toBe(true);
+    expect(main.code).toContain(`User.from(raw)`);
+    expect(main.code).not.toContain("as!");
+    expect(result.companionNames.has("User")).toBe(true);
+  });
+
+  it("ignores as! inside comments and strings", () => {
+    const src = `
+// const x = raw as! number;
+const s = "raw as! number";
+const n = raw as! number;
+`;
+    const { code, changed } = transform(src);
+    expect(changed).toBe(true);
+    expect(code).toContain(`// const x = raw as! number;`);
+    expect(code).toContain(`"raw as! number"`);
+    expect(code.match(/Checked cast to number failed/g)?.length).toBe(1);
   });
 });
