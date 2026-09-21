@@ -1,4 +1,8 @@
-# superset-ts
+<p align="center">
+  <img src="docs/assets/seal.svg" width="64" height="64" alt="superset-ts seal" />
+</p>
+
+<h1 align="center">superset-ts</h1>
 
 **Dialect + CLI:** write `brand type`, expand to plain TypeScript types + runtime companions (`Account.is` / `Account.from`) that stock `tsc` / Vite / VS Code already understand.
 
