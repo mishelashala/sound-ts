@@ -30,7 +30,7 @@
     <nav aria-label="On this page">
       <a href="#authoring">Authoring</a>
       <a href="#mode-b">Mode&nbsp;B</a>
-      <a href="#unions">Unions</a>
+      <a href="#unions">Unions / intersections</a>
       <a href="#cli">CLI</a>
       <a href="#caveats">Caveats</a>
       <a href="#vscode">VS&nbsp;Code</a>
@@ -138,6 +138,10 @@ const Staff = /*#__PURE__*/ (() =&gt; {
   }
   return Object.freeze({ name: "Staff" as const, is, from });
 })();</code></pre>
+      <p>Call-site usage of the runtime companions:</p>
+      <pre><code class="language-typescript">Staff.is("admin");     // true (Admin member)
+Authed.is(value);      // true only if User.is &amp;&amp; Session.is
+Staff.from(raw);       // throws if neither brand matches</code></pre>
     </section>
 
     <section id="cli">
