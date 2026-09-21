@@ -16,6 +16,7 @@ import {
   parseTypeSnippet,
   scanBalancedBrace,
   skipWs,
+  leadingExportStart,
 } from "./helpers.js";
 
 function unquoteStringLiteral(node: ts.StringLiteral): string {
@@ -224,6 +225,7 @@ function parseRefinedBrand(
   declStart: number,
   name: string,
   rhsStart: number,
+  exported: boolean,
 ): RefinedBrandDecl {
   const scanner = createTriviaSkippingScanner(source);
   scanner.setTextPos(rhsStart);
@@ -369,6 +371,7 @@ function parseRefinedBrand(
     raw: source.slice(declStart, end),
     start: declStart,
     end,
+    exported,
   };
 }
 
@@ -380,7 +383,11 @@ export function parseBrandAt(
   source: string,
   scanner: ts.Scanner,
 ): BrandTypeDecl {
-  const declStart = scanner.getTokenPos();
+  const brandTokenStart = scanner.getTokenPos();
+  const { start: declStart, exported } = leadingExportStart(
+    source,
+    brandTokenStart,
+  );
   // brand
   scanner.scan(); // type
   if (scanner.getToken() !== ts.SyntaxKind.TypeKeyword) {
@@ -410,7 +417,7 @@ export function parseBrandAt(
       first === ts.SyntaxKind.BooleanKeyword) &&
     source[afterFirstWs] === "{"
   ) {
-    return parseRefinedBrand(source, declStart, name, rhsStart);
+    return parseRefinedBrand(source, declStart, name, rhsStart, exported);
   }
 
   const sliced = sliceBrandRhs(source, rhsStart, name);
@@ -425,6 +432,7 @@ export function parseBrandAt(
       raw: source.slice(declStart, sliced.end),
       start: declStart,
       end: sliced.end,
+      exported,
     };
     return decl;
   }
@@ -438,6 +446,7 @@ export function parseBrandAt(
     raw: source.slice(declStart, sliced.end),
     start: declStart,
     end: sliced.end,
+    exported,
   };
   return decl;
 }

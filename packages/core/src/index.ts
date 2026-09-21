@@ -12,6 +12,7 @@
 export {
   transform,
   transformProject,
+  isDialectSurface,
   type TransformResult,
   type TransformFileOptions,
   type ProjectFileInput,

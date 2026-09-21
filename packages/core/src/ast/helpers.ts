@@ -89,6 +89,28 @@ export function skipWs(source: string, i: number): number {
 }
 
 /**
+ * If `keywordStart` is immediately preceded by `export` (whitespace only),
+ * return a span that includes the export keyword.
+ */
+export function leadingExportStart(
+  source: string,
+  keywordStart: number,
+): { start: number; exported: boolean } {
+  let i = keywordStart;
+  while (i > 0 && /[\s\n\r\t]/.test(source[i - 1]!)) i--;
+  const kw = "export";
+  if (i < kw.length) return { start: keywordStart, exported: false };
+  if (source.slice(i - kw.length, i) !== kw) {
+    return { start: keywordStart, exported: false };
+  }
+  const before = i - kw.length - 1;
+  if (before >= 0 && /[A-Za-z0-9_$]/.test(source[before]!)) {
+    return { start: keywordStart, exported: false };
+  }
+  return { start: i - kw.length, exported: true };
+}
+
+/**
  * Scan balanced `{…}` starting at `i` (must be `{`), respecting strings.
  * Returns index after the closing `}`.
  */

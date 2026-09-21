@@ -35,6 +35,8 @@ export interface ValidateTypeDecl {
   raw: string;
   start: number;
   end: number;
+  /** True when declared as `export validate type` */
+  exported: boolean;
 }
 
 export interface ValidateParseResult {
@@ -86,21 +88,23 @@ function emitObjectShape(decl: ValidateTypeDecl): string {
 function emitTypeAlias(decl: ValidateTypeDecl): string {
   const brand = `${decl.name}Brand`;
   const shape = emitObjectShape(decl);
+  const exp = decl.exported ? "export " : "";
   return [
     `declare const ${brand}: unique symbol;`,
-    `type ${decl.name} = ${shape} & { readonly [${brand}]: true };`,
+    `${exp}type ${decl.name} = ${shape} & { readonly [${brand}]: true };`,
   ].join("\n");
 }
 
 /** Emit plain TS type alias + `.is` / `.from` companion for one validate type. */
 export function emitValidateType(decl: ValidateTypeDecl): string {
-  const { name, fields } = decl;
+  const { name, fields, exported } = decl;
+  const exp = exported ? "export " : "";
   const checks = fields
     .map((f) => `    ${emitFieldCheck("v", f)}`)
     .join(" &&\n");
   return [
     emitTypeAlias(decl),
-    `const ${name} = /*#__PURE__*/ (() => {`,
+    `${exp}const ${name} = /*#__PURE__*/ (() => {`,
     `  function is(value: unknown): value is ${name} {`,
     `    if (typeof value !== "object" || value === null) return false;`,
     `    const v = value as Record<string, unknown>;`,

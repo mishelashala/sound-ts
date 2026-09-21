@@ -20,6 +20,8 @@ interface BrandTypeDeclBase {
   start: number;
   /** End offset in source */
   end: number;
+  /** True when declared as `export brand type` */
+  exported: boolean;
 }
 
 /** Phase 1: closed string literal union */

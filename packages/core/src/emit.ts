@@ -24,22 +24,28 @@ export interface EmitOptions {
  * two brands with the same members distinct under stock `tsc`.
  * Outbound to `string` works; outbound to the bare literal union does not.
  */
-function emitLiteralNominalType(name: string, union: string): string {
+function emitLiteralNominalType(
+  name: string,
+  union: string,
+  exported: boolean,
+): string {
   const brand = `${name}Brand`;
+  const exp = exported ? "export " : "";
   return [
     `declare const ${brand}: unique symbol;`,
-    `type ${name} = ${union} | (string & { readonly [${brand}]: true });`,
+    `${exp}type ${name} = ${union} | (string & { readonly [${brand}]: true });`,
   ].join("\n");
 }
 
 function emitLiteralSelfContained(decl: LiteralBrandDecl): string {
-  const { name, values } = decl;
+  const { name, values, exported } = decl;
   const litList = values.map((v) => JSON.stringify(v)).join(", ");
   const union = values.map((v) => JSON.stringify(v)).join(" | ");
+  const exp = exported ? "export " : "";
 
   return [
-    emitLiteralNominalType(name, union),
-    `const ${name} = /*#__PURE__*/ (() => {`,
+    emitLiteralNominalType(name, union, exported),
+    `${exp}const ${name} = /*#__PURE__*/ (() => {`,
     `  const __values = Object.freeze([${litList}] as const);`,
     `  const __set = new Set<string>(__values);`,
     `  function is(value: unknown): value is ${name} {`,
@@ -61,12 +67,13 @@ function emitLiteralSelfContained(decl: LiteralBrandDecl): string {
 }
 
 function emitLiteralWithHelper(decl: LiteralBrandDecl): string {
-  const { name, values } = decl;
+  const { name, values, exported } = decl;
   const litList = values.map((v) => JSON.stringify(v)).join(", ");
   const union = values.map((v) => JSON.stringify(v)).join(" | ");
+  const exp = exported ? "export " : "";
   return [
-    emitLiteralNominalType(name, union),
-    `const ${name} = defineLiteralSet("${name}", [${litList}] as const);`,
+    emitLiteralNominalType(name, union, exported),
+    `${exp}const ${name} = defineLiteralSet("${name}", [${litList}] as const);`,
   ].join("\n");
 }
 
@@ -74,11 +81,16 @@ function emitLiteralWithHelper(decl: LiteralBrandDecl): string {
  * Phantom brand marker so stock `tsc` treats the refined type as nominally opaque
  * (bare `number` / base is not assignable). Runtime entry remains `.is` / `.from`.
  */
-export function emitPhantomBrandAlias(name: string, baseType: string): string {
+export function emitPhantomBrandAlias(
+  name: string,
+  baseType: string,
+  exported = false,
+): string {
   const brand = `${name}Brand`;
+  const exp = exported ? "export " : "";
   return [
     `declare const ${brand}: unique symbol;`,
-    `type ${name} = ${baseType} & { readonly [${brand}]: true };`,
+    `${exp}type ${name} = ${baseType} & { readonly [${brand}]: true };`,
   ].join("\n");
 }
 
@@ -86,7 +98,8 @@ export function emitPhantomBrandAlias(name: string, baseType: string): string {
  * Mode B: phantom-branded type + companion with user `.is` body and generated `.from`.
  */
 function emitRefined(decl: RefinedBrandDecl): string {
-  const { name, baseType, isParamName, isParamType, isBody } = decl;
+  const { name, baseType, isParamName, isParamType, isBody, exported } = decl;
+  const exp = exported ? "export " : "";
   // Dedent user body, then indent to companion scope
   const rawLines = isBody.split("\n");
   const nonEmpty = rawLines.filter((l) => l.trim().length > 0);
@@ -101,8 +114,8 @@ function emitRefined(decl: RefinedBrandDecl): string {
     .join("\n");
 
   return [
-    emitPhantomBrandAlias(name, baseType),
-    `const ${name} = /*#__PURE__*/ (() => {`,
+    emitPhantomBrandAlias(name, baseType, exported),
+    `${exp}const ${name} = /*#__PURE__*/ (() => {`,
     `  function is(${isParamName}: ${isParamType}): ${isParamName} is ${name} {`,
     indentedBody,
     `  }`,
@@ -125,7 +138,8 @@ function emitRefined(decl: RefinedBrandDecl): string {
  * delegates `.is` to member brands (`||` / `&&`).
  */
 function emitCombined(decl: CombinedBrandDecl): string {
-  const { name, members, kind } = decl;
+  const { name, members, kind, exported } = decl;
+  const exp = exported ? "export " : "";
   const typeExpr =
     kind === "intersection" ? members.join(" & ") : members.join(" | ");
   const isExpr =
@@ -134,8 +148,8 @@ function emitCombined(decl: CombinedBrandDecl): string {
       : members.map((m) => `${m}.is(value)`).join(" || ");
 
   return [
-    `type ${name} = ${typeExpr};`,
-    `const ${name} = /*#__PURE__*/ (() => {`,
+    `${exp}type ${name} = ${typeExpr};`,
+    `${exp}const ${name} = /*#__PURE__*/ (() => {`,
     `  function is(value: unknown): value is ${name} {`,
     `    return ${isExpr};`,
     `  }`,
