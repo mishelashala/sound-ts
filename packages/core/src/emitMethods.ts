@@ -8,6 +8,9 @@
  * Caveat: a class method becomes a readonly *instance* property whose value is
  * a function. Instance properties are not on the prototype, and `this` inside
  * the function is lexical (arrow), not the dynamic receiver.
+ *
+ * Object-literal methods are not rewritten (`readonly name = …` is invalid
+ * inside `{…}`); use class methods or explicit function properties there.
  */
 
 import * as ts from "typescript";
@@ -143,16 +146,13 @@ export function rewriteMethodsAsProperties(
     ts.ScriptKind.TS,
   );
 
-  // Detect overload groups in classes / object literals (same name, multiple decls).
+  // Detect overload groups in classes (same name, multiple decls).
+  // Object-literal methods are left alone: `readonly name = …` is invalid there.
   const declCounts = new Map<string, number>();
   const collectOverloads = (node: ts.Node): void => {
     if (ts.isMethodDeclaration(node) && node.name) {
       const parent = node.parent;
-      if (
-        ts.isClassDeclaration(parent) ||
-        ts.isClassExpression(parent) ||
-        ts.isObjectLiteralExpression(parent)
-      ) {
+      if (ts.isClassDeclaration(parent) || ts.isClassExpression(parent)) {
         const key = `${parent.pos}:${methodKey(node, sf)}`;
         declCounts.set(key, (declCounts.get(key) ?? 0) + 1);
       }
@@ -180,18 +180,20 @@ export function rewriteMethodsAsProperties(
 
     if (ts.isMethodDeclaration(node) && node.name) {
       const parent = node.parent;
-      const inClassOrObject =
-        ts.isClassDeclaration(parent) ||
-        ts.isClassExpression(parent) ||
-        ts.isObjectLiteralExpression(parent);
+      const inClass =
+        ts.isClassDeclaration(parent) || ts.isClassExpression(parent);
 
-      if (inClassOrObject) {
-        const key = `${parent.pos}:${methodKey(node, sf)}`;
-        if ((declCounts.get(key) ?? 0) > 1) {
-          // Leave overload groups as methods (property form cannot express them).
-          ts.forEachChild(node, visit);
-          return;
-        }
+      if (!inClass) {
+        // Skip object-literal / other method forms (emit would be invalid).
+        ts.forEachChild(node, visit);
+        return;
+      }
+
+      const key = `${parent.pos}:${methodKey(node, sf)}`;
+      if ((declCounts.get(key) ?? 0) > 1) {
+        // Leave overload groups as methods (property form cannot express them).
+        ts.forEachChild(node, visit);
+        return;
       }
 
       const isAbstract = !!node.modifiers?.some(
