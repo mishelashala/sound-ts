@@ -57,17 +57,24 @@ function isOutboundTarget(sym: DialectSymbol): boolean {
 function memberKey(member: ValidateTypeDecl["fields"][number]["type"]["members"][number]): string {
   if (member.kind === "null") return "null";
   if (member.kind === "primitive") return member.name;
-  return `${member.element}[]`;
+  if (member.kind === "array") return `${member.element}[]`;
+  if (member.kind === "date") return "Date";
+  if (member.kind === "ref") return `ref:${member.name}`;
+  return `obj:${fieldParts(member.fields).join(";")}`;
 }
 
-function validateNakedKey(decl: ValidateTypeDecl): string {
-  const parts = decl.fields.map((field) => {
+function fieldParts(fields: ValidateTypeDecl["fields"]): string[] {
+  const parts = fields.map((field) => {
     const typeKey = field.type.members.map(memberKey).sort().join("|");
     const opt = field.optional ? "?" : "";
     return `${field.name}${opt}:${typeKey}`;
   });
   parts.sort();
-  return `obj:${parts.join(";")}`;
+  return parts;
+}
+
+function validateNakedKey(decl: ValidateTypeDecl): string {
+  return `obj:${fieldParts(decl.fields).join(";")}`;
 }
 
 function literalNakedKey(decl: LiteralBrandDecl): string {
@@ -202,8 +209,10 @@ export function assertNoOutboundWiden(
       }
       return undefined;
     }
+    if (ts.isTypeLiteralNode(t)) return objectKey(t);
     if (ts.isTypeReferenceNode(t) && ts.isIdentifier(t.typeName)) {
       if (t.typeArguments && t.typeArguments.length > 0) return undefined;
+      if (t.typeName.text === "Date") return "Date";
       return aliases.get(t.typeName.text);
     }
     if (ts.isUnionTypeNode(t)) {

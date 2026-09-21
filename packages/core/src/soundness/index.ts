@@ -13,6 +13,9 @@
  * 1.0 rules (#54) need project symbols — see `runSoundness1Checks` and
  * `SOUNDNESS_1_0.md`. Wired from `transform` / `transformProject` after
  * `buildProjectSymbols`.
+ *
+ * Plain `.ts` in a mixed batch (#72) runs the assertion half of that gate:
+ * `as` / `any` / `!` into a brand or validate companion fails closed.
  */
 
 import { assertNoAny } from "./rejectAny.js";
@@ -49,6 +52,7 @@ export { assertNoWideTypes } from "./rejectWideTypes.js";
 
 export {
   runSoundness1Checks,
+  assertNoDialectAssertions,
   assertNoBrandTypePredicates,
   assertHonestRefinedPredicates,
   assertNoBrandMutation,

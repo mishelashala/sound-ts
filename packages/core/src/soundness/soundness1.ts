@@ -9,12 +9,19 @@ import type { DialectProjectSymbols } from "../symbols/types.js";
 import { assertBrandGenericSubset } from "./rejectBrandGenericPartial.js";
 import { assertNoBrandMutation } from "./rejectBrandMutation.js";
 import { assertNoBrandTypePredicates } from "./rejectBrandTypePredicates.js";
+import { assertNoDialectAssertions } from "./rejectDialectAssertion.js";
 import { assertNoOutboundWiden } from "./rejectOutboundWiden.js";
 import { assertHonestRefinedPredicates } from "./rejectDishonestRefinedIs.js";
 
 export type Soundness1CheckOptions = {
   filename?: string;
   symbols: DialectProjectSymbols;
+  /**
+   * `.sts` runs the full 1.0 matrix. Plain `.ts` / `.tsx` in the same batch
+   * only reject assertions into a brand or validate companion (#72).
+   * Default true.
+   */
+  dialectSurface?: boolean;
 };
 
 /**
@@ -25,7 +32,9 @@ export function runSoundness1Checks(
   source: string,
   options: Soundness1CheckOptions,
 ): void {
-  const { symbols, filename } = options;
+  const { symbols, filename, dialectSurface = true } = options;
+  assertNoDialectAssertions(source, symbols, filename);
+  if (!dialectSurface) return;
   assertNoBrandTypePredicates(source, symbols, filename);
   assertHonestRefinedPredicates(symbols, filename);
   assertNoBrandMutation(source, symbols, filename);
@@ -33,6 +42,7 @@ export function runSoundness1Checks(
   assertNoOutboundWiden(source, symbols, filename);
 }
 
+export { assertNoDialectAssertions } from "./rejectDialectAssertion.js";
 export { assertNoBrandTypePredicates } from "./rejectBrandTypePredicates.js";
 export { assertHonestRefinedPredicates } from "./rejectDishonestRefinedIs.js";
 export { assertNoBrandMutation } from "./rejectBrandMutation.js";
