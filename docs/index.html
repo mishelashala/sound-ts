@@ -388,7 +388,7 @@ node packages/cli/dist/cli.js ./example.sts -o ./out/example.ts</code></pre>
       </p>
       <ul class="checklist">
         <li>
-          <input type="checkbox" disabled />
+          <input type="checkbox" disabled checked />
           <a href="https://github.com/mishelashala/superset-ts/issues/36">Reject <code>as</code></a>
           — a type assertion in <code>.sts</code> fails expand.
           <code>as const</code> and <code>cast&lt;&gt;</code> stay.
@@ -416,7 +416,7 @@ node packages/cli/dist/cli.js ./example.sts -o ./out/example.ts</code></pre>
           so stock <code>strictFunctionTypes</code> checks parameters contravariantly.
         </li>
         <li>
-          <input type="checkbox" disabled />
+          <input type="checkbox" disabled checked />
           <a href="https://github.com/mishelashala/superset-ts/issues/41">Reject <code>!</code></a>
           — <code>value!</code> and <code>prop!: Type</code> in <code>.sts</code>
           fail expand. <code>!==</code> stays. <code>!</code> is not deleted.
