@@ -290,7 +290,7 @@ void literal;
     expect(code).toContain(`const wide: string = a`);
   });
 
-  it("rejects a number literal brand and Values member as the bare union", () => {
+  it("rejects a number literal brand as the bare union", () => {
     expect(() =>
       transform(`
 brand type Days = 7 | 30 | 90;
@@ -298,21 +298,9 @@ const d: Days = Days.from(7);
 const members: 90 | 7 | 30 = d;
 `),
     ).toThrow(/bare literal union/);
-
-    const src = `
-brand type Days = 7 | 30 | 90;
-const d = Days.from(7);
-const members: 7 | 30 | 90 = Days.toPrimitive(d);
-const wide: number = d;
-const viaValues: 7 | 30 | 90 = Days.Values[7];
-void members;
-void wide;
-`;
-    expect(() => transform(src)).toThrow(/Days\.toPrimitive/);
-    expect(() => transform(src)).toThrow(/bare literal union/);
   });
 
-  it("allows .toPrimitive for a number literal brand when Values is not assigned", () => {
+  it("allows .toPrimitive for a number literal brand", () => {
     const src = `
 brand type Days = 7 | 30 | 90;
 const d = Days.from(7);

@@ -14,8 +14,8 @@
  *
  * What this sees: a binding whose annotation is the full naked field
  * structure (or the bare literal union), and whose initializer — or a later
- * `=` to that binding — is a validate-type / literal-brand value. Values are
- * `.from` / `cast<>` / `Name.Values.*`, or a binding annotated as that
+ * `=` to that binding — is a validate-type / literal-brand value. Those values are
+ * `.from` / `cast<>`, or a binding annotated as that
  * companion or initialized with one of those expressions.
  */
 
@@ -363,20 +363,6 @@ export function assertNoOutboundWiden(
     return sym;
   };
 
-  const valuesAccess = (expr: ts.Expression): DialectSymbol | undefined => {
-    const target = ts.isPropertyAccessExpression(expr)
-      ? expr.expression
-      : ts.isElementAccessExpression(expr)
-        ? expr.expression
-        : undefined;
-    if (!target || !ts.isPropertyAccessExpression(target)) return undefined;
-    if (target.name.text !== "Values") return undefined;
-    if (!ts.isIdentifier(target.expression)) return undefined;
-    const sym = resolveName(target.expression.text);
-    if (!sym || !literalDecl(sym)) return undefined;
-    return sym;
-  };
-
   const valuesIn = (expr: ts.Expression | undefined): DialectSymbol[] => {
     if (!expr) return [];
     const e = unwrapExpr(expr);
@@ -392,10 +378,6 @@ export function assertNoOutboundWiden(
     }
     if (ts.isCallExpression(e)) {
       const sym = callCarrier(e);
-      return sym ? [sym] : [];
-    }
-    if (ts.isPropertyAccessExpression(e) || ts.isElementAccessExpression(e)) {
-      const sym = valuesAccess(e);
       return sym ? [sym] : [];
     }
     return [];

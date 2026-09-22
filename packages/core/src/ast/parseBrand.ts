@@ -455,7 +455,6 @@ function parseRefinedBrand(
 const ENUM_RESERVED = new Set([
   "name",
   "values",
-  "Values",
   "is",
   "from",
   "toPrimitive",

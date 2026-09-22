@@ -483,7 +483,6 @@ function parseRefinedBrand(source, declStart, name, rhsStart, exported) {
 var ENUM_RESERVED = /* @__PURE__ */ new Set([
   "name",
   "values",
-  "Values",
   "is",
   "from",
   "toPrimitive"
@@ -1176,31 +1175,11 @@ function emitLiteralNominalType(name, union, primitive, exported) {
 function emitLiteralToken(value) {
   return typeof value === "number" ? String(value) : JSON.stringify(value);
 }
-function emitValuesMemberKey(literal) {
-  if (typeof literal === "number") {
-    return /^\d+(\.\d+)?$/.test(String(literal)) ? String(literal) : JSON.stringify(literal);
-  }
-  return /^[A-Za-z_$][\w$]*$/.test(literal) ? literal : JSON.stringify(literal);
-}
 function emitEnumMemberLines(brandName, members) {
   if (!members || members.length === 0) return [];
   return members.map(
     (member) => `    ${member.name}: ${emitLiteralToken(member.value)} as ${brandName},`
   );
-}
-function emitValuesConst(brandName, values, members) {
-  const entries = [
-    ...values.map((v) => {
-      const key = emitValuesMemberKey(v);
-      return `    ${key}: ${emitLiteralToken(v)} as ${brandName},`;
-    }),
-    ...emitEnumMemberLines(brandName, members)
-  ];
-  return [
-    `  const Values = Object.freeze({`,
-    ...entries,
-    `  });`
-  ].join("\n");
 }
 function emitLiteralSelfContained(decl) {
   const { name, values, exported, primitive, members } = decl;
@@ -1228,11 +1207,9 @@ function emitLiteralSelfContained(decl) {
     `    }`,
     `    throw new Error(\`Invalid ${name} primitive: \${JSON.stringify(value)}\`);`,
     `  }`,
-    emitValuesConst(name, values, members),
     `  return Object.freeze({`,
     `    name: "${name}" as const,`,
     `    values: __values,`,
-    `    Values,`,
     `    is,`,
     `    from,`,
     `    toPrimitive,`,
@@ -2357,15 +2334,6 @@ function assertNoOutboundWiden(source, symbols, filename) {
     if (!sym || !isOutboundTarget(sym)) return void 0;
     return sym;
   };
-  const valuesAccess = (expr) => {
-    const target = (void 0)(expr) ? expr.expression : (void 0)(expr) ? expr.expression : void 0;
-    if (!target || !(void 0)(target)) return void 0;
-    if (target.name.text !== "Values") return void 0;
-    if (!(void 0)(target.expression)) return void 0;
-    const sym = resolveName(target.expression.text);
-    if (!sym || !literalDecl(sym)) return void 0;
-    return sym;
-  };
   const valuesIn = (expr) => {
     if (!expr) return [];
     const e = unwrapExpr(expr);
@@ -2378,10 +2346,6 @@ function assertNoOutboundWiden(source, symbols, filename) {
     }
     if ((void 0)(e)) {
       const sym = callCarrier(e);
-      return sym ? [sym] : [];
-    }
-    if ((void 0)(e) || (void 0)(e)) {
-      const sym = valuesAccess(e);
       return sym ? [sym] : [];
     }
     return [];

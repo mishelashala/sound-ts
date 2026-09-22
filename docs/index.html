@@ -172,7 +172,7 @@
       <p>
         String literal brands emit as the member literals
         <strong>or</strong> a phantom arm, plus a runtime companion
-        (<code>.values</code> / <code>.Values</code> / <code>.is</code> /
+        (<code>.values</code> / <code>.is</code> /
         <code>.from</code> / <code>.toPrimitive</code>).
         <code>setRole("admin")</code> stays OK. A second brand with the same
         members is not assignable. A value of the brand assigns to
@@ -180,10 +180,8 @@
       </p>
       <p>
         Unknown input enters with <code>.from</code>. <code>.from</code> always
-        runs the check and throws on failure. A known string member is
-        <code>Brand.Values.member</code>; a known number member is
-        <code>Brand.Values[n]</code>, or <code>Brand.Name</code> on a
-        <code>brand enum</code>. The companion does not format and has no
+        runs the check and throws on failure. A known member is the literal
+        itself (<code>setRole("admin")</code>, <code>type: 0</code>). The companion does not format and has no
         method that skips <code>is</code>. <code>toFixed</code> and slugify stay
         in a normal function that calls <code>.from</code>. A label stays a
         normal function over <code>.toPrimitive</code>.
@@ -191,7 +189,7 @@
       <pre><code class="language-typescript">// file: roles.sts
 brand type Account = "admin" | "regular";
 
-const admin = Account.Values.admin;
+const admin: Account = "admin";
 
 function greet(role: Account): string {
   return role === "admin" ? "hello, admin" : "hello";
@@ -218,7 +216,7 @@ function currencyFromAmount(amount: number): CurrencyNumber {
         A closed number set with a name for each value. Same checks as a
         number literal brand. The name is a property on the companion.
         <code>from</code>, <code>is</code>, <code>values</code>,
-        <code>Values</code>, <code>name</code>, and <code>toPrimitive</code>
+        <code>name</code>, and <code>toPrimitive</code>
         cannot be member names.
       </p>
       <pre><code class="language-typescript">brand enum AccountCode {
@@ -232,7 +230,7 @@ const code: AccountCode = AccountCode.Zero;
 AccountCode.from(1);
 AccountCode.from(4); // throws</code></pre>
       <p class="muted">
-        <code>AccountCode.Values[0]</code> is the same member.
+        <code>0</code> is the same member as <code>AccountCode.Zero</code>.
         Runnable copy: <code>examples/tsc-app/src/account-code.sts</code>.
       </p>
     </section>
@@ -521,8 +519,8 @@ node packages/cli/dist/cli.js ./example.sts -o ./out/example.ts</code></pre>
           <input type="checkbox" disabled checked />
           <a href="https://github.com/mishelashala/sound-ts/issues/75"><code>.from</code> is the only door</a>
           — unknown input enters with <code>.from</code> (always checks).
-          Known members are <code>Brand.Values.member</code> or
-          <code>Brand.Values[n]</code>. No unchecked constructor.
+          Known members are the literals (<code>"admin"</code>, <code>0</code>).
+          No unchecked constructor.
           Formatting and labels stay normal functions.
         </li>
       </ul>
