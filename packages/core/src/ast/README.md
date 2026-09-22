@@ -9,7 +9,7 @@ We do **not** feed raw `.sts` straight into `createSourceFile` and expect a clea
 
 Instead:
 
-1. **Mask** comments / strings / templates with `maskCommentsAndStrings` (offset-preserving).
+1. **Mask** comments / strings / templates / regex literals with `maskCommentsAndStrings` (offset-preserving).
    A bare TypeScript scanner loses `${…}` template state and can swallow the rest of the
    file; masking avoids that without using regex as the dialect grammar.
 2. **Discover** dialect constructs with the TypeScript **scanner** (`ts.createScanner`,
