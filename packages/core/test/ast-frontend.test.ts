@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { parseSts } from "../src/ast/index.js";
+import { maskCommentsAndStrings } from "../src/mask.js";
+import { transform } from "../src/transform.js";
 
 describe("parseSts dialect side-table", () => {
   it("collects brand, validate, and cast as first-class nodes with spans", () => {
@@ -28,6 +30,31 @@ const a = cast<Account>(raw);
     expect(src.slice(program.casts[0]!.start, program.casts[0]!.end)).toBe(
       "cast<Account>(raw)",
     );
+  });
+
+  it("ignores dialect keywords inside regex literals", () => {
+    const src = `
+const pattern = /brand type Fake = "x"/g;
+const listed = [/brand type A/, /brand type B/];
+function f() { return /brand type C/; }
+const klass = /[/brand type D/]/;
+const n = total / width;
+brand type Live = "yes";
+`;
+    const masked = maskCommentsAndStrings(src);
+    expect(masked.length).toBe(src.length);
+    expect(masked).not.toContain("brand type Fake");
+    expect(masked).toContain("total / width");
+
+    const program = parseSts(src);
+    expect(program.brands.map((b) => b.name)).toEqual(["Live"]);
+
+    const { code } = transform(src, { filename: "pattern.sts" });
+    expect(code).toContain('/brand type Fake = "x"/g');
+    expect(code).toContain("[/brand type A/, /brand type B/]");
+    expect(code).toContain("return /brand type C/;");
+    expect(code).toContain("/[/brand type D/]/");
+    expect(code).toContain("total / width");
   });
 
   it("ignores dialect keywords inside strings and comments", () => {

@@ -21,8 +21,9 @@ export type { DialectProgram } from "./types.js";
  * Walk the file with the TypeScript scanner; parse each dialect construct
  * into an explicit side-table entry with real source spans.
  *
- * Discovery runs on a comment/string/template-masked copy so the standalone
- * scanner cannot lose `${…}` template state and swallow the rest of the file.
+ * Discovery runs on a comment/string/template/regex-masked copy so the
+ * standalone scanner cannot lose `${…}` template state and swallow the rest
+ * of the file, and cannot treat `/brand type …/` as a declaration.
  * Offsets stay aligned with the original source; payloads parse from `source`.
  */
 export function parseSts(source: string): DialectProgram {
