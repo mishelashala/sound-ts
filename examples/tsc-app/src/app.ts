@@ -10,7 +10,7 @@ export function label(role: Account): string {
 
 export const admin: Account = "admin";
 
-export const sandbox: Environment = Environment.Values.sandbox;
+export const sandbox: Environment = "sandbox";
 
 export function environmentFromChecked(raw: unknown): Environment | undefined {
   if (!Environment.is(raw)) return undefined;

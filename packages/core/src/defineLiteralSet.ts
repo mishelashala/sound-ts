@@ -11,8 +11,6 @@ export interface LiteralSet<
 > {
   readonly name: Name;
   readonly values: Values;
-  /** Known members as branded constants (`Env.Values.sandbox`). */
-  readonly Values: { readonly [K in Values[number]]: Values[number] };
   is(value: unknown): value is Values[number];
   from(value: unknown): Values[number];
   /** Narrow a branded member back to the closed literal union (DTO / JSON edges). */
@@ -71,14 +69,9 @@ export function defineLiteralSet<
     throw new LiteralSetError(name, value, frozen);
   }
 
-  const ValuesMap = Object.freeze(
-    Object.fromEntries(values.map((v) => [v, v])),
-  ) as { readonly [K in Values[number]]: Values[number] };
-
   return Object.freeze({
     name,
     values: frozen,
-    Values: ValuesMap,
     is,
     from,
     toPrimitive,

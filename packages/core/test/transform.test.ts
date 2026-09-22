@@ -30,9 +30,8 @@ function loadCompanion(
   return factory();
 }
 
-/** Public companion keys. Refined brands omit `values` / `Values`. */
+/** Public companion keys. Refined brands omit `values`. */
 const LITERAL_COMPANION_KEYS = [
-  "Values",
   "from",
   "is",
   "name",
@@ -468,9 +467,7 @@ describe("transform", () => {
     }
     expect(code).toMatch(/name:\s*"Account"/);
     expect(code).toMatch(/values:\s*__values/);
-    expect(code).toMatch(/\bValues,/);
-    expect(code).toContain("admin: \"admin\" as Account");
-    expect(code).toContain("regular: \"regular\" as Account");
+    expect(code).not.toMatch(/\bValues\b/);
     expect(code).toMatch(/\bis,/);
     expect(code).toMatch(/\bfrom,/);
     expect(code).toMatch(/\btoPrimitive,/);
@@ -479,8 +476,6 @@ describe("transform", () => {
     const Account = defineLiteralSet("Account", ["admin", "regular"] as const);
     expect(Account.name).toBe("Account");
     expect([...Account.values]).toEqual(["admin", "regular"]);
-    expect(Account.Values.admin).toBe("admin");
-    expect(Account.Values.regular).toBe("regular");
     expect(Account.is("admin")).toBe(true);
     expect(Account.is("guest")).toBe(false);
     expect(Account.from("regular")).toBe("regular");
@@ -527,7 +522,7 @@ brand type PositiveInt = number {
     ]);
   });
 
-  it("Values quotes non-identifier literals", () => {
+  it("does not emit a Values bag", () => {
     const block = emitBrandType({
       kind: "literal",
       name: "Tag",
@@ -538,8 +533,8 @@ brand type PositiveInt = number {
       end: 0,
       exported: false,
     });
-    expect(block).toContain('ok: "ok" as Tag');
-    expect(block).toContain('"not-ok": "not-ok" as Tag');
+    expect(block).not.toMatch(/\bValues\b/);
+    expect(block).toContain('["ok", "not-ok"]');
   });
 
   it("emitBrandType produces standalone block for literals", () => {
@@ -661,8 +656,6 @@ describe("defineLiteralSet (internal)", () => {
     expect(Account.from("admin")).toBe("admin");
     expect(Account.is("guest")).toBe(false);
     expect(() => Account.from("x")).toThrow(LiteralSetError);
-    expect(Account.Values.admin).toBe("admin");
-    expect(Account.Values.regular).toBe("regular");
   });
 });
 
@@ -1141,7 +1134,6 @@ const members: "admin" | "regular" = a;
     expect(code).toContain(
       `type Days = 7 | 30 | 90 | (number & { readonly [DaysBrand]: true });`,
     );
-    expect(code).toContain("7: 7 as Days");
     expect(code).toContain('typeof value === "number"');
     const check = `${code}
 declare function setDays(days: Days): void;
@@ -1150,7 +1142,7 @@ declare let a: Days;
 declare let b: Other;
 setDays(7);
 setDays(a);
-setDays(Days.Values[30]);
+setDays(30);
 // @ts-expect-error widened number
 setDays(raw);
 // @ts-expect-error non-member
@@ -1180,14 +1172,11 @@ const members: 7 | 30 | 90 = a;
     expect(code).toContain("Zero: 0 as AccountCode");
     const AccountCode = loadEmittedCompanion(src, "AccountCode") as EmittedCompanion & {
       Zero: number;
-      Values: { 0: number; Zero: number };
     };
     expect(Object.getOwnPropertyNames(AccountCode).sort()).toEqual(
       ["One", "Three", "Two", "Zero", ...LITERAL_COMPANION_KEYS].sort(),
     );
     expect(AccountCode.Zero).toBe(0);
-    expect(AccountCode.Values[0]).toBe(0);
-    expect(AccountCode.Values.Zero).toBe(0);
     expect(() => AccountCode.from(4)).toThrow(/Invalid AccountCode: 4/);
     const check = `${code}
 const code: AccountCode = AccountCode.Zero;

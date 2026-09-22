@@ -43,16 +43,6 @@ function emitLiteralToken(value: string | number): string {
   return typeof value === "number" ? String(value) : JSON.stringify(value);
 }
 
-/** Property key for a Mode A `Values` member (quote when not a JS identifier). */
-function emitValuesMemberKey(literal: string | number): string {
-  if (typeof literal === "number") {
-    return /^\d+(\.\d+)?$/.test(String(literal))
-      ? String(literal)
-      : JSON.stringify(literal);
-  }
-  return /^[A-Za-z_$][\w$]*$/.test(literal) ? literal : JSON.stringify(literal);
-}
-
 function emitEnumMemberLines(
   brandName: string,
   members: LiteralBrandDecl["members"],
@@ -62,26 +52,6 @@ function emitEnumMemberLines(
     (member) =>
       `    ${member.name}: ${emitLiteralToken(member.value)} as ${brandName},`,
   );
-}
-
-/** Nested `Values` map: known members without going through `.from(...)`. */
-function emitValuesConst(
-  brandName: string,
-  values: readonly (string | number)[],
-  members?: LiteralBrandDecl["members"],
-): string {
-  const entries = [
-    ...values.map((v) => {
-      const key = emitValuesMemberKey(v);
-      return `    ${key}: ${emitLiteralToken(v)} as ${brandName},`;
-    }),
-    ...emitEnumMemberLines(brandName, members),
-  ];
-  return [
-    `  const Values = Object.freeze({`,
-    ...entries,
-    `  });`,
-  ].join("\n");
 }
 
 function emitLiteralSelfContained(decl: LiteralBrandDecl): string {
@@ -111,11 +81,9 @@ function emitLiteralSelfContained(decl: LiteralBrandDecl): string {
     `    }`,
     `    throw new Error(\`Invalid ${name} primitive: \${JSON.stringify(value)}\`);`,
     `  }`,
-    emitValuesConst(name, values, members),
     `  return Object.freeze({`,
     `    name: "${name}" as const,`,
     `    values: __values,`,
-    `    Values,`,
     `    is,`,
     `    from,`,
     `    toPrimitive,`,
